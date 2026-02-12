@@ -16,6 +16,9 @@ const config: Config = {
         "brand-white": "#ffffff",
         "brand-gray": "#f5f5f5",
       },
+      fontFamily: {
+        sans: ["var(--font-inter)", "sans-serif"],
+      },
     },
   },
   plugins: [],
