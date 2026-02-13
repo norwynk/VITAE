@@ -1,0 +1,18 @@
+{
+  "name": "VITAE Development",
+  "forwardPorts": [3000, 8080, 9000],
+  "portsAttributes": {
+    "3000": {
+      "label": "Next.js Dev Server",
+      "onAutoForward": "notify"
+    },
+    "8080": {
+      "label": "Alt Dev Server",
+      "onAutoForward": "notify"
+    },
+    "9000": {
+      "label": "Test Server",
+      "onAutoForward": "notify"
+    }
+  }
+}
