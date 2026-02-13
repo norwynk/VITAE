@@ -59,8 +59,6 @@ export default function MentalHealthStep({
     assessmentType === 'phq9' ? phq9Questions : gad7Questions;
   const currentAnswers =
     assessmentType === 'phq9' ? phq9Answers : gad7Answers;
-  const totalQuestions = allQuestions.length;
-
   const handleAnswer = (value: number) => {
     const newAnswers = [...currentAnswers];
     newAnswers[currentQuestionIndex] = value;

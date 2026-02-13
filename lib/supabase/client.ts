@@ -1,9 +1,10 @@
 // import { createBrowserClient } from '@supabase/ssr';
-import type { Database } from '@/types/database';
+// import type { Database } from '@/types/database';
 
-export function createClient() {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function createClient(): any {
   // Supabase temporarily disabled - return mock client
-  return null as any;
+  return null;
 
   // Original code (disabled):
   // return createBrowserClient<Database>(

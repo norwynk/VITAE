@@ -17,7 +17,17 @@ const config: Config = {
         "brand-gray": "#f5f5f5",
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "sans-serif"],
+        sans: [
+          "Inter",
+          "system-ui",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          "Arial",
+          "sans-serif",
+        ],
       },
     },
   },

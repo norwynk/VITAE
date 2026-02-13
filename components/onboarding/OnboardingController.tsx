@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { useOnboardingStore } from '@/store/onboardingStore';
+import { useOnboardingStore, type OnboardingState } from '@/store/onboardingStore';
 import { createClient } from '@/lib/supabase/client';
 import { upsertProfile, upsertHealthBaseline } from '@/lib/supabase/queries';
 import ProgressBar from './ProgressBar';
@@ -165,7 +165,7 @@ export default function OnboardingController() {
 }
 
 // Helper functions for score calculation
-function calculatePhysicalScore(state: any): number {
+function calculatePhysicalScore(state: OnboardingState): number {
   let score = 70; // Base score
 
   // BMI impact
@@ -213,7 +213,7 @@ function calculateMentalScore(phq9: number, gad7: number): number {
   return Math.max(0, Math.min(100, score));
 }
 
-function calculateLifestyleScore(state: any): number {
+function calculateLifestyleScore(state: OnboardingState): number {
   let score = 50; // Base score
 
   // Exercise impact

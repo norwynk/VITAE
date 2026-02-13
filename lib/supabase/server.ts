@@ -1,10 +1,11 @@
 // import { createServerClient } from '@supabase/ssr';
 // import { cookies } from 'next/headers';
-import type { Database } from '@/types/database';
+// import type { Database } from '@/types/database';
 
-export async function createClient() {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function createClient(): Promise<any> {
   // Supabase temporarily disabled - return mock client
-  return null as any;
+  return null;
 
   // Original code (disabled):
   // const cookieStore = await cookies();
