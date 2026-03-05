@@ -5,6 +5,8 @@ import Login from '@/pages/Login'
 import Layout from '@/components/ui/Layout'
 import Dashboard from '@/pages/Dashboard'
 import Suppliers from '@/pages/Suppliers'
+import AddSupplier from '@/pages/AddSupplier'
+import SupplierDetail from '@/pages/SupplierDetail'
 import Settings from '@/pages/Settings'
 
 function Spinner() {
@@ -42,6 +44,9 @@ function AppRoutes() {
         <Route element={<Layout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/suppliers" element={<Suppliers />} />
+          <Route path="/suppliers/new" element={<AddSupplier />} />
+          <Route path="/suppliers/:id" element={<SupplierDetail />} />
+          <Route path="/suppliers/:id/edit" element={<AddSupplier />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
       </Route>
