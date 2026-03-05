@@ -194,9 +194,7 @@ export default function AddSupplier() {
     const errs: FormErrors = {}
     if (!formData.first_name.trim()) errs.first_name = 'Required'
     if (!formData.last_name.trim()) errs.last_name = 'Required'
-    if (!formData.id_number.trim()) {
-      errs.id_number = 'Required'
-    }
+
     if (!formData.cell_number.trim()) errs.cell_number = 'Required'
     if (!formData.email.trim()) {
       errs.email = 'Required'
@@ -345,7 +343,7 @@ export default function AddSupplier() {
               />
             </Field>
 
-            <Field label="ID / Passport number" required error={errors.id_number}>
+            <Field label="ID / Passport number" error={errors.id_number}>
               <input
                 type="text"
                 maxLength={50}
