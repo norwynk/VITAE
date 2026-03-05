@@ -37,7 +37,7 @@ const UPLOAD_DOC_TYPES: SupplierDocumentType[] = [
 ]
 
 const ALLOWED_MIME = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png']
-const MAX_BYTES = 5 * 1024 * 1024 // 5 MB
+const MAX_BYTES = 20 * 1024 * 1024 // 20 MB
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
@@ -237,7 +237,7 @@ function DocumentsTab({ supplierId }: { supplierId: string }) {
     }
     if (picked.size > MAX_BYTES) {
       const mb = (picked.size / 1024 / 1024).toFixed(1)
-      setFileError(`File is ${mb} MB — maximum allowed size is 5 MB`)
+      setFileError(`File is ${mb} MB — maximum allowed size is 20 MB`)
       e.target.value = ''
       return
     }
@@ -342,7 +342,7 @@ function DocumentsTab({ supplierId }: { supplierId: string }) {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
               File{' '}
-              <span className="font-normal text-gray-400">(PDF, JPG or PNG · max 5 MB)</span>
+              <span className="font-normal text-gray-400">(PDF, JPG or PNG · max 20 MB)</span>
             </label>
 
             <input

@@ -169,21 +169,23 @@ export default function AddSupplier() {
   }
 
   // ── SA ID auto-fill ─────────────────────────────────────────────────────────
+  // If the value looks like a 13-digit SA ID, try to auto-fill DOB and gender.
+  // Non-SA IDs (passports, foreign IDs) are accepted as-is — no error shown.
 
   function handleIdBlur(e: FocusEvent<HTMLInputElement>) {
     const val = e.target.value.trim()
     if (!val) return
-    const result = parseSAId(val)
-    if (result.isValid) {
-      setFormData((prev) => ({
-        ...prev,
-        date_of_birth: result.dateOfBirth ?? prev.date_of_birth,
-        gender: result.gender ?? prev.gender,
-      }))
-      setErrors((prev) => ({ ...prev, id_number: undefined }))
-    } else {
-      setErrors((prev) => ({ ...prev, id_number: 'Invalid SA ID number (13-digit Luhn check failed)' }))
+    if (/^\d{13}$/.test(val)) {
+      const result = parseSAId(val)
+      if (result.isValid) {
+        setFormData((prev) => ({
+          ...prev,
+          date_of_birth: result.dateOfBirth ?? prev.date_of_birth,
+          gender: result.gender ?? prev.gender,
+        }))
+      }
     }
+    setErrors((prev) => ({ ...prev, id_number: undefined }))
   }
 
   // ── Validation ──────────────────────────────────────────────────────────────
@@ -194,8 +196,6 @@ export default function AddSupplier() {
     if (!formData.last_name.trim()) errs.last_name = 'Required'
     if (!formData.id_number.trim()) {
       errs.id_number = 'Required'
-    } else if (!parseSAId(formData.id_number).isValid) {
-      errs.id_number = 'Invalid SA ID number'
     }
     if (!formData.cell_number.trim()) errs.cell_number = 'Required'
     if (!formData.email.trim()) {
@@ -345,15 +345,14 @@ export default function AddSupplier() {
               />
             </Field>
 
-            <Field label="SA ID number" required error={errors.id_number}>
+            <Field label="ID / Passport number" required error={errors.id_number}>
               <input
                 type="text"
-                inputMode="numeric"
-                maxLength={13}
+                maxLength={50}
                 value={formData.id_number}
-                onChange={(e) => set('id_number', e.target.value.replace(/\D/g, ''))}
+                onChange={(e) => set('id_number', e.target.value)}
                 onBlur={handleIdBlur}
-                placeholder="13-digit ID number"
+                placeholder="SA ID, passport or foreign ID number"
                 className={inputCls(errors.id_number)}
               />
             </Field>

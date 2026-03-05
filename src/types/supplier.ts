@@ -60,7 +60,7 @@ export interface Supplier {
   // Personal information
   first_name: string
   last_name: string
-  id_number: string // 13-digit SA ID
+  id_number: string // SA ID, passport, or foreign ID number
   date_of_birth: string | null // ISO date string
   gender: Gender | null
   profile_photo_url: string | null
