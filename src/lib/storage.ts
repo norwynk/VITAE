@@ -17,9 +17,9 @@ export async function uploadSupplierFile(
   documentType: SupplierDocumentType,
   file: File,
 ): Promise<UploadResult> {
-  const ext = file.name.split('.').pop() ?? 'bin'
   const timestamp = Date.now()
-  const path = `${supplierId}/${documentType}/${timestamp}.${ext}`
+  const safeName = file.name.replace(/[^\w.-]/g, '_')
+  const path = `${supplierId}/${documentType}/${timestamp}_${safeName}`
 
   const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
     cacheControl: '3600',
