@@ -211,7 +211,6 @@ export default function AddSupplier() {
     if (!formData.first_name.trim()) errs.first_name = 'Required'
     if (!formData.last_name.trim()) errs.last_name = 'Required'
 
-    if (!formData.cell_number.trim()) errs.cell_number = 'Required'
     if (!formData.email.trim()) {
       errs.email = 'Required'
     } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
@@ -371,7 +370,7 @@ export default function AddSupplier() {
               />
             </Field>
 
-            <Field label="Cell number" required error={errors.cell_number}>
+            <Field label="Cell number" error={errors.cell_number}>
               <input
                 type="tel"
                 value={formData.cell_number}
