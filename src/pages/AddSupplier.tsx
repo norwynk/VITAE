@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { ReactNode, FocusEvent } from 'react'
-import { useNavigate, useParams, Link } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { supabase } from '@/lib/supabase'
 import { parseSAId } from '@/utils/saId'
@@ -95,6 +95,7 @@ function inputCls(error?: string) {
 export default function AddSupplier() {
   const navigate = useNavigate()
   const { id } = useParams<{ id: string }>()
+  const [searchParams] = useSearchParams()
   const isEdit = Boolean(id)
 
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM)
@@ -147,12 +148,27 @@ export default function AddSupplier() {
       } else {
         const catsRes = await catsPromise
         if (catsRes.data) setCategories(catsRes.data as ServiceCategory[])
+
+        // Pre-fill from query params (e.g. passed from Find Suppliers page)
+        const businessName = searchParams.get('business_name')
+        const cellNumber = searchParams.get('cell_number')
+        const city = searchParams.get('city')
+        const serviceCategory = searchParams.get('service_category')
+        if (businessName || cellNumber || city || serviceCategory) {
+          setFormData((prev) => ({
+            ...prev,
+            first_name: businessName ?? prev.first_name,
+            cell_number: cellNumber ?? prev.cell_number,
+            city: city ?? prev.city,
+            service_categories: serviceCategory ? [serviceCategory] : prev.service_categories,
+          }))
+        }
       }
 
       setPageLoading(false)
     }
     load()
-  }, [id, isEdit, navigate])
+  }, [id, isEdit, navigate, searchParams])
 
   // ── Field helpers ───────────────────────────────────────────────────────────
 

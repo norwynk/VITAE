@@ -8,6 +8,7 @@ import Suppliers from '@/pages/Suppliers'
 import AddSupplier from '@/pages/AddSupplier'
 import SupplierDetail from '@/pages/SupplierDetail'
 import Settings from '@/pages/Settings'
+import FindSuppliers from '@/pages/FindSuppliers'
 
 function Spinner() {
   return (
@@ -47,6 +48,7 @@ function AppRoutes() {
           <Route path="/suppliers/new" element={<AddSupplier />} />
           <Route path="/suppliers/:id" element={<SupplierDetail />} />
           <Route path="/suppliers/:id/edit" element={<AddSupplier />} />
+          <Route path="/find-suppliers" element={<FindSuppliers />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
       </Route>

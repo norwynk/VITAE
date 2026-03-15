@@ -30,6 +30,19 @@ function SuppliersIcon({ className }: { className?: string }) {
   )
 }
 
+function FindSuppliersIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.75}
+        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+      />
+    </svg>
+  )
+}
+
 function SettingsIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -76,6 +89,12 @@ const navItems = [
     label: 'Suppliers',
     end: false,
     Icon: SuppliersIcon,
+  },
+  {
+    to: '/find-suppliers',
+    label: 'Find Suppliers',
+    end: false,
+    Icon: FindSuppliersIcon,
   },
   {
     to: '/settings',
