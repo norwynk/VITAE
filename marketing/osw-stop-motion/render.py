@@ -24,7 +24,11 @@ import sound
 HERE = os.path.dirname(os.path.abspath(__file__))
 W, H = 1080, 1920
 FPS = 12
-TOTAL = 180  # 15 s
+SLOW = 1.5  # each animation pose is held 1.5 frames on average (mixed ones and twos)
+# (scene, real frames, arg). Lengths are multiples of 4 frames so cuts land on
+# eighth notes of the 90 bpm score; after the build, each scene holds to be read.
+SEGMENTS = None  # filled in below, once the scene functions exist
+TOTAL = None
 
 INK = (22, 20, 18, 255)
 GOLD = (156, 116, 72, 255)
@@ -45,7 +49,8 @@ EVENTS = []  # (kind, frame) collected for the soundtrack
 
 
 def ev(kind, frame):
-    EVENTS.append((kind, frame))
+    if NEWPOSE[0]:
+        EVENTS.append((kind, frame))
 
 
 # ---------------------------------------------------------------- utilities
@@ -120,7 +125,7 @@ CROPS = {
     "test": (SRC_A, (905, 1050, 1040, 1258)),
     "pouch": (SRC_A, (0, 975, 340, 1235)),
     "scene": (SRC_A, (0, 845, 1055, 1300)),
-    "woman": (SRC_B, (120, 520, 1010, 1250)),
+    "woman": (SRC_B, (120, 566, 1010, 1250)),
     "pen": (SRC_B, (60, 1115, 600, 1225)),
 }
 
@@ -384,7 +389,6 @@ def card_in(c, lf, name, width, path, key, onion=True):
 
 # ------------------------------------------------------------------ scenes
 # frame ranges; every boundary lands on an eighth note (4 frames at 90 bpm)
-S1, S2, S3, S4, S5, S6 = (0, 20), (20, 48), (48, 76), (76, 136), (136, 156), (156, 180)
 
 
 def scene1(c, lf):
@@ -432,26 +436,25 @@ def scene3(c, lf):
             if lf == 7 + i * 2:
                 ev("pop", FRAME[0])
             place(c, pill(s), x, y, scale=p, rot=r, key=("tag", i), frame=FRAME[0])
-    p = steps(lf - 19, [30, 6, 0])
+    p = steps(lf - 17, [30, 6, 0])
     if p is not None:
-        if lf == 19:
+        if lf == 17:
             ev("tick", FRAME[0])
-        place(c, text_img("We come to you.", "bodoni400i", 66, GOLD), W / 2, 1745 + p, key="wcty", frame=FRAME[0])
+        for i, ln in enumerate(["Hormone testing, bespoke treatment", "and monthly delivery."]):
+            place(c, text_img(ln, "bodoni400i", 50, GOLD), W / 2, 1715 + i * 66 + p, key=("hbt", i), frame=FRAME[0])
 
 
 BEATS = [
     ("01", "drop", "TEST.", INK, "bodoni600",
-     "We draw blood and send it to the lab to see what your hormones are really doing."),
+     "We draw blood and send it to the lab."),
     ("02", "doc", "PLAN.", GOLD, "bodoni600i",
-     "A bespoke plan built from your results — supplements and proper hormone replacement therapy."),
+     "A bespoke plan from your results, including hormone replacement therapy."),
     ("03", "box", "DELIVER.", INK, "bodoni600",
-     "Treatment and supplements delivered monthly, so you stay supported without the guesswork."),
+     "Treatment and supplements, delivered monthly."),
 ]
 
 
-def scene4(c, lf):
-    b = min(lf // 20, 2)
-    bl = lf - b * 20
+def scene4(c, bl, b):
     num, ic, word, col, fname, cap = BEATS[b]
     circle_draw(c, bl, 540, 250, 40, 0, width=2)
     if bl >= 1:
@@ -462,7 +465,7 @@ def scene4(c, lf):
     stamp(c, text_img(word, fname, size, col), W / 2, 590, bl, 3, ("word", b))
     if bl == 3:
         ev("thump", FRAME[0])
-    caption(c, bl, cap, 730, 6, ("cap", b))
+    caption(c, bl, cap, 730, 5, ("cap", b))
     if b == 0:
         path = [(1500, 1250, 8), (1150, 1240, 5), (800, 1250, 2), (560, 1245, -0.5), (540, 1250, -1.2), (540, 1248, -1)]
         card_in(c, bl - 4, "box", 800, path, "boxc")
@@ -522,7 +525,8 @@ def scene6(c, lf):
     if p is not None:
         if lf == 11:
             ev("tick", FRAME[0])
-        place(c, text_img("We come to you.", "bodoni400i", 66, GOLD), W / 2, 1240 + p, key="wcty2", frame=FRAME[0])
+        for i, ln in enumerate(["Understand today.", "Feel more tomorrow."]):
+            place(c, text_img(ln, "bodoni400i", 62, GOLD), W / 2, 1220 + i * 82 + p, key=("utd", i), frame=FRAME[0])
     draw_tracked_typein(c, lf, "A PHILOSOPHY OF BECOMING.", "mont400", 28, GOLD, W / 2, 1690, 13, 6, 14, "phil")
     hairline(c, lf, 1650, 13, 380, n=3)
     p = steps(lf - 16, [10, 0])
@@ -531,8 +535,13 @@ def scene6(c, lf):
               W / 2, 1770 + p, key="disc", frame=FRAME[0], jit=0.4)
 
 
-SCENES = [(S1, scene1), (S2, scene2), (S3, scene3), (S4, scene4), (S5, scene5), (S6, scene6)]
+SEGMENTS = [(scene1, 32, None), (scene2, 56, None), (scene3, 48, None),
+            (scene4, 36, 0), (scene4, 36, 1), (scene4, 36, 2),
+            (scene5, 36, None), (scene6, 52, None)]
+STARTS = [sum(n for _, n, _ in SEGMENTS[:i]) for i in range(len(SEGMENTS))]
+TOTAL = sum(n for _, n, _ in SEGMENTS)
 FRAME = [0]
+NEWPOSE = [True]  # sound events fire only on the first real frame of a pose
 # the last two frames of a scene lift the whole set off-camera (a hand clearing the table)
 EXIT = [(-40, 0.0), (-420, 0.0)]
 
@@ -541,17 +550,20 @@ def render_frame(f):
     FRAME[0] = f
     bg = background(f)
     layer = Image.new("RGBA", (W, H), (0, 0, 0, 0))
-    for (a, b), fn in SCENES:
-        if a <= f < b:
-            lf = f - a
-            # beat changes inside the three-step section also clear the table
-            sub_end = b
-            if fn is scene4:
-                sub_end = a + (min(lf // 20, 2) + 1) * 20
-            fn(layer, lf)
-            if fn is not scene6 and f >= sub_end - 2:
-                dy = EXIT[f - (sub_end - 2)][0]
-                if f == sub_end - 2:
+    for (fn, n, arg), a in zip(SEGMENTS, STARTS):
+        if a <= f < a + n:
+            r = f - a
+            lf = int(r / SLOW)
+            NEWPOSE[0] = r == 0 or lf != int((r - 1) / SLOW)
+            if arg is None:
+                fn(layer, lf)
+            else:
+                fn(layer, lf, arg)
+            NEWPOSE[0] = True
+            # the last two frames lift the whole set off-camera (a hand clearing the table)
+            if fn is not scene6 and r >= n - 2:
+                dy = EXIT[r - (n - 2)][0]
+                if r == n - 2:
                     ev("whoosh", f)
                 moved = Image.new("RGBA", (W, H), (0, 0, 0, 0))
                 moved.alpha_composite(layer.crop((0, max(0, -dy), W, H)), (0, 0))
@@ -573,7 +585,7 @@ def main():
     ff = subprocess.Popen(
         [ffmpeg_bin(), "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}",
          "-framerate", str(FPS), "-i", "-", "-vf", "fps=24", "-c:v", "libx264", "-preset", "slow",
-         "-crf", "17", "-pix_fmt", "yuv420p", "-movflags", "+faststart", silent],
+         "-crf", "21", "-pix_fmt", "yuv420p", "-movflags", "+faststart", silent],
         stdin=subprocess.PIPE)
     for f in range(TOTAL):
         fr = render_frame(f)
@@ -583,7 +595,9 @@ def main():
     ff.stdin.close()
     ff.wait()
     events = sorted(set(EVENTS), key=lambda e: e[1])
-    sound.render(wav, TOTAL / FPS, [(k, fr / FPS) for k, fr in events])
+    # chord changes: logo, woman, test, plan, deliver, lockup, end card
+    chord_at = [STARTS[i] / FPS for i in (0, 2, 3, 4, 5, 6, 7)]
+    sound.render(wav, TOTAL / FPS, [(k, fr / FPS) for k, fr in events], chord_at)
     subprocess.run([ffmpeg_bin(), "-y", "-loglevel", "error", "-i", silent, "-i", wav, "-c:v", "copy",
                     "-c:a", "aac", "-b:a", "192k", "-shortest", out_video], check=True)
     os.remove(silent)

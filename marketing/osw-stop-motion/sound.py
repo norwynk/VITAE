@@ -47,16 +47,17 @@ NOTE = {n: 440 * 2 ** ((i - 9) / 12 + o - 4)
         for i, n0 in enumerate(["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"])
         for n in [f"{n0}{o}"]}
 
-# (start_s, chord) — boundaries match the scene cuts in render.py
-CHORDS = [
-    (0.0, ["D3", "A3", "F#4", "C#5", "E5"]),       # Dmaj9     logo + headline
-    (4.0, ["B2", "F#3", "D4", "A4", "E5"]),        # Bm(add11) the woman
-    (6.333, ["G2", "D3", "B3", "F#4", "A4"]),      # Gmaj9     test
-    (8.0, ["E2", "B2", "G3", "D4", "F#4"]),        # Em9       plan
-    (9.667, ["A2", "E3", "B3", "E4", "C#5"]),      # Asus      deliver
-    (11.333, ["G2", "D3", "B3", "F#4", "A4"]),     # Gmaj9     lockup
-    (13.0, ["D3", "A3", "F#4", "C#5", "E5"]),      # Dmaj9     end card
+# one chord per section: logo+headline, woman, test, plan, deliver, lockup, end card
+CHORD_NOTES = [
+    ["D3", "A3", "F#4", "C#5", "E5"],   # Dmaj9
+    ["B2", "F#3", "D4", "A4", "E5"],    # Bm(add11)
+    ["G2", "D3", "B3", "F#4", "A4"],    # Gmaj9
+    ["E2", "B2", "G3", "D4", "F#4"],    # Em9
+    ["A2", "E3", "B3", "E4", "C#5"],    # Asus
+    ["G2", "D3", "B3", "F#4", "A4"],    # Gmaj9
+    ["D3", "A3", "F#4", "C#5", "E5"],   # Dmaj9
 ]
+CHORDS = []  # (start_s, notes), set by render() from the film's section times
 
 
 def pad(dur):
@@ -89,9 +90,9 @@ def arp(dur):
     out = np.zeros(int(dur * SR))
     eighth = BEAT / 2
     pattern = [0, 2, 4, 3, 1, 3, 4, 2]
-    t = 6.333
+    t = CHORDS[2][0]
     i = 0
-    while t < 12.9:
+    while t < CHORDS[6][0] - 0.1:
         chord = [c for s, c in CHORDS if s <= t + 1e-3][-1]
         n = chord[pattern[i % 8]]
         f = NOTE[n] * (2 if NOTE[n] < 300 else 1)
@@ -161,7 +162,8 @@ def chime():
     return s * np.minimum(1, t / 0.004)
 
 
-def render(path, dur, events):
+def render(path, dur, events, chord_at):
+    CHORDS[:] = list(zip(chord_at, CHORD_NOTES))
     n = int(dur * SR)
     music = pad(dur) + arp(dur)
     fx = np.zeros(n)
