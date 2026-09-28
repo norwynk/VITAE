@@ -1,0 +1,4 @@
+stills/
+__pycache__/
+.video_only.mp4
+.soundtrack.wav
