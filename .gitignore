@@ -34,3 +34,16 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# demo persistence (fictional data, local only)
+/.demo/
+
+# firebase
+functions/lib/
+functions/node_modules/
+*-debug.log
+.firebase/
+
+# playwright
+/test-results/
+/playwright-report/

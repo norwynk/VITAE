@@ -1,33 +1,43 @@
 {
-  "name": "workforce-vitae",
+  "name": "vitae-health",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
-    "dev": "next dev -H 0.0.0.0",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p functions",
+    "lint": "eslint .",
+    "test": "vitest run tests/domain.test.ts tests/demo.test.ts",
+    "test:rules": "firebase emulators:exec --only firestore,storage --project demo-vitae \"vitest run tests/rules.test.ts\"",
+    "test:firebase": "npm run functions:build && firebase emulators:exec --only auth,firestore,functions,storage --project demo-vitae \"tsx scripts/verify-firebase.ts\"",
+    "test:e2e": "playwright test",
+    "functions:build": "npm --prefix functions run build",
+    "staff": "tsx scripts/staff.ts"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.8.0",
-    "@supabase/supabase-js": "^2.95.3",
-    "framer-motion": "^12.34.0",
-    "lucide-react": "^0.563.0",
-    "next": "14.2.35",
-    "react": "^18",
-    "react-dom": "^18",
-    "react-hook-form": "^7.71.1",
-    "zod": "^4.3.6",
-    "zustand": "^5.0.11"
+    "firebase": "^12.19.0",
+    "next": "^16.3.8",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
-    "eslint": "^8",
-    "eslint-config-next": "14.2.35",
-    "postcss": "^8",
-    "tailwindcss": "^3.4.1",
-    "typescript": "^5"
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "@playwright/test": "1.56",
+    "@types/node": "^22.20.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.3.8",
+    "firebase-admin": "^14.5.0",
+    "firebase-tools": "^15.32.1",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "vitest": "^3.2.7"
   }
 }
