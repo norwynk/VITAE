@@ -15,7 +15,6 @@ import {
   type ConsentType,
   type MessageThread,
   type NotificationRecord,
-  type Order,
   type OrderStatus,
   type Role,
   type Store,

@@ -97,7 +97,7 @@ function approvalPlan(overrides: Record<string, unknown> = {}) {
     quantity: 2,
     dose: 1,
     doseUnit: 'click',
-    schedule: { kind: 'DAILY' },
+    schedule: { kind: 'DAILY' as const },
     startDate: TODAY,
     durationDays: 28,
     reminderTime: '08:00',
@@ -463,7 +463,9 @@ describe('orders', () => {
   }
 
   it('follows the transition graph and only fulfilment dispenses', () => {
-    let { store, orderId } = paidOrder();
+    const paid = paidOrder();
+    const orderId = paid.orderId;
+    let store = paid.store;
     const move = (actor: Actor, status: 'PREPARING' | 'DISPENSED' | 'SHIPPED' | 'DELIVERED' | 'CANCELLED' | 'PAID') =>
       run(store, actor, { type: 'orderStatus', orderId, memberId: NEW, status });
     expectError(() => move(fulfilment, 'SHIPPED'), 'CONFLICT');

@@ -1,0 +1,100 @@
+:root {
+  --bg: #f6f7f5;
+  --surface: #ffffff;
+  --surface-2: #eef1ed;
+  --text: #1c2420;
+  --muted: #5b6862;
+  --border: #d9dfdb;
+  --accent: #2f6f5e;
+  --accent-text: #ffffff;
+  --warn-bg: #fff4dc;
+  --warn-text: #6b4a00;
+  --error-bg: #fde8e6;
+  --error-text: #8a1c12;
+  --ok-bg: #e3f3ea;
+  --ok-text: #1d5a3b;
+  --radius: 10px;
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121614;
+    --surface: #1b211e;
+    --surface-2: #232b27;
+    --text: #e6ece8;
+    --muted: #9aa8a1;
+    --border: #2f3934;
+    --accent: #6cc2a6;
+    --accent-text: #0d1a15;
+    --warn-bg: #3a2f12;
+    --warn-text: #f1d48a;
+    --error-bg: #3d1a17;
+    --error-text: #f4b3ab;
+    --ok-bg: #173226;
+    --ok-text: #9fe0bd;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); line-height: 1.5; }
+a { color: var(--accent); }
+h1, h2, h3 { line-height: 1.25; margin: 0 0 0.5rem; }
+h1 { font-size: 1.75rem; }
+h2 { font-size: 1.2rem; }
+h3 { font-size: 1rem; }
+p { margin: 0 0 0.75rem; }
+
+.container { max-width: 1100px; margin: 0 auto; padding: 1rem; }
+.topbar { background: var(--surface); border-bottom: 1px solid var(--border); }
+.topbar .container { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: space-between; }
+.brand { font-weight: 700; text-decoration: none; color: var(--text); }
+.banner { background: var(--warn-bg); color: var(--warn-text); font-size: 0.875rem; }
+.banner .container { padding: 0.5rem 1rem; }
+
+.grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.stack { display: flex; flex-direction: column; gap: 1rem; }
+.row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
+.card > h2:first-child, .card > h3:first-child { margin-top: 0; }
+.muted { color: var(--muted); font-size: 0.9rem; }
+.small { font-size: 0.85rem; }
+
+label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.9rem; font-weight: 500; }
+label.check { flex-direction: row; align-items: flex-start; gap: 0.5rem; font-weight: 400; }
+input, select, textarea {
+  font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 0.5rem 0.6rem; width: 100%;
+}
+label.check input { width: auto; margin-top: 0.3rem; }
+textarea { min-height: 4.5rem; }
+fieldset { border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem 1rem 1rem; margin: 0; display: grid; gap: 0.75rem; }
+legend { font-weight: 600; padding: 0 0.25rem; }
+.form-grid { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+button {
+  font: inherit; cursor: pointer; border-radius: 8px; padding: 0.5rem 0.9rem; border: 1px solid var(--accent);
+  background: var(--accent); color: var(--accent-text); font-weight: 600;
+}
+button.secondary { background: transparent; color: var(--accent); }
+button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.notice { border-radius: 8px; padding: 0.6rem 0.8rem; font-size: 0.9rem; }
+.notice.warn { background: var(--warn-bg); color: var(--warn-text); }
+.notice.error { background: var(--error-bg); color: var(--error-text); }
+.notice.ok { background: var(--ok-bg); color: var(--ok-text); }
+.notice.info { background: var(--surface-2); color: var(--text); }
+
+.badge { display: inline-block; font-size: 0.75rem; font-weight: 600; padding: 0.1rem 0.5rem; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
+.badge.alert { background: var(--error-bg); color: var(--error-text); }
+.badge.good { background: var(--ok-bg); color: var(--ok-text); }
+
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th, td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.table-wrap { overflow-x: auto; }
+ul.plain { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.5rem; }
+.tabs { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.tabs button[aria-pressed='true'] { background: var(--accent); color: var(--accent-text); }
+.tabs button[aria-pressed='false'] { background: transparent; color: var(--accent); }
+.toast { position: sticky; top: 0; z-index: 5; }

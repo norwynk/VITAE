@@ -27,6 +27,7 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env
 
 # vercel
 .vercel
@@ -47,3 +48,4 @@ functions/node_modules/
 # playwright
 /test-results/
 /playwright-report/
+/.demo-e2e/
