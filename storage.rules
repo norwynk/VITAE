@@ -1,2 +1,23 @@
-rules_version = "2";
-service firebase.storage { match /b/{bucket}/o { match /{p=**} { allow read, write: if false; } } }
+rules_version = '2';
+
+// Members may upload to their own quarantine prefix only. Nothing can be read,
+// replaced or deleted from a client; access goes through the accessDocument
+// callable, which issues short-lived signed URLs for CLEAN files only.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /incoming/{uid}/{fileName} {
+      allow create: if resource == null
+        && request.auth != null
+        && request.auth.uid == uid
+        && request.auth.token.email_verified == true
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType in ['application/pdf', 'image/jpeg', 'image/png']
+        && fileName.matches('^[A-Za-z0-9._-]{1,120}$');
+      allow read, update, delete: if false;
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
