@@ -86,8 +86,10 @@ export function QuizPage() {
   );
 }
 
-function article(name: string) {
-  return /^[aeiou]/i.test(name) ? 'an' : 'a';
+/** "you're a Sharp Mind", "you're The Glow Up". */
+function withArticle(name: string) {
+  if (/^the\s/i.test(name)) return name;
+  return `${/^[aeiou]/i.test(name) ? 'an' : 'a'} ${name}`;
 }
 
 export function MatchReveal({ pen, onRestart }: { pen: BrandedPen; onRestart: () => void }) {
@@ -104,9 +106,9 @@ export function MatchReveal({ pen, onRestart }: { pen: BrandedPen; onRestart: ()
             <h1 className="display match__title">
               Looks like
               <br />
-              you&apos;re {article(t.name)}
+              you&apos;re
               <br />
-              {t.name}.
+              {withArticle(t.name)}.
             </h1>
             <div className="match__body">
               <p className="serif-i" style={{ fontSize: 'var(--step-2)', lineHeight: 1.15 }}>

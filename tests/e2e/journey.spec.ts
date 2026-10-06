@@ -47,6 +47,11 @@ test('quiz match leads into screening for the matched pen', async ({ page }) => 
   await page.getByRole('button', { name: "Let's go" }).click();
   await page.getByRole('button', { name: 'I want better sleep' }).click();
   await expect(page.getByRole('heading', { name: /Looks like you're a Deep Sleep Rebuild/i })).toBeVisible();
+  await page.getByRole('button', { name: 'Start over' }).click();
+  await page.getByRole('button', { name: 'I want to glow' }).click();
+  await expect(page.getByRole('heading', { name: /Looks like you're The Glow Up\./i })).toBeVisible();
+  await page.getByRole('button', { name: 'Start over' }).click();
+  await page.getByRole('button', { name: 'I want better sleep' }).click();
   await expect(page.getByText('This is a match, not a prescription.')).toBeVisible();
   await page.getByRole('link', { name: 'Start your screening' }).click();
   await page.getByRole('button', { name: 'New member' }).click();

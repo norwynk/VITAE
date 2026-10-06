@@ -47,3 +47,4 @@ functions/node_modules/
 /test-results/
 /playwright-report/
 /.demo-e2e/
+/.preview/
