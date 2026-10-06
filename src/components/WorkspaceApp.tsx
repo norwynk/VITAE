@@ -1,9 +1,8 @@
 'use client';
-import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { CommandInput } from '@/domain/commands';
 import { ROLES, type Role } from '@/domain/model';
-import { SERVICE_NAME } from '@/config';
+import { SiteNav } from './site/SiteNav';
 import { RepositoryError, type Workspace, demoRepository, repository } from '@/services/repository';
 import { LiveAuthGate } from './LiveAuthGate';
 import { MemberHome } from './member/MemberHome';
@@ -76,25 +75,22 @@ export function WorkspaceApp() {
   })();
 
   return (
-    <>
-      <header className="topbar">
-        <div className="container">
-          <Link href="/" className="brand">
-            {SERVICE_NAME}
-          </Link>
-          {repo.mode === 'demo' && workspace && (
-            <DemoControls
-              role={workspace.actor.role}
-              uid={workspace.actor.uid}
-              onChanged={async () => {
-                setFlash(null);
-                await refresh();
-              }}
-            />
-          )}
+    <div className="calm">
+      <SiteNav cta={false} />
+      {repo.mode === 'demo' && workspace && (
+        <div className="container toolbar">
+          <span className="muted">Demo workspace · fictional data</span>
+          <DemoControls
+            role={workspace.actor.role}
+            uid={workspace.actor.uid}
+            onChanged={async () => {
+              setFlash(null);
+              await refresh();
+            }}
+          />
         </div>
-      </header>
-      <main className="container stack">
+      )}
+      <main className="container stack app-main">
         {flash && (
           <div className="toast">
             <Notice tone={flash.tone}>{flash.text}</Notice>
@@ -102,7 +98,7 @@ export function WorkspaceApp() {
         )}
         {body}
       </main>
-    </>
+    </div>
   );
 }
 
@@ -130,27 +126,40 @@ const PERSONAS: { label: string; role: Role; persona?: string }[] = [
 ];
 
 function DemoRolePicker({ onChosen }: { onChosen: () => Promise<void> }) {
+  const choose = async (p: (typeof PERSONAS)[number]) => {
+    await demoRepository.startSession(p.role, p.persona);
+    await onChosen();
+  };
   return (
-    <section className="card">
-      <h1>Demo workspace</h1>
-      <p>
-        Choose a role to explore. All people, treatments and orders are fictional, and demo payments are simulated:
-        no money is ever charged.
+    <section className="screening-intro">
+      <p className="eyebrow">Demo preview</p>
+      <h1 className="display">
+        Welcome in.
+        <span className="serif-i">This is a demo, so there&apos;s no sign-in yet.</span>
+      </h1>
+      <p style={{ maxWidth: '52ch' }}>
+        Everyone and everything here is fictional, and demo payments are simulated. No money is ever charged.
       </p>
       <div className="row">
-        {PERSONAS.map((p) => (
-          <button
-            key={p.label}
-            type="button"
-            onClick={async () => {
-              await demoRepository.startSession(p.role, p.persona);
-              await onChosen();
-            }}
-          >
-            {p.label}
-          </button>
-        ))}
+        <button type="button" onClick={() => choose(PERSONAS[0])}>
+          New member
+        </button>
+        <button type="button" className="secondary" onClick={() => choose(PERSONAS[1])}>
+          Established member
+        </button>
       </div>
+      <details>
+        <summary className="small muted" style={{ cursor: 'pointer' }}>
+          Staff demo roles
+        </summary>
+        <div className="row" style={{ marginTop: '0.75rem' }}>
+          {PERSONAS.slice(2).map((p) => (
+            <button key={p.label} type="button" className="secondary small" onClick={() => choose(p)}>
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </details>
     </section>
   );
 }

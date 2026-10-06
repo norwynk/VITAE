@@ -43,7 +43,7 @@ describe('demo store', () => {
     const member = demo.demoActorFor('MEMBER', 'established');
     const before = await demo.demoWorkspace(member);
     expect(Object.keys(before.store.approvedTreatments)).toHaveLength(1);
-    await expect(demo.demoExecute(member, { type: 'checkout', treatmentId: 'trt-demo-metabolic', quantity: 1 })).rejects.toThrow(
+    await expect(demo.demoExecute(member, { type: 'checkout', treatmentId: 'trt-total-body-reset', quantity: 1 })).rejects.toThrow(
       /not available to order/,
     );
     await demo.demoExecute(member, { type: 'measurement', measurement: { kind: 'SLEEP', unit: 'hours', value: 7 } });

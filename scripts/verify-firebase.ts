@@ -129,9 +129,9 @@ async function main() {
       },
       'member1',
     );
-    const r = await ok('executeCommand', { type: 'request', treatmentId: 'trt-demo-metabolic' }, 'member1');
+    const r = await ok('executeCommand', { type: 'request', treatmentId: 'trt-total-body-reset' }, 'member1');
     assert.ok(r.resultId);
-    await denied('executeCommand', { type: 'request', treatmentId: 'trt-demo-metabolic' }, 'member1', 'ALREADY_EXISTS');
+    await denied('executeCommand', { type: 'request', treatmentId: 'trt-total-body-reset' }, 'member1', 'ALREADY_EXISTS');
   });
 
   let requestId = '';
@@ -189,7 +189,7 @@ async function main() {
   });
 
   await step('unverified treatment cannot be ordered', async () => {
-    const r = await call('executeCommand', { type: 'checkout', treatmentId: 'trt-demo-metabolic', quantity: 1 }, 'member1');
+    const r = await call('executeCommand', { type: 'checkout', treatmentId: 'trt-total-body-reset', quantity: 1 }, 'member1');
     assert.equal(r.ok, false);
     assert.equal((r as { status: string }).status, 'FAILED_PRECONDITION');
   });
@@ -208,25 +208,25 @@ async function main() {
   });
 
   await step('super admin catalogue update is gated and other roles are denied', async () => {
-    const change = { type: 'catalogue', treatmentId: 'trt-demo-metabolic', changes: { purchasable: true } };
+    const change = { type: 'catalogue', treatmentId: 'trt-total-body-reset', changes: { purchasable: true } };
     await denied('executeCommand', change, 'admin1', 'FAILED_PRECONDITION');
     await denied('executeCommand', change, 'ops1', 'PERMISSION_DENIED');
     await ok(
       'executeCommand',
-      { type: 'catalogue', treatmentId: 'trt-demo-metabolic', changes: { regulatoryStatus: 'VERIFIED', regulatoryReference: 'EMU-REF-0001', purchasable: true } },
+      { type: 'catalogue', treatmentId: 'trt-total-body-reset', changes: { regulatoryStatus: 'VERIFIED', regulatoryReference: 'EMU-REF-0001', purchasable: true } },
       'admin1',
     );
   });
 
   await step('live checkout creates a payment-pending order and reserves stock transactionally', async () => {
-    const orderId = (await ok('executeCommand', { type: 'checkout', treatmentId: 'trt-demo-metabolic', quantity: 1 }, 'member1')).resultId;
+    const orderId = (await ok('executeCommand', { type: 'checkout', treatmentId: 'trt-total-body-reset', quantity: 1 }, 'member1')).resultId;
     const order = (await db.doc(`orders/${orderId}`).get()).data();
     assert.equal(order?.status, 'PAYMENT_PENDING');
     assert.equal(order?.simulated, false);
     const payment = (await db.collection('payments').where('orderId', '==', orderId).get()).docs[0].data();
     assert.equal(payment.status, 'AWAITING_PROVIDER');
     assert.equal(payment.provider, 'NONE');
-    assert.equal((await db.doc('inventory/DEMO-MET-PEN').get()).get('reserved'), 1);
+    assert.equal((await db.doc('inventory/PRK-RESET').get()).get('reserved'), 1);
     assert.equal((await db.doc(`approvedTreatments/${approvalId}`).get()).get('remainingQuantity'), 1);
     await denied('executeCommand', { type: 'orderStatus', orderId, memberId: 'member1', status: 'PAID' }, 'ops1', 'ALREADY_EXISTS');
     await denied('executeCommand', { type: 'orderStatus', orderId, memberId: 'member1', status: 'CANCELLED' }, 'ful1', 'PERMISSION_DENIED');
@@ -243,7 +243,7 @@ async function main() {
     assert.equal(second.created, 0);
     const n = (await db.collection('notifications').where('kind', '==', 'REMINDER').get()).docs[0].data();
     assert.equal(n.title, REMINDER_TITLE);
-    assert.ok(!JSON.stringify(n).includes('Metabolic'));
+    assert.ok(!JSON.stringify(n).includes('Total Body Reset'));
     assert.ok(!JSON.stringify(pushed).includes('One Stop Wellness'));
   });
 

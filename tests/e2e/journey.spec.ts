@@ -11,13 +11,47 @@ async function expectToast(page: Page, text: string | RegExp) {
   await expect(page.locator('.toast')).toContainText(text);
 }
 
-test('public pathways are fictional and not orderable', async ({ page }) => {
+test('home shows the range, a quick look and honest demo labelling', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Care that starts with an assessment' })).toBeVisible();
-  await expect(page.getByText('Metabolic Support Pen (fictional demo)')).toBeVisible();
-  await expect(page.getByText('Fictional demo').first()).toBeVisible();
-  await expect(page.getByText('Not available to order.').first()).toBeVisible();
-  await expect(page.getByText('nothing here can be bought')).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Pick your\s*Prick\./i })).toBeVisible();
+  await expect(page.getByText("Pens shown are fictional demo products and can't be bought yet.")).toBeVisible();
+  for (const name of ['The Glow Up', 'Total Body Reset', 'Deep Sleep Rebuild', 'Sharp Mind']) {
+    await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
+  }
+  const card = page.locator('article.pen-card', { hasText: 'Sharp Mind' });
+  await card.getByRole('button', { name: 'Quick look' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Sharp Mind quick look' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText('demo price')).toBeVisible();
+  await dialog.getByRole('button', { name: 'Close quick look' }).click();
+  await expect(dialog).toBeHidden();
+  // Placeholders, never invented testimonials.
+  await expect(page.getByText('Real reviews from real members will live here.').first()).toBeVisible();
+});
+
+test('shop filters by goal and product page keeps the clinical gate', async ({ page }) => {
+  await page.goto('/shop');
+  await page.getByRole('button', { name: 'Sleep deeper' }).click();
+  await expect(page.getByRole('heading', { name: 'Deep Sleep Rebuild', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'The Glow Up', exact: true })).toHaveCount(0);
+  await page.getByRole('link', { name: 'Deep Sleep Rebuild' }).first().click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Deep Sleep Rebuild' })).toBeVisible();
+  await expect(page.getByText('You can only order it if your clinician approves it for you.')).toBeVisible();
+  await expect(page.getByText(/Regulatory status not yet confirmed/)).toBeVisible();
+  await expect(page.getByRole('button', { name: /add to cart|buy now/i })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Start screening' }).first()).toHaveAttribute('href', '/app?pen=deep-sleep-rebuild');
+});
+
+test('quiz match leads into screening for the matched pen', async ({ page }) => {
+  await page.goto('/find-your-prick');
+  await page.getByRole('button', { name: "Let's go" }).click();
+  await page.getByRole('button', { name: 'I want better sleep' }).click();
+  await expect(page.getByRole('heading', { name: /Looks like you're a Deep Sleep Rebuild/i })).toBeVisible();
+  await expect(page.getByText('This is a match, not a prescription.')).toBeVisible();
+  await page.getByRole('link', { name: 'Start your screening' }).click();
+  await page.getByRole('button', { name: 'New member' }).click();
+  await expect(page.getByText('Health screening · Deep Sleep Rebuild')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Begin screening' })).toBeVisible();
 });
 
 test('full journey across roles', async ({ page }) => {
@@ -25,7 +59,9 @@ test('full journey across roles', async ({ page }) => {
 
   // --- New member onboarding ---------------------------------------------------
   await page.goto('/app');
+  // Earlier tests may have left a demo session; this context starts clean.
   await page.getByRole('button', { name: 'New member' }).click();
+  await page.getByRole('button', { name: 'Begin screening' }).click();
   await expect(page.getByRole('heading', { name: 'Your health assessment' })).toBeVisible();
   await page.getByLabel('First name').fill('Alex');
   await page.getByLabel('Last name').fill('Demo');
@@ -43,10 +79,10 @@ test('full journey across roles', async ({ page }) => {
   await page.getByLabel(/health information being processed/).check();
   await page.getByLabel(/clinician decides/).check();
   await page.getByRole('button', { name: 'Submit assessment' }).click();
-  await expect(page.getByRole('heading', { name: 'Welcome, Alex' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Hey, Alex\./ })).toBeVisible();
 
   // --- Request, save address; nothing orderable yet -----------------------------
-  const metabolicCard = page.locator('li.card', { hasText: 'Metabolic Support Pen' });
+  const metabolicCard = page.locator('li.card', { hasText: 'Total Body Reset' });
   await metabolicCard.getByRole('button', { name: 'Request clinician review' }).click();
   await expectToast(page, 'Request sent to your clinician');
   await expect(metabolicCard.getByText('Request in review')).toBeVisible();
@@ -61,17 +97,15 @@ test('full journey across roles', async ({ page }) => {
   await page.getByRole('button', { name: 'Save address' }).click();
   await expectToast(page, 'Delivery address saved');
   const ordering = page.locator('section', { has: page.getByRole('heading', { name: 'Order treatment' }) });
-  // Only the non-prescription demo pathway is listed, and it is not orderable.
-  await expect(ordering.getByText('Sleep Programme (fictional demo)')).toBeVisible();
-  await expect(ordering.getByText('This treatment is not available to order yet.')).toBeVisible();
-  await expect(ordering.getByText('Metabolic Support Pen')).toHaveCount(0);
+  // Every pen needs an approval, so nothing is orderable yet.
+  await expect(ordering.getByText('Nothing is available to order')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Your orders' })).toHaveCount(0);
 
   // --- Clinician approves --------------------------------------------------------
   await switchRole(page, 'Clinician');
   await expect(page.getByRole('heading', { name: 'Clinician workspace' })).toBeVisible();
   await page.getByRole('button', { name: /Alex Demo/ }).click();
-  const review = page.getByRole('form', { name: /Review Metabolic Support Pen/ });
+  const review = page.getByRole('form', { name: /Review Total Body Reset/ });
   await review.getByLabel('Packs approved').fill('2');
   await review.getByLabel('Frequency').selectOption('DAILY');
   await review.getByLabel('Decision note').fill('Suitable for the fictional demo plan.');
@@ -81,18 +115,18 @@ test('full journey across roles', async ({ page }) => {
 
   // --- Super admin: verification gate, then demo catalogue setup -----------------
   await switchRole(page, 'Super admin');
-  const recovery = page.getByRole('form', { name: /Edit Recovery Support Pen/ });
+  const recovery = page.getByRole('form', { name: /Edit The Glow Up/ });
   await recovery.getByLabel('Purchasable').check();
   await recovery.getByRole('button', { name: /^Save/ }).click();
   await expectToast(page, /regulatorily verified/);
 
-  const metabolic = page.getByRole('form', { name: /Edit Metabolic Support Pen/ });
+  const metabolic = page.getByRole('form', { name: /Edit Total Body Reset/ });
   await metabolic.getByLabel('Regulatory status').selectOption('VERIFIED');
   await metabolic.getByLabel('Registration reference').fill('DEMO-REG-0001');
   await metabolic.getByLabel('Purchasable').check();
   await metabolic.getByRole('button', { name: /^Save/ }).click();
   await expectToast(page, /updated/);
-  await expect(page.getByRole('form', { name: /Edit Metabolic Support Pen/ }).locator('.badge', { hasText: /^Purchasable$/ })).toBeVisible();
+  await expect(page.getByRole('form', { name: /Edit Total Body Reset/ }).locator('.badge', { hasText: /^Purchasable$/ })).toBeVisible();
 
   // --- Member: adherence and simulated checkout ----------------------------------
   await switchRole(page, 'New member');
@@ -158,8 +192,9 @@ test('established member dashboard and blocked checkout', async ({ page }) => {
   await page.goto('/app');
   // Fresh browser context: no demo session yet, so the role picker is shown.
   await page.getByRole('button', { name: 'Established member' }).click();
-  await expect(page.getByRole('heading', { name: 'Welcome, Sam' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Hey, Sam\./ })).toBeVisible();
+  await expect(page.getByText("Here's your prick.")).toBeVisible();
   await expect(page.getByText(/Every day · valid until/)).toBeVisible();
-  // Metabolic was made purchasable in the journey above, but Sam has no saved address yet.
+  // Total Body Reset was made purchasable in the journey above, but Sam has no saved address yet.
   await expect(page.getByText('Save a delivery address before ordering.')).toBeVisible();
 });

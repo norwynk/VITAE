@@ -18,5 +18,5 @@ export function assertMatchingDataModes(env: NodeJS.ProcessEnv = process.env): D
   return server as DataMode;
 }
 
-/** Working title until the health division's name is approved. */
-export const SERVICE_NAME = 'Care Pathways';
+/** Brand name. The logo is still a typeset placeholder until it is finalised. */
+export const SERVICE_NAME = 'PRICK';

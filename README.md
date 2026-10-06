@@ -1,6 +1,6 @@
-# Care Pathways (working title)
+# PRICK
 
-Early foundation for an assessment-led, clinician-reviewed health service: health assessment, clinician review of peptide pen pathways, reminders and adherence, check-ins, secure messaging and order handling.
+Peptide pens with a personality, on top of an assessment-led, clinician-reviewed health service: health assessment, clinician review of peptide pen pathways, reminders and adherence, check-ins, secure messaging and order handling.
 
 **This is not a commissioned clinical service or a live medicine shop.** Every treatment in the catalogue is a fictional demo pathway that starts unverified and not purchasable. Demo payments are simulated, and live mode cannot take payment because no payment provider is integrated. Nothing is deployed.
 
@@ -30,6 +30,13 @@ Demo data lives in `.demo/store.json` (git-ignored). Use **Reset demo data** in 
 | `npm run typecheck`, `npm run lint`, `npm run functions:build`, `npm run build` | Static checks and builds |
 
 The emulator tests need Java 21+. Playwright uses an installed Chromium; set `PLAYWRIGHT_CHROMIUM_PATH` if it can't find one.
+
+## Customer routes
+
+- `/` home, `/shop` the range with goal filters, `/pens/[slug]` product pages, `/find-your-prick` quiz and match reveal.
+- `/app` screening (onboarding), the member dashboard, and the staff workspaces.
+
+Brand presentation (pen colours, goals, taglines) lives in `src/brand/pens.ts`, keyed by catalogue slug, separate from product facts and clinical rules. The pens are SVG renders (`src/components/brand/Pen.tsx`) until product photography exists; photo slots and review cards are marked `data-placeholder` in the markup. The logo is a typeset placeholder (`src/components/site/Logo.tsx`).
 
 ## Where things live
 
@@ -67,4 +74,5 @@ Key rules enforced on the server:
 - Data export and deletion, rate limiting, command idempotency keys, cursor pagination (operations workspaces are capped at 250 records, audit at 100).
 - A Firebase project, deployment, staff invitations, MFA enrolment UI, App Check setup, push-token registration in the browser.
 - Regimen revision beyond issuing a new approval.
-- A final service name: "Care Pathways" is a placeholder.
+- Final logo, product photography and real reviews (placeholders are marked in code).
+- Recurring delivery (the UI says "coming soon").

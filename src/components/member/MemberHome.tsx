@@ -19,26 +19,42 @@ import {
   nextScheduledDate,
   scheduledDates,
 } from '@/domain/model';
+import { type PenBrand, penBrand } from '@/brand/pens';
 import { paymentAdapterFor } from '@/services/payment';
+import { Pen } from '../brand/Pen';
+import { worldStyle } from '../brand/worldStyle';
 import { Badge, Card, Empty, Notice, fmtDateTime, formValues, humanise } from '../ui';
 import { useWorkspace } from '../workspace-context';
 import { OnboardingForm } from './OnboardingForm';
 
 export function MemberHome() {
   const { workspace } = useWorkspace();
+  // Pen picked on the site (quiz or product page). A preference only, never a clinical input.
+  const [chosen] = useState(() => (typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('pen')));
+  const [started, setStarted] = useState(false);
   const member = workspace.store.members[workspace.actor.uid];
   if (!member) return <Notice tone="error">Your member record could not be found.</Notice>;
-  if (!member.onboardedAt) return <OnboardingForm />;
+  const chosenTreatment = Object.values(workspace.store.treatments).find((t) => t.slug === chosen);
+  const brand = chosenTreatment ? penBrand(chosenTreatment) : null;
+
+  if (!member.onboardedAt) {
+    if (!started) return <ScreeningIntro chosenName={chosenTreatment?.name} brand={brand} onBegin={() => setStarted(true)} />;
+    return (
+      <div style={brand ? worldStyle(brand.colours) : undefined}>
+        <OnboardingForm />
+      </div>
+    );
+  }
 
   return (
     <div className="stack">
-      <h1>Welcome, {member.firstName}</h1>
+      <DashboardPenCard chosenSlug={chosen} />
       <Notifications />
       <div className="grid">
         <Plans />
         <Pathways />
       </div>
-      <div className="grid">
+      <div className="grid" id="order">
         <Ordering />
         <DeliveryAddress />
       </div>
@@ -47,12 +63,129 @@ export function MemberHome() {
         <CheckIn />
         <Measurements />
       </div>
-      <Messages />
+      <div id="messages">
+        <Messages />
+      </div>
       <div className="grid">
         <NutritionAndTesting />
         <Consents />
       </div>
     </div>
+  );
+}
+
+function ScreeningIntro({ chosenName, brand, onBegin }: { chosenName?: string; brand: PenBrand | null; onBegin: () => void }) {
+  return (
+    <section className="screening-intro" style={brand ? worldStyle(brand.colours) : { '--accent': 'var(--pink)' } as React.CSSProperties}>
+      <p className="eyebrow">Health screening{chosenName ? ` · ${chosenName}` : ''}</p>
+      <h1 className="display">
+        The fun part is picking it.
+        <span className="serif-i">The important part is making sure it&apos;s right for you.</span>
+      </h1>
+      <p style={{ maxWidth: '56ch' }}>
+        A few calm questions about you, your health and your goals. A clinician reads your answers before anything is
+        offered. Your answers go to your clinician only, not to delivery or support staff.
+      </p>
+      <div className="trust-row">
+        <span>Private</span>
+        <span>Adults 18+</span>
+        <span>Reviewed by a clinician</span>
+        <span>You can stop any time</span>
+      </div>
+      <div>
+        <button type="button" onClick={onBegin}>
+          Begin screening
+        </button>
+      </div>
+    </section>
+  );
+}
+
+/** The member's current pen: approved plan, then a pending request, then the pen they picked on the site. */
+function DashboardPenCard({ chosenSlug }: { chosenSlug: string | null }) {
+  const { workspace, run, busy } = useWorkspace();
+  const { store, actor } = workspace;
+  const member = store.members[actor.uid];
+  const now = today();
+  const approval = Object.values(store.approvedTreatments).find((a) => isApprovalCurrent(a, now));
+  const requests = Object.values(store.treatmentRequests).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const pending = requests.find((r) => PENDING_REQUEST_STATUSES.includes(r.status));
+  const chosen = Object.values(store.treatments).find((t) => t.slug === chosenSlug && t.active && t.public);
+  const treatment = store.treatments[approval?.treatmentId ?? pending?.treatmentId ?? ''] ?? chosen;
+  const brand = treatment ? penBrand(treatment) : null;
+  const request = treatment && requests.find((r) => r.treatmentId === treatment.id);
+  const regimen = approval && Object.values(store.regimens).find((r) => r.approvalId === approval.id && r.active);
+  const recordedToday = approval && Object.values(store.adherenceEvents).some((e) => e.approvalId === approval.id && e.dueDate === now && e.action !== 'SNOOZED');
+  const nextDose = regimen && nextScheduledDate(regimen, recordedToday ? addDays(now, 1) : now);
+  const lastOrder = Object.values(store.orders).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+
+  return (
+    <section className="stack" style={brand ? worldStyle(brand.colours) : undefined}>
+      <h1 className="display dash-hello">
+        Hey, {member.firstName}.
+        {treatment && (
+          <>
+            <br />
+            <span style={{ color: 'var(--accent)' }}>Here&apos;s your prick.</span>
+          </>
+        )}
+      </h1>
+      {treatment && brand ? (
+        <div className="dash-pen">
+          <div className="dash-pen__art">
+            <span className="pen-card__sun" style={{ width: '64%' }} />
+            <Pen colours={brand.colours} label={brand.penLabel} />
+          </div>
+          <div className="dash-pen__info">
+            <span className="tag dark">{brand.colourName}</span>
+            <h2 className="display" style={{ fontSize: 'var(--step-3)' }}>{treatment.name}</h2>
+            <dl className="status-grid">
+              <div>
+                <dt>Screening</dt>
+                <dd>Complete</dd>
+              </div>
+              <div>
+                <dt>Clinical review</dt>
+                <dd>{request ? humanise(request.status) : 'Not requested yet'}</dd>
+              </div>
+              <div>
+                <dt>Next dose</dt>
+                <dd>{nextDose ? (nextDose === now ? 'Today' : nextDose) : '—'}</dd>
+              </div>
+              <div>
+                <dt>Latest order</dt>
+                <dd>{lastOrder ? humanise(lastOrder.status) : 'None yet'}</dd>
+              </div>
+              <div>
+                <dt>Repeat delivery</dt>
+                <dd>Coming soon</dd>
+              </div>
+            </dl>
+            <div className="row">
+              {!request && (
+                <button type="button" className="btn accent" disabled={busy} onClick={() => run({ type: 'request', treatmentId: treatment.id }, 'Request sent to your clinician')}>
+                  Request clinical review
+                </button>
+              )}
+              {approval && (
+                <a href="#order" className="btn accent">
+                  Order or reorder
+                </a>
+              )}
+              <a href="#messages" className="link-arrow">
+                Get support
+              </a>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="card">
+          <p className="serif-i" style={{ fontSize: 'var(--step-2)', lineHeight: 1.15 }}>Screening done. Now the fun bit.</p>
+          <p>Pick a pen below and ask for a clinical review, or take the quiz.</p>
+          <a href="/find-your-prick" className="btn">Find your prick</a>
+        </div>
+      )}
+    </section>
   );
 }
 

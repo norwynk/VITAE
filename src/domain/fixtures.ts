@@ -60,49 +60,27 @@ export function createFixtureStore(now: Date = new Date()): Store {
   const est = DEMO_ESTABLISHED_MEMBER;
   s.users[est.uid] = { id: est.uid, email: 'sam.example@example.invalid', displayName: est.name, role: 'MEMBER', createdAt: at, updatedAt: at };
 
-  s.treatments['trt-demo-metabolic'] = treatment(
-    {
-      id: 'trt-demo-metabolic',
-      slug: 'demo-metabolic-pen',
-      name: 'Metabolic Support Pen (fictional demo)',
-      summary: 'An invented example pathway showing how assessment, clinician review and pen reminders fit together.',
-      category: 'Weight & metabolic',
-      outcomes: ['Clinician-reviewed plan', 'Scheduled pen reminders', 'Regular follow-up'],
-      priceCents: 189_900,
-      inventorySku: 'DEMO-MET-PEN',
-      requiredLabs: ['HbA1c (demo)'],
-    },
-    at,
-  );
-  s.treatments['trt-demo-recovery'] = treatment(
-    {
-      id: 'trt-demo-recovery',
-      slug: 'demo-recovery-pen',
-      name: 'Recovery Support Pen (fictional demo)',
-      summary: 'An invented example pathway for recovery support, used to demonstrate alternative recommendations.',
-      category: 'Recovery',
-      outcomes: ['Clinician-reviewed plan', 'Check-ins'],
-      priceCents: 149_900,
-      inventorySku: 'DEMO-REC-PEN',
-    },
-    at,
-  );
-  s.treatments['trt-demo-sleep'] = treatment(
-    {
-      id: 'trt-demo-sleep',
-      slug: 'demo-sleep-programme',
-      name: 'Sleep Programme (fictional demo)',
-      summary: 'An invented coaching-style pathway with no medicine, shown to illustrate a non-prescription option.',
-      category: 'Sleep',
-      requiresPrescription: false,
-      requiresClinicianApproval: false,
-      administration: { device: 'OTHER', route: 'Coaching', instructions: '' },
-      inventorySku: 'DEMO-SLEEP',
-      priceCents: 49_900,
-      billing: 'MONTHLY',
-    },
-    at,
-  );
+  // The PRICK range. Names are the brand's product names; everything clinical
+  // (claims, ingredients, dosing, registration) is deliberately absent until verified.
+  const pen = (id: string, slug: string, name: string, category: string, sku: string) =>
+    treatment(
+      {
+        id,
+        slug,
+        name,
+        summary: 'Fictional demo product. Ingredient, dosing and regulatory information will be added once verified.',
+        category,
+        outcomes: ['Health screening first', 'Clinician-reviewed plan', 'Reminders and check-ins', 'Regular follow-up'],
+        // Demo price only: no real pricing has been agreed.
+        priceCents: 189_900,
+        inventorySku: sku,
+      },
+      at,
+    );
+  s.treatments['trt-glow-up'] = pen('trt-glow-up', 'the-glow-up', 'The Glow Up', 'Look better', 'PRK-GLOW');
+  s.treatments['trt-total-body-reset'] = pen('trt-total-body-reset', 'total-body-reset', 'Total Body Reset', 'Feel better', 'PRK-RESET');
+  s.treatments['trt-deep-sleep-rebuild'] = pen('trt-deep-sleep-rebuild', 'deep-sleep-rebuild', 'Deep Sleep Rebuild', 'Sleep deeper', 'PRK-SLEEP');
+  s.treatments['trt-sharp-mind'] = pen('trt-sharp-mind', 'sharp-mind', 'Sharp Mind', 'Think sharper', 'PRK-MIND');
   for (const t of Object.values(s.treatments)) {
     s.inventory[t.inventorySku] = { id: t.inventorySku, sku: t.inventorySku, treatmentId: t.id, onHand: 20, reserved: 0, updatedAt: at };
   }
@@ -174,7 +152,7 @@ export function createFixtureStore(now: Date = new Date()): Store {
   s.treatmentRequests['req-demo-est'] = {
     id: 'req-demo-est',
     memberId: est.uid,
-    treatmentId: 'trt-demo-metabolic',
+    treatmentId: 'trt-total-body-reset',
     status: 'APPROVED',
     reason: 'Fictional demo request',
     createdAt: at,
@@ -185,7 +163,7 @@ export function createFixtureStore(now: Date = new Date()): Store {
   s.approvedTreatments['apr-demo-est'] = {
     id: 'apr-demo-est',
     memberId: est.uid,
-    treatmentId: 'trt-demo-metabolic',
+    treatmentId: 'trt-total-body-reset',
     requestId: 'req-demo-est',
     clinicianId: DEMO_USERS.CLINICIAN.uid,
     status: 'ACTIVE',
@@ -200,7 +178,7 @@ export function createFixtureStore(now: Date = new Date()): Store {
     id: 'rgm-demo-est',
     memberId: est.uid,
     approvalId: 'apr-demo-est',
-    treatmentId: 'trt-demo-metabolic',
+    treatmentId: 'trt-total-body-reset',
     dose: 1,
     doseUnit: 'click',
     schedule: { kind: 'DAILY' },
@@ -224,7 +202,7 @@ export function createFixtureStore(now: Date = new Date()): Store {
     memberId: est.uid,
     approvalId: 'apr-demo-est',
     dueDate: addDays(today, 21),
-    reason: 'Review of Metabolic Support Pen (fictional demo)',
+    reason: 'Review of Total Body Reset',
     status: 'SCHEDULED',
     createdBy: DEMO_USERS.CLINICIAN.uid,
     createdAt: at,
