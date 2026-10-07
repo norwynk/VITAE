@@ -149,8 +149,24 @@ const BOTANICALS: Record<string, Botanical> = {
   'gut-reset': 'daisy',
 };
 
-/** Card photographs, added as they're exported (public/cards/<slug>.jpg). */
-const CARD_IMAGES: Record<string, string> = {};
+/** Card photographs (AI-generated in Canva), served from public/cards. Decoration only. */
+const CARD_IMAGES: Record<string, string> = {
+  'total-body-reset': '/cards/total-body-reset.jpg',
+  'craving-control': '/cards/craving-control.jpg',
+  'body-sculpt': '/cards/body-sculpt.jpg',
+  'the-glow-up': '/cards/the-glow-up.jpg',
+  'skin-rewind': '/cards/skin-rewind.jpg',
+  'skin-rewind-reserve': '/cards/skin-rewind-reserve.jpg',
+  'holiday-tan': '/cards/holiday-tan.jpg',
+  'all-day-energy': '/cards/all-day-energy.jpg',
+  'deep-sleep-rebuild': '/cards/deep-sleep-rebuild.jpg',
+  'rapid-recovery': '/cards/rapid-recovery.jpg',
+  'age-defiance': '/cards/age-defiance.jpg',
+  'hormone-reset': '/cards/hormone-reset.jpg',
+  'bedroom-confidence': '/cards/bedroom-confidence.jpg',
+  'sharp-mind': '/cards/sharp-mind.jpg',
+  'gut-reset': '/cards/gut-reset.jpg',
+};
 
 export const PEN_BRANDS: Record<string, PenBrand> = Object.fromEntries(
   RANGE.products.map((p) => [

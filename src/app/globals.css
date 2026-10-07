@@ -597,7 +597,10 @@ fieldset.nested { background: var(--off-white); }
 .flip-card__spill { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 34%; z-index: 0; pointer-events: none; }
 .flip-card__front--bloom .flip-card__actions { z-index: 3; }
 .flip-card__front--bloom .flip-card__btn-light { color: var(--world-print); }
-.flip-card__front--bloom.has-photo .flip-card__stage { margin-bottom: 18%; }
+.flip-card__front--bloom.has-photo { background-color: var(--world-main); background-size: cover; background-position: center bottom; color: var(--world-ink); }
+.flip-card__front--bloom.has-photo .flip-card__name, .flip-card__front--bloom.has-photo .flip-card__hook, .flip-card__front--bloom.has-photo .flip-card__outcome { text-shadow: 0 1px 14px rgb(0 0 0 / 0.12); }
+.flip-card__front--bloom.has-photo .flip-card__btn-light { color: var(--world-strong); }
+.flip-card__front--bloom.has-photo .flip-card__stage { margin-bottom: 14%; }
 
 /* Co-founder quote: photo half and pastel quote half. */
 .founder-quote { display: grid; grid-template-columns: 1fr 1fr; min-height: 560px; }
