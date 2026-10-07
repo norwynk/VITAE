@@ -257,27 +257,13 @@ export function DesignedForWomen() {
               <PenStage key={b.slug} colours={b.colours} label={b.penLabel} angle={[-70, -90, -110][i]} fit={0.95} />
             ))}
           </div>
-          <div className="cofounders">
-            {withPhoto?.photo && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img className="cofounders__photo" src={withPhoto.photo} alt={withPhoto.name} width={96} height={230} />
-            )}
-            <p className="cofounders__line">
-              Co-founded by{' '}
-              {CO_FOUNDERS.map((f, i) => {
-                // "Norwyn K, Director, and Dr Kylee Montgomerie": a title is set off by commas.
-                const title = f.role.replace(/^Co-founder( and )?/, '');
-                return (
-                  <span key={f.name}>
-                    {i > 0 && ' and '}
-                    <strong>{f.name}</strong>
-                    {title && `, ${title}${i < CO_FOUNDERS.length - 1 ? ',' : ''}`}
-                  </span>
-                );
-              })}
-              .{withPhoto?.bio && <span className="cofounders__bio"> {withPhoto.name} is {withPhoto.bio}</span>}
-            </p>
-          </div>
+          {withPhoto?.photo && (
+            <figure className="cofounders">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="cofounders__photo" src={withPhoto.photo} alt={withPhoto.name} width={120} height={288} />
+              <figcaption className="cofounders__name">{withPhoto.name}</figcaption>
+            </figure>
+          )}
         </div>
       </div>
     </section>
