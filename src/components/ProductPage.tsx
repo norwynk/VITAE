@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { formatRand } from '@/domain/model';
 import { useCatalogue } from '@/hooks/useCatalogue';
-import { Pen } from './brand/Pen';
+import { PenStage } from './brand/Pen';
 import { PenCard } from './brand/PenCard';
 import { worldStyle } from './brand/worldStyle';
 import { BrandPage } from './site/BrandPage';
@@ -14,6 +14,11 @@ const REG_STATUS: Record<string, string> = {
   NOT_PERMITTED: 'Not available.',
 };
 
+/**
+ * Expanded product view: emotion first (outcome, feeling, transformation),
+ * then what it is, then verified clinical information, eligibility,
+ * screening, safety and the process.
+ */
 export function ProductPage({ slug }: { slug: string }) {
   const { pens, error } = useCatalogue();
   const pen = pens?.find((p) => p.treatment.slug === slug);
@@ -42,26 +47,20 @@ export function ProductPage({ slug }: { slug: string }) {
   const { treatment: t, brand } = pen;
   const needsApproval = t.requiresClinicianApproval || t.requiresPrescription;
   const startHref = `/app?pen=${t.slug}`;
-  const related = pens.filter((p) => p.treatment.id !== t.id);
+  const related = pens.filter((p) => p.treatment.id !== t.id && p.treatment.category === t.category);
 
   return (
     <BrandPage revealKey={t.id}>
       <div style={worldStyle(brand.colours)}>
         <section className="product-hero">
-          <div className="product-hero__art">
-            <span className="pen-card__sun" />
-            <span className="pen-card__orb a" />
-            <span className="pen-card__orb b" />
-            <Pen colours={brand.colours} label={brand.penLabel} className="product-hero__pen" title={`PRICK ${t.name} pen`} />
+          <div className="product-hero__art product-hero__art--world">
+            <span className="flip-card__glow" style={{ opacity: 1 }} />
+            <PenStage colours={brand.colours} label={brand.penLabel} angle={-52} fit={0.86} className="pen-stage--float" title={`PRICK ${t.name} pen`} />
           </div>
           <div className="product-hero__info">
-            <span className="tag dark">{brand.colourName}</span>
+            <span className="tag dark">{brand.category}</span>
             <h1 className="display product-hero__name">{t.name}</h1>
-            <p className="serif-i product-hero__statement">
-              {brand.statement[0]}
-              <br />
-              {brand.statement[1]}
-            </p>
+            <p className="serif-i product-hero__statement">{brand.hook}</p>
             {t.priceCents > 0 && (
               <p className="price" style={{ margin: 0 }}>
                 {formatRand(t.priceCents)} <span className="small muted">demo price{t.billing === 'MONTHLY' ? ' per month' : ''}</span>
@@ -87,7 +86,7 @@ export function ProductPage({ slug }: { slug: string }) {
               </div>
             </div>
             <div className="row" style={{ gap: 'var(--space-3)' }}>
-              <Link href={startHref} className="btn accent">
+              <Link href={startHref} className="btn product-hero__cta">
                 Start screening
               </Link>
               <Link href="/find-your-prick" className="link-arrow">
@@ -103,41 +102,74 @@ export function ProductPage({ slug }: { slug: string }) {
           </div>
         </section>
 
+        {/* Emotion first */}
+        <section className="story-band">
+          <div className="container story-band__grid">
+            <div data-reveal>
+              <p className="eyebrow">Outcome</p>
+              <p className="story-band__text">{brand.outcome}</p>
+            </div>
+            <div data-reveal style={{ '--delay': '120ms' } as React.CSSProperties}>
+              <p className="eyebrow">Feeling</p>
+              <p className="story-band__feeling">{brand.feeling}</p>
+            </div>
+            <div data-reveal style={{ '--delay': '240ms' } as React.CSSProperties}>
+              <p className="eyebrow">Transformation</p>
+              <p className="story-band__text">{brand.transformation}</p>
+            </div>
+          </div>
+        </section>
+
         <div className="container">
           <section className="info-block" data-reveal>
-            <h2 className="display">What it&apos;s for</h2>
+            <h2 className="display">For when</h2>
             <div>
-              <ul className="outcome-list">
-                <li>{brand.goalLabel}</li>
-              </ul>
-              <p className="serif-i" style={{ fontSize: 'var(--step-2)', lineHeight: 1.15, marginTop: 'var(--space-3)' }}>{brand.line}</p>
+              <p className="serif-i" style={{ fontSize: 'var(--step-2)', lineHeight: 1.2 }}>{brand.cardBack}</p>
+              {brand.benefits.length > 0 && (
+                <ul className="outcome-list" style={{ marginTop: 'var(--space-3)' }}>
+                  {brand.benefits.map((b) => (
+                    <li key={b}>{b}</li>
+                  ))}
+                </ul>
+              )}
+              <p className="small muted" style={{ marginTop: 'var(--space-3)' }}>
+                These describe what people are hoping for, not a promise. Your clinician will talk you through what&apos;s
+                realistic for you.
+              </p>
             </div>
           </section>
 
           <section className="info-block" data-reveal>
-            <h2 className="display">How it works</h2>
-            <ol className="checklist" style={{ margin: 0 }}>
-              <li>Complete a private health screening.</li>
-              <li>Ask for a clinical review of {t.name}.</li>
-              <li>A clinician decides whether it&apos;s right for you. They may suggest a different pen, or none.</li>
-              <li>If approved, your plan, reminders and check-ins appear in your account, and you can order.</li>
-            </ol>
+            <h2 className="display">What it actually is</h2>
+            <p>{t.summary}</p>
           </section>
 
           <section className="info-block" data-reveal>
-            <h2 className="display">What&apos;s inside</h2>
-            {/* Only verified ingredient information belongs here; none exists yet. */}
-            <div className="placeholder" data-placeholder="ingredients">
-              <p style={{ margin: 0 }}>{t.summary}</p>
+            <h2 className="display">Peptide / stack</h2>
+            <div>
+              <p className="display" style={{ fontSize: 'var(--step-3)', lineHeight: 1 }}>{t.peptide || 'To be confirmed'}</p>
+              <p className="muted">Exact composition and strength are confirmed by your clinician as part of your plan.</p>
             </div>
           </section>
 
           <section className="info-block" data-reveal>
-            <h2 className="display">Who it may be for</h2>
+            <h2 className="display">Verified clinical information</h2>
+            {/* Only verified clinical content belongs here. None has been supplied yet. */}
+            <div className="placeholder" data-placeholder="clinical">
+              <p style={{ margin: 0 }}>
+                Not yet verified. Clinical information for {t.name} will be published here once it has been reviewed and
+                approved by our clinical team.
+              </p>
+              {t.clinicalDescription && <p style={{ margin: 'var(--space-2) 0 0' }}>{t.clinicalDescription}</p>}
+            </div>
+          </section>
+
+          <section className="info-block" data-reveal>
+            <h2 className="display">Eligibility</h2>
             <div>
               <p>
-                Adults aged 18 and over, where a clinician decides after screening that it&apos;s appropriate. Not
-                everyone will be approved, and that&apos;s the point of the screening.
+                Adults aged 18 and over, where a clinician decides after screening that it&apos;s appropriate. Not everyone
+                will be approved, and that&apos;s the point of the screening.
               </p>
               {t.requiredLabs.length > 0 && (
                 <p className="muted">Your clinician may ask for testing first ({t.requiredLabs.join(', ')}). If so, they&apos;ll arrange it.</p>
@@ -146,27 +178,36 @@ export function ProductPage({ slug }: { slug: string }) {
           </section>
 
           <section className="info-block" data-reveal>
-            <h2 className="display">How to use it</h2>
+            <h2 className="display">Screening</h2>
             <div>
               <p>
-                {t.administration.device === 'PEN' ? 'A pen you use yourself' : 'Used as directed'}
-                {t.administration.route ? ` (${t.administration.route.toLowerCase()})` : ''}.{' '}
-                {t.administration.instructions}
+                A private questionnaire about you, your health history, current medication and lifestyle, and what you want
+                to change. Your answers go to your clinician only, not to delivery or support staff.
               </p>
-              <p className="muted">Your dose and schedule are set by your clinician, not chosen here. You can change your reminder time any time.</p>
+              <Link href={startHref} className="link-arrow">Start your screening</Link>
             </div>
           </section>
 
           <section className="info-block" data-reveal>
-            <h2 className="display">Clinical and safety</h2>
+            <h2 className="display">Safety</h2>
             <div>
               <p>{REG_STATUS[t.regulatoryStatus] ?? ''}</p>
               <p>
-                {needsApproval ? 'Requires a clinician’s approval. ' : ''}
-                If something feels off, flag it in a check-in or message and it goes straight to your clinician. In an
-                emergency call 10177.
+                {needsApproval ? 'Requires a clinician’s approval. ' : ''}Your clinician sets your plan; you can&apos;t
+                change the dose yourself. If something feels off, flag it in a check-in or message and it goes straight to
+                your clinician. In an emergency call 10177.
               </p>
             </div>
+          </section>
+
+          <section className="info-block" data-reveal>
+            <h2 className="display">How the process works</h2>
+            <ol className="checklist" style={{ margin: 0 }}>
+              <li>Complete your private health screening.</li>
+              <li>Ask for a clinical review of {t.name}.</li>
+              <li>A clinician decides whether it&apos;s right for you. They may ask for more information, suggest a different pen, or decline.</li>
+              <li>If approved, your plan, reminders and check-ins appear in your account, and you can order.</li>
+            </ol>
           </section>
 
           <section className="info-block" data-reveal>
@@ -175,10 +216,6 @@ export function ProductPage({ slug }: { slug: string }) {
               <details>
                 <summary>Can I order it straight away?</summary>
                 <div>No. You complete a health screening first, then a clinician reviews it. Ordering opens only if you&apos;re approved.</div>
-              </details>
-              <details>
-                <summary>What if it isn&apos;t right for me?</summary>
-                <div>Your clinician may ask for more information, suggest a different pen, or decline. You&apos;ll see their decision and note in your account.</div>
               </details>
               <details>
                 <summary>Who sees my health information?</summary>
@@ -197,16 +234,16 @@ export function ProductPage({ slug }: { slug: string }) {
         </div>
 
         {related.length > 0 && (
-          <section className="section">
+          <section className="range range--pink section">
             <div className="container">
               <div className="section-head" data-reveal>
                 <h2 className="display">
-                  Your next
+                  More in
                   <br />
-                  prick?
+                  {brand.category}
                 </h2>
               </div>
-              <div className="range__grid">
+              <div className="cards-grid">
                 {related.map((p, i) => (
                   <PenCard key={p.treatment.id} pen={p} index={i} />
                 ))}
@@ -217,7 +254,7 @@ export function ProductPage({ slug }: { slug: string }) {
 
         <div className={`sticky-cta${stuck ? ' show' : ''}`}>
           <strong className="display" style={{ fontSize: '1.3rem' }}>{t.name}</strong>
-          <Link href={startHref} className="btn accent">
+          <Link href={startHref} className="btn product-hero__cta">
             Start screening
           </Link>
         </div>

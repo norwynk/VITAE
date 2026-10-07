@@ -21,7 +21,7 @@ import {
 } from '@/domain/model';
 import { type PenBrand, penBrand } from '@/brand/pens';
 import { paymentAdapterFor } from '@/services/payment';
-import { Pen } from '../brand/Pen';
+import { PenStage } from '../brand/Pen';
 import { worldStyle } from '../brand/worldStyle';
 import { Badge, Card, Empty, Notice, fmtDateTime, formValues, humanise } from '../ui';
 import { useWorkspace } from '../workspace-context';
@@ -133,11 +133,11 @@ function DashboardPenCard({ chosenSlug }: { chosenSlug: string | null }) {
       {treatment && brand ? (
         <div className="dash-pen">
           <div className="dash-pen__art">
-            <span className="pen-card__sun" style={{ width: '64%' }} />
-            <Pen colours={brand.colours} label={brand.penLabel} />
+            <span className="flip-card__glow" style={{ opacity: 1 }} />
+            <PenStage colours={brand.colours} label={brand.penLabel} angle={-50} fit={0.9} />
           </div>
           <div className="dash-pen__info">
-            <span className="tag dark">{brand.colourName}</span>
+            <span className="tag dark">{brand.category}</span>
             <h2 className="display" style={{ fontSize: 'var(--step-3)' }}>{treatment.name}</h2>
             <dl className="status-grid">
               <div>

@@ -1,0 +1,281 @@
+{
+  "brand": "PRICK",
+  "interaction_pattern": {
+    "front": "Visual-first product world. Large pen, colour, texture, short emotional hook.",
+    "hover_or_tap": "Reveal outcome, feeling and one-line transformation.",
+    "expanded_view": "Show What it is, Outcome, Feeling, Transformation, then verified clinical/science content.",
+    "rule": "Outcome and emotion lead. Clinical detail follows. Never invent medical claims."
+  },
+  "products": [
+    {
+      "id": "total-body-reset",
+      "name": "Total Body Reset",
+      "peptide": "Retatrutide",
+      "category": "Weight & Body",
+      "hero_colour": "#FF6A21",
+      "front_hook": "A different chapter with your weight.",
+      "what_it_is": "A weight-management care pathway built around Retatrutide.",
+      "outcome": "A lighter, more in-control relationship with your body and weight goals.",
+      "feeling": "More capable. More in control. Less stuck.",
+      "transformation": "From feeling trapped in the same cycle to feeling like your body is finally moving in the direction you want.",
+      "card_back_copy": "For when you want a real reset in how your body feels, looks and responds. Built around a doctor-led pathway, with the goal of helping you feel lighter, more in control and more confident in the next chapter.",
+      "short_benefit_lines": [
+        "Weight-management support",
+        "More control around your body goals",
+        "A clearer path forward"
+      ]
+    },
+    {
+      "id": "craving-control",
+      "name": "Craving Control",
+      "peptide": "Tirzepatide",
+      "category": "Weight & Body",
+      "hero_colour": "#FF3D8D",
+      "front_hook": "Stop letting food take up so much space in your head.",
+      "what_it_is": "A doctor-led appetite and weight-management pathway built around Tirzepatide.",
+      "outcome": "Less mental noise around food and more freedom to get on with your day.",
+      "feeling": "Quieter. Calmer. Less preoccupied.",
+      "transformation": "From food constantly occupying your attention to feeling like you have room in your head for everything else.",
+      "card_back_copy": "For when cravings, appetite or food thoughts feel louder than you want them to. The outcome is not just eating less. It is feeling less mentally consumed by food and more able to focus on your life.",
+      "short_benefit_lines": [
+        "Less food noise",
+        "More mental space",
+        "More control around appetite"
+      ]
+    },
+    {
+      "id": "body-sculpt",
+      "name": "Body Sculpt",
+      "peptide": "Tesamorelin",
+      "category": "Weight & Body",
+      "hero_colour": "#B874FF",
+      "front_hook": "Less of what you don’t want. More of the shape you do.",
+      "what_it_is": "A body-composition pathway built around Tesamorelin.",
+      "outcome": "A body shape that feels closer to the one you want to see and live in.",
+      "feeling": "Sharper. More defined. More confident.",
+      "transformation": "From feeling dissatisfied with body composition to feeling more at home in your shape.",
+      "card_back_copy": "For when the goal is not simply weight loss, but shape. This pathway is about helping you move toward a body composition that feels more intentional, more defined and more like you.",
+      "short_benefit_lines": [
+        "Body-composition support",
+        "A more defined shape",
+        "More confidence in your body"
+      ]
+    },
+    {
+      "id": "the-glow-up",
+      "name": "The Glow Up",
+      "peptide": "Glow Stack",
+      "category": "Appearance & Skin",
+      "hero_colour": "#FF0F78",
+      "front_hook": "Look as good as you want to feel.",
+      "what_it_is": "A skin and appearance-focused peptide stack.",
+      "outcome": "Skin that looks brighter, fresher and more alive.",
+      "feeling": "Radiant. Fresh. Confident.",
+      "transformation": "From looking tired or flat to feeling like your outside finally matches how good you want to feel inside.",
+      "card_back_copy": "For when you want to look in the mirror and see more life looking back. The Glow Up is about radiance, freshness and that visible sense that you are taking care of yourself.",
+      "short_benefit_lines": [
+        "Brighter-looking skin",
+        "A fresher appearance",
+        "More confidence in how you look"
+      ]
+    },
+    {
+      "id": "skin-rewind",
+      "name": "Skin Rewind",
+      "peptide": "GHK-Cu 50mg",
+      "category": "Appearance & Skin",
+      "hero_colour": "#42D6C8",
+      "front_hook": "When you want the mirror to look a little kinder.",
+      "what_it_is": "A skin-focused pathway built around GHK-Cu 50mg.",
+      "outcome": "A fresher, more restored-looking complexion.",
+      "feeling": "Refreshed. Restored. Better in your skin.",
+      "transformation": "From seeing tiredness and wear in the mirror to seeing a fresher, more cared-for version of yourself.",
+      "card_back_copy": "For when your skin feels like it is showing more stress than you want it to. Skin Rewind is positioned around helping you feel fresher, more restored and better when you catch your reflection.",
+      "short_benefit_lines": [
+        "Fresher-looking skin",
+        "A more restored appearance",
+        "More confidence in the mirror"
+      ]
+    },
+    {
+      "id": "skin-rewind-reserve",
+      "name": "Skin Rewind Reserve",
+      "peptide": "GHK-Cu 100mg",
+      "category": "Appearance & Skin",
+      "hero_colour": "#6E42C1",
+      "front_hook": "The elevated Skin Rewind.",
+      "what_it_is": "The higher-strength Skin Rewind pathway built around GHK-Cu 100mg.",
+      "outcome": "A more premium, intensive skin-support experience.",
+      "feeling": "Elevated. Invested. Luxurious.",
+      "transformation": "From wanting basic skin support to choosing a more elevated, deliberate approach to how your skin looks and feels.",
+      "card_back_copy": "For someone who wants the more elevated version of the Skin Rewind experience. Same visual world, but positioned as the premium, more intensive path.",
+      "short_benefit_lines": [
+        "Elevated skin support",
+        "Premium treatment pathway",
+        "A more intensive approach"
+      ]
+    },
+    {
+      "id": "holiday-tan",
+      "name": "Holiday Tan",
+      "peptide": "Melanotan II",
+      "category": "Appearance & Skin",
+      "hero_colour": "#FFB000",
+      "front_hook": "That just-got-back look, without waiting for the holiday.",
+      "what_it_is": "A tanning-focused pathway built around Melanotan II.",
+      "outcome": "A sun-kissed look that feels like you have just come back from somewhere good.",
+      "feeling": "Sun-kissed. Fresh. Holiday-ready.",
+      "transformation": "From pale, flat or wintery to looking like life has been a little sunnier lately.",
+      "card_back_copy": "For when you want that just-back-from-holiday look. The emotional outcome is simple: warmer, fresher, more sun-kissed and more alive.",
+      "short_benefit_lines": [
+        "A sun-kissed appearance",
+        "Holiday-look energy",
+        "A warmer-looking complexion"
+      ]
+    },
+    {
+      "id": "all-day-energy",
+      "name": "All-Day Energy",
+      "peptide": "MOTS-c",
+      "category": "Energy, Sleep & Recovery",
+      "hero_colour": "#FFEA00",
+      "front_hook": "Still have something left when the day isn’t finished yet.",
+      "what_it_is": "An energy-focused pathway built around MOTS-c.",
+      "outcome": "More usable energy across the day.",
+      "feeling": "Switched on. Capable. Still going.",
+      "transformation": "From fading before the day is done to feeling like you still have something left for work, training, people and life.",
+      "card_back_copy": "For when your day keeps going after your energy has checked out. The goal is simple: feel like you have more left in the tank when you still have things you want to do.",
+      "short_benefit_lines": [
+        "More day-long energy",
+        "Less end-of-day drop-off",
+        "More capacity for real life"
+      ]
+    },
+    {
+      "id": "deep-sleep-rebuild",
+      "name": "Deep Sleep Rebuild",
+      "peptide": "CJC-1295 + Ipamorelin",
+      "category": "Energy, Sleep & Recovery",
+      "hero_colour": "#1267E8",
+      "front_hook": "Make your nights count again.",
+      "what_it_is": "A sleep and recovery-focused pathway built around CJC-1295 and Ipamorelin.",
+      "outcome": "Deeper-feeling rest and better mornings.",
+      "feeling": "Rested. Rebuilt. Clearer.",
+      "transformation": "From getting through the night to waking up feeling like the night actually did something for you.",
+      "card_back_copy": "For when sleep technically happens, but recovery does not feel like it does. The outcome is a night that feels more restorative and a morning that feels less like recovery from sleep itself.",
+      "short_benefit_lines": [
+        "Deeper-feeling rest",
+        "Better recovery overnight",
+        "Brighter mornings"
+      ]
+    },
+    {
+      "id": "rapid-recovery",
+      "name": "Rapid Recovery",
+      "peptide": "Wolverine Stack",
+      "category": "Energy, Sleep & Recovery",
+      "hero_colour": "#00B85A",
+      "front_hook": "Get back to doing what you love sooner.",
+      "what_it_is": "A recovery-focused peptide stack.",
+      "outcome": "Less time feeling sidelined and more time feeling ready to move again.",
+      "feeling": "Capable. Recovered. Back in it.",
+      "transformation": "From feeling held back by recovery to feeling like you can return to the things your body lets you enjoy.",
+      "card_back_copy": "For when being out of action is the part you hate most. Rapid Recovery is emotionally about getting back to movement, training, routine and the parts of life that make you feel like yourself.",
+      "short_benefit_lines": [
+        "Recovery support",
+        "A faster return to routine",
+        "More confidence in movement"
+      ]
+    },
+    {
+      "id": "age-defiance",
+      "name": "Age Defiance",
+      "peptide": "NAD+",
+      "category": "Energy, Sleep & Recovery",
+      "hero_colour": "#FF4F45",
+      "front_hook": "Getting older doesn’t have to mean feeling older.",
+      "what_it_is": "A longevity and vitality-focused pathway built around NAD+.",
+      "outcome": "More vitality and a stronger sense of staying engaged with life.",
+      "feeling": "Vital. Capable. Still yourself.",
+      "transformation": "From feeling like age is becoming the story to feeling like you still have plenty of story left.",
+      "card_back_copy": "For when you are less interested in your age than in how you feel living it. Age Defiance is positioned around vitality, presence and staying fully engaged in the life you are already building.",
+      "short_benefit_lines": [
+        "Vitality support",
+        "More energy for life",
+        "A more capable sense of ageing"
+      ]
+    },
+    {
+      "id": "hormone-reset",
+      "name": "Hormone Reset",
+      "peptide": "Kisspeptin",
+      "category": "Hormones, Intimacy & Mind",
+      "hero_colour": "#C65B7C",
+      "front_hook": "When you haven’t quite felt like yourself lately.",
+      "what_it_is": "A hormone-focused pathway built around Kisspeptin.",
+      "outcome": "A greater sense of rhythm, balance and feeling like yourself again.",
+      "feeling": "Balanced. Familiar. More like you.",
+      "transformation": "From feeling subtly off or disconnected from yourself to feeling more settled in your own rhythm again.",
+      "card_back_copy": "For that hard-to-describe feeling that something is just off. The transformation is not about becoming someone new. It is about feeling more like yourself again.",
+      "short_benefit_lines": [
+        "Hormone-focused support",
+        "A greater sense of balance",
+        "More like yourself again"
+      ]
+    },
+    {
+      "id": "bedroom-confidence",
+      "name": "Bedroom Confidence",
+      "peptide": "PT-141",
+      "category": "Hormones, Intimacy & Mind",
+      "hero_colour": "#8E1F5D",
+      "front_hook": "Want it again. Feel wanted again.",
+      "what_it_is": "An intimacy-focused pathway built around PT-141.",
+      "outcome": "More confidence, desire and presence in intimate moments.",
+      "feeling": "Wanted. Present. Confident.",
+      "transformation": "From feeling disconnected from intimacy to feeling like that part of you has a place in your life again.",
+      "card_back_copy": "For when intimacy has gone quieter than you want it to. The outcome is not performance for performance’s sake. It is confidence, desire, presence and feeling connected to that part of yourself again.",
+      "short_benefit_lines": [
+        "Intimacy support",
+        "More confidence",
+        "A stronger sense of desire and presence"
+      ]
+    },
+    {
+      "id": "sharp-mind",
+      "name": "Sharp Mind",
+      "peptide": "Semax",
+      "category": "Hormones, Intimacy & Mind",
+      "hero_colour": "#8EEA12",
+      "front_hook": "For the days when you want your brain properly switched on.",
+      "what_it_is": "A focus and mental-performance pathway built around Semax.",
+      "outcome": "Clearer thinking and a stronger sense of mental sharpness.",
+      "feeling": "Clear. Focused. Switched on.",
+      "transformation": "From foggy, scattered or mentally flat to feeling like your brain is working with you again.",
+      "card_back_copy": "For the days when your brain is technically present but not really helping. Sharp Mind is about clarity, focus and feeling properly switched on again.",
+      "short_benefit_lines": [
+        "Sharper focus",
+        "Greater mental clarity",
+        "More productive, present days"
+      ]
+    },
+    {
+      "id": "gut-reset",
+      "name": "Gut Reset",
+      "peptide": "KPV",
+      "category": "Hormones, Intimacy & Mind",
+      "hero_colour": "#24BFA3",
+      "front_hook": "When you’d like to stop thinking about your stomach all the time.",
+      "what_it_is": "A gut-focused pathway built around KPV.",
+      "outcome": "A calmer-feeling gut and less mental attention spent on digestive discomfort.",
+      "feeling": "Settled. Easier. Less preoccupied.",
+      "transformation": "From constantly noticing your stomach to getting through more of the day without thinking about it.",
+      "card_back_copy": "For when your stomach occupies too much attention. The emotional outcome is simple: feeling more settled, less preoccupied and more able to get on with your day.",
+      "short_benefit_lines": [
+        "Gut-focused support",
+        "A calmer-feeling middle",
+        "Less day-to-day preoccupation"
+      ]
+    }
+  ]
+}

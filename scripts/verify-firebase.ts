@@ -226,7 +226,7 @@ async function main() {
     const payment = (await db.collection('payments').where('orderId', '==', orderId).get()).docs[0].data();
     assert.equal(payment.status, 'AWAITING_PROVIDER');
     assert.equal(payment.provider, 'NONE');
-    assert.equal((await db.doc('inventory/PRK-RESET').get()).get('reserved'), 1);
+    assert.equal((await db.doc('inventory/PRK-TOTAL-BODY-RESET').get()).get('reserved'), 1);
     assert.equal((await db.doc(`approvedTreatments/${approvalId}`).get()).get('remainingQuantity'), 1);
     await denied('executeCommand', { type: 'orderStatus', orderId, memberId: 'member1', status: 'PAID' }, 'ops1', 'ALREADY_EXISTS');
     await denied('executeCommand', { type: 'orderStatus', orderId, memberId: 'member1', status: 'CANCELLED' }, 'ful1', 'PERMISSION_DENIED');

@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { PEN_BRANDS } from '@/brand/pens';
-import { Pen } from './Pen';
+import { PenStage } from './Pen';
 import { PhotoSlot } from './PhotoSlot';
 
-const RANGE = Object.values(PEN_BRANDS);
+const FINALE = ['the-glow-up', 'total-body-reset', 'deep-sleep-rebuild', 'all-day-energy', 'sharp-mind', 'body-sculpt'].map((slug) => PEN_BRANDS[slug]);
 
 export function EditorialStatement({ top, bottom, children }: { top: string; bottom: string; children?: ReactNode }) {
   return (
@@ -42,7 +42,7 @@ export function HowItWorks() {
           </div>
           <ol className="steps__grid" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
             {STEPS.map((s, i) => (
-              <li key={s.title} className="step" data-reveal style={{ '--delay': `${i * 120}ms`, '--step-colour': RANGE[i]?.colours.main } as React.CSSProperties}>
+              <li key={s.title} className="step" data-reveal style={{ '--delay': `${i * 120}ms`, '--step-colour': FINALE[i]?.colours.main } as React.CSSProperties}>
                 <div className="step__num">0{i + 1}</div>
                 <h3>{s.title}</h3>
                 <p className="muted" style={{ margin: 0 }}>{s.body}</p>
@@ -164,14 +164,15 @@ export function Reviews() {
 
 export function SubscriptionPanel() {
   const trio = [PEN_BRANDS['deep-sleep-rebuild'], PEN_BRANDS['the-glow-up'], PEN_BRANDS['total-body-reset']];
+  const angles = [-72, -90, -108];
   return (
     <section className="section">
       <div className="container">
         <div className="repeat section" style={{ paddingInline: 'var(--gutter)' }}>
           <div className="repeat__grid">
             <div className="repeat__pens" data-reveal>
-              {trio.map((b) => (
-                <Pen key={b.slug} colours={b.colours} label={b.penLabel} />
+              {trio.map((b, i) => (
+                <PenStage key={b.slug} colours={b.colours} label={b.penLabel} angle={angles[i]} fit={0.95} />
               ))}
             </div>
             <div data-reveal style={{ '--delay': '150ms', '--accent': 'var(--pink)' } as React.CSSProperties}>
@@ -216,8 +217,8 @@ export function FinalCta() {
           </Link>
         </div>
         <div className="final-cta__pens" data-reveal>
-          {RANGE.map((b) => (
-            <Pen key={b.slug} colours={b.colours} label={b.penLabel} />
+          {FINALE.map((b, i) => (
+            <PenStage key={b.slug} colours={b.colours} label={b.penLabel} angle={i % 2 ? -84 : -96} fit={0.95} />
           ))}
         </div>
       </div>

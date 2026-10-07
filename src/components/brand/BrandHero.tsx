@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { useRef } from 'react';
 import { PEN_BRANDS } from '@/brand/pens';
 import { useParallax } from '@/hooks/useReveal';
-import { Pen } from './Pen';
+import { PenStage } from './Pen';
 
 export function BrandHero() {
   const stage = useRef<HTMLDivElement>(null);
@@ -38,7 +38,7 @@ export function BrandHero() {
           <span className="hero__disc" />
           <span className="hero__disc two" />
           <span className="hero__disc three" />
-          <Pen colours={hero.colours} label={hero.penLabel} className="hero__pen" title="PRICK The Glow Up pen in hot pink" />
+          <PenStage colours={hero.colours} label={hero.penLabel} angle={-48} fit={0.98} className="hero__pen pen-stage--float" title="PRICK The Glow Up pen in hot pink" />
           <p className="hand hero__note">this one&apos;s yours?</p>
         </div>
       </div>

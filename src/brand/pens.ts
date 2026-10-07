@@ -1,108 +1,133 @@
 /**
- * PRICK brand presentation for each product, keyed by catalogue slug.
+ * PRICK brand presentation for each product, from the character sheet in
+ * `range.json`, keyed by catalogue slug.
  *
- * Presentation only: colour, mood and marketing lines. Product facts (name,
- * price, availability, approval rules) always come from the catalogue via the
- * repository. Never put ingredients, dosing or medical claims here.
+ * Presentation only: colour and the emotional copy the brand supplied. Product
+ * facts (name, peptide, price, availability, approval rules) always come from
+ * the catalogue via the repository. Never add dosing or invented claims here.
  */
 import type { Treatment } from '@/domain/model';
-
-export type GoalKey = 'glow' | 'energy' | 'sleep' | 'sharper' | 'recover';
+import RANGE from './range.json';
 
 export interface PenColours {
   /** Casing / hero colour. */
   main: string;
-  /** Shadowed side of the casing. */
+  /** Shadowed side of the casing, bands and cap. */
   deep: string;
   /** Highlight on the casing. */
   light: string;
-  /** Pale tint for backgrounds behind the pen. */
+  /** Pale tint for quiet backgrounds. */
   tint: string;
   /** Text that sits on `main`. */
   ink: string;
+  /** Solid button colour on `main` that keeps white text readable. */
+  strong: string;
 }
 
 export interface PenBrand {
   slug: string;
-  /** Short label printed on the pen, e.g. "GLOW UP". */
+  /** Label printed on the pen. */
   penLabel: string;
-  colourName: string;
+  category: string;
   colours: PenColours;
-  goals: GoalKey[];
-  /** Outcome-first shop label. */
-  goalLabel: string;
-  /** Two-line launch statement for the product page. */
-  statement: [string, string];
-  /** One-liner for cards. */
-  line: string;
-  /** Art direction for photography; shown only in development placeholders. */
-  world: string;
+  hook: string;
+  whatItIs: string;
+  outcome: string;
+  feeling: string;
+  transformation: string;
+  cardBack: string;
+  benefits: string[];
 }
 
-export const PEN_BRANDS: Record<string, PenBrand> = {
-  'the-glow-up': {
-    slug: 'the-glow-up',
-    penLabel: 'GLOW UP',
-    colourName: 'Prick Pink',
-    colours: { main: '#ff2d8a', deep: '#b8005a', light: '#ff8cc0', tint: '#ffe3ef', ink: '#ffffff' },
-    goals: ['glow'],
-    goalLabel: 'Look better',
-    statement: ['Your skin called.', 'It wants better lighting.'],
-    line: 'For the days you want to shine a little louder.',
-    world: 'Pink pen on halved grapefruit and hibiscus, water droplets, hard midday sun, glossy reflections.',
-  },
-  'total-body-reset': {
-    slug: 'total-body-reset',
-    penLabel: 'BODY RESET',
-    colourName: 'Reset Orange',
-    colours: { main: '#ff7a1a', deep: '#c24a00', light: '#ffb070', tint: '#ffead9', ink: '#ffffff' },
-    goals: ['energy', 'recover'],
-    goalLabel: 'Feel better',
-    statement: ['Same you.', 'More get-up-and-go.'],
-    line: 'For mornings that start before the alarm wins.',
-    world: 'Orange pen with peaches and blood oranges, warm late-afternoon sun, long hard shadows on stone.',
-  },
-  'deep-sleep-rebuild': {
-    slug: 'deep-sleep-rebuild',
-    penLabel: 'DEEP SLEEP',
-    colourName: 'Sleep Blue',
-    colours: { main: '#2e4bff', deep: '#1424a8', light: '#7f93ff', tint: '#e2e7ff', ink: '#ffffff' },
-    goals: ['sleep'],
-    goalLabel: 'Sleep deeper',
-    statement: ['Lights out.', 'Properly, this time.'],
-    line: 'For nights that actually feel like nights.',
-    world: 'Blue pen on cool linen with lavender sprigs, dusk light, soft blue shadows, a glass of iced water.',
-  },
-  'sharp-mind': {
-    slug: 'sharp-mind',
-    penLabel: 'SHARP MIND',
-    colourName: 'Mind Lime',
-    colours: { main: '#a8e61d', deep: '#5f8f00', light: '#d6ff7a', tint: '#f1fbd9', ink: '#132000' },
-    goals: ['sharper'],
-    goalLabel: 'Think sharper',
-    statement: ['Clear head.', 'Full calendar.'],
-    line: 'For when the to-do list has a to-do list.',
-    world: 'Lime pen with sliced limes and green leaves, clean bright daylight, chrome desk objects, crisp shadows.',
-  },
-};
+// ---------------------------------------------------------------------------
+// Colour derivation
+// ---------------------------------------------------------------------------
 
-/** Neutral identity for catalogue items that don't have a brand entry yet. */
-const FALLBACK: Omit<PenBrand, 'slug' | 'penLabel'> = {
-  colourName: 'Studio Black',
-  colours: { main: '#1d1d1f', deep: '#000000', light: '#5a5a60', tint: '#efebe4', ink: '#ffffff' },
-  goals: [],
-  goalLabel: 'More good days',
-  statement: ['New in.', 'Details coming soon.'],
-  line: 'A new pen is on its way.',
-  world: 'Black pen on warm stone, hard flash, chrome accents.',
-};
-
-export function penBrand(treatment: Pick<Treatment, 'slug' | 'name'>): PenBrand {
-  return PEN_BRANDS[treatment.slug] ?? { ...FALLBACK, slug: treatment.slug, penLabel: treatment.name.toUpperCase() };
+function rgb(hex: string): [number, number, number] {
+  const n = parseInt(hex.replace('#', ''), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
-/** Display order of the range; unknown products follow. */
-export const RANGE_ORDER = ['the-glow-up', 'total-body-reset', 'deep-sleep-rebuild', 'sharp-mind'];
+function toHex([r, g, b]: number[]): string {
+  return `#${[r, g, b].map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('')}`;
+}
+
+function mix(hex: string, other: string, t: number): string {
+  const a = rgb(hex);
+  const b = rgb(other);
+  return toHex(a.map((v, i) => v + (b[i] - v) * t));
+}
+
+/** WCAG relative luminance. */
+function luminance(hex: string): number {
+  const [r, g, b] = rgb(hex).map((v) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+const INK_DARK = '#141414';
+
+export function coloursFor(hero: string): PenColours {
+  const contrastWhite = 1.05 / (luminance(hero) + 0.05);
+  const contrastDark = (luminance(hero) + 0.05) / (luminance(INK_DARK) + 0.05);
+  const ink = contrastWhite >= contrastDark ? '#ffffff' : INK_DARK;
+  const deep = mix(hero, '#000000', 0.3);
+  return {
+    main: hero,
+    deep,
+    light: mix(hero, '#ffffff', 0.38),
+    tint: mix(hero, '#ffffff', 0.86),
+    ink,
+    strong: ink === '#ffffff' ? mix(hero, '#000000', 0.42) : INK_DARK,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Range
+// ---------------------------------------------------------------------------
+
+export const PEN_BRANDS: Record<string, PenBrand> = Object.fromEntries(
+  RANGE.products.map((p) => [
+    p.id,
+    {
+      slug: p.id,
+      penLabel: p.name.toUpperCase(),
+      category: p.category,
+      colours: coloursFor(p.hero_colour),
+      hook: p.front_hook,
+      whatItIs: p.what_it_is,
+      outcome: p.outcome,
+      feeling: p.feeling,
+      transformation: p.transformation,
+      cardBack: p.card_back_copy,
+      benefits: p.short_benefit_lines,
+    } satisfies PenBrand,
+  ]),
+);
+
+/** Neutral identity for catalogue items without a character-sheet entry yet. */
+export function penBrand(treatment: Pick<Treatment, 'slug' | 'name' | 'category' | 'summary'>): PenBrand {
+  return (
+    PEN_BRANDS[treatment.slug] ?? {
+      slug: treatment.slug,
+      penLabel: treatment.name.toUpperCase(),
+      category: treatment.category,
+      colours: coloursFor('#2a2a2e'),
+      hook: 'New in. Details coming soon.',
+      whatItIs: treatment.summary,
+      outcome: 'Details coming soon.',
+      feeling: 'Details coming soon.',
+      transformation: 'Details coming soon.',
+      cardBack: treatment.summary,
+      benefits: [],
+    }
+  );
+}
+
+/** Character-sheet order; unknown products follow alphabetically. */
+export const RANGE_ORDER = RANGE.products.map((p) => p.id);
 
 export function sortRange<T extends Pick<Treatment, 'slug' | 'name'>>(items: T[]): T[] {
   const rank = (slug: string) => {
@@ -112,15 +137,10 @@ export function sortRange<T extends Pick<Treatment, 'slug' | 'name'>>(items: T[]
   return [...items].sort((a, b) => rank(a.slug) - rank(b.slug) || a.name.localeCompare(b.name));
 }
 
-export const GOALS: { key: GoalKey; choice: string; filter: string; colour: string }[] = [
-  { key: 'glow', choice: 'I want to glow', filter: 'Look better', colour: PEN_BRANDS['the-glow-up'].colours.main },
-  { key: 'energy', choice: 'I want more energy', filter: 'Feel better', colour: PEN_BRANDS['total-body-reset'].colours.main },
-  { key: 'sleep', choice: 'I want better sleep', filter: 'Sleep deeper', colour: PEN_BRANDS['deep-sleep-rebuild'].colours.main },
-  { key: 'sharper', choice: 'I want to feel sharper', filter: 'Think sharper', colour: PEN_BRANDS['sharp-mind'].colours.main },
-  { key: 'recover', choice: 'I want to recover faster', filter: 'Recover faster', colour: PEN_BRANDS['total-body-reset'].colours.deep },
+/** Shop filters and quiz first step, in character-sheet order. */
+export const CATEGORIES: { name: string; choice: string; colour: string }[] = [
+  { name: 'Weight & Body', choice: 'I want to change my body', colour: PEN_BRANDS['total-body-reset'].colours.main },
+  { name: 'Appearance & Skin', choice: 'I want to love what I see', colour: PEN_BRANDS['the-glow-up'].colours.main },
+  { name: 'Energy, Sleep & Recovery', choice: 'I want more energy, sleep or recovery', colour: PEN_BRANDS['deep-sleep-rebuild'].colours.main },
+  { name: 'Hormones, Intimacy & Mind', choice: 'I want to feel more like me', colour: PEN_BRANDS['sharp-mind'].colours.main },
 ];
-
-/** Consumer recommendation only. It never changes clinical eligibility. */
-export function matchForGoal<T extends Pick<Treatment, 'slug' | 'name'>>(goal: GoalKey, catalogue: T[]): T | undefined {
-  return sortRange(catalogue).find((t) => penBrand(t).goals.includes(goal));
-}

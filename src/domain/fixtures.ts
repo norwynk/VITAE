@@ -1,8 +1,9 @@
 /**
- * Fictional demonstration data only. No real people, products, approvals,
- * registrations or prices. Every treatment here is an invented pathway that
- * starts unverified and not purchasable.
+ * Demonstration data. People, orders and prices are fictional. Product names
+ * and peptides come from the PRICK character sheet; every product starts
+ * unverified and not purchasable, with no clinical claims or dosing.
  */
+import RANGE from '../brand/range.json';
 import { type Actor, type Role, type Store, type Treatment, CONSENT_VERSION, addDays, emptyStore, localDate } from './model';
 
 export const DEMO_USERS: Record<Role, { uid: string; name: string; email: string }> = {
@@ -23,7 +24,7 @@ export function demoActor(role: Role): Actor {
 
 function treatment(partial: Partial<Treatment> & Pick<Treatment, 'id' | 'slug' | 'name' | 'summary' | 'inventorySku'>, at: string): Treatment {
   return {
-    clinicalDescription: 'Fictional demonstration pathway. Not a real product or clinical protocol.',
+    clinicalDescription: '',
     category: 'Demo',
     outcomes: [],
     requiresPrescription: true,
@@ -60,27 +61,26 @@ export function createFixtureStore(now: Date = new Date()): Store {
   const est = DEMO_ESTABLISHED_MEMBER;
   s.users[est.uid] = { id: est.uid, email: 'sam.example@example.invalid', displayName: est.name, role: 'MEMBER', createdAt: at, updatedAt: at };
 
-  // The PRICK range. Names are the brand's product names; everything clinical
-  // (claims, ingredients, dosing, registration) is deliberately absent until verified.
-  const pen = (id: string, slug: string, name: string, category: string, sku: string) =>
-    treatment(
+  // The PRICK range, from the brand character sheet. Clinical claims, dosing and
+  // registration are deliberately absent: every pathway starts unverified.
+  for (const p of RANGE.products) {
+    s.treatments[`trt-${p.id}`] = treatment(
       {
-        id,
-        slug,
-        name,
-        summary: 'Fictional demo product. Ingredient, dosing and regulatory information will be added once verified.',
-        category,
-        outcomes: ['Health screening first', 'Clinician-reviewed plan', 'Reminders and check-ins', 'Regular follow-up'],
+        id: `trt-${p.id}`,
+        slug: p.id,
+        name: p.name,
+        summary: p.what_it_is,
+        clinicalDescription: '',
+        category: p.category,
+        peptide: p.peptide,
+        outcomes: p.short_benefit_lines,
         // Demo price only: no real pricing has been agreed.
         priceCents: 189_900,
-        inventorySku: sku,
+        inventorySku: `PRK-${p.id.toUpperCase()}`,
       },
       at,
     );
-  s.treatments['trt-glow-up'] = pen('trt-glow-up', 'the-glow-up', 'The Glow Up', 'Look better', 'PRK-GLOW');
-  s.treatments['trt-total-body-reset'] = pen('trt-total-body-reset', 'total-body-reset', 'Total Body Reset', 'Feel better', 'PRK-RESET');
-  s.treatments['trt-deep-sleep-rebuild'] = pen('trt-deep-sleep-rebuild', 'deep-sleep-rebuild', 'Deep Sleep Rebuild', 'Sleep deeper', 'PRK-SLEEP');
-  s.treatments['trt-sharp-mind'] = pen('trt-sharp-mind', 'sharp-mind', 'Sharp Mind', 'Think sharper', 'PRK-MIND');
+  }
   for (const t of Object.values(s.treatments)) {
     s.inventory[t.inventorySku] = { id: t.inventorySku, sku: t.inventorySku, treatmentId: t.id, onHand: 20, reserved: 0, updatedAt: at };
   }

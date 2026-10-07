@@ -11,33 +11,41 @@ async function expectToast(page: Page, text: string | RegExp) {
   await expect(page.locator('.toast')).toContainText(text);
 }
 
-test('home shows the range, a quick look and honest demo labelling', async ({ page }) => {
+test('home shows colour cards that flip to outcome, feeling and transformation', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: /Pick your\s*Prick\./i })).toBeVisible();
   await expect(page.getByText("Pens shown are fictional demo products and can't be bought yet.")).toBeVisible();
-  for (const name of ['The Glow Up', 'Total Body Reset', 'Deep Sleep Rebuild', 'Sharp Mind']) {
-    await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
+  for (const name of ['Total Body Reset', 'Craving Control', 'Body Sculpt', 'The Glow Up', 'Skin Rewind', 'Skin Rewind Reserve']) {
+    await expect(page.getByRole('heading', { name, exact: true }).first()).toBeVisible();
   }
-  const card = page.locator('article.pen-card', { hasText: 'Sharp Mind' });
-  await card.getByRole('button', { name: 'Quick look' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Sharp Mind quick look' });
-  await expect(dialog).toBeVisible();
-  await expect(dialog.getByText('demo price')).toBeVisible();
-  await dialog.getByRole('button', { name: 'Close quick look' }).click();
-  await expect(dialog).toBeHidden();
+  await expect(page.getByRole('link', { name: 'See all 15 pens' })).toBeVisible();
+  const card = page.getByRole('article', { name: 'Craving Control' });
+  await expect(card.getByText('Stop letting food take up so much space in your head.')).toBeVisible();
+  const feeling = card.getByText('Quieter. Calmer. Less preoccupied.');
+  await expect(feeling).toBeHidden();
+  await card.getByRole('button', { name: 'What you get' }).click();
+  await expect(feeling).toBeVisible();
+  await expect(card.getByText('Transformation')).toBeVisible();
+  await card.getByRole('button', { name: 'Flip back' }).click();
+  await expect(feeling).toBeHidden();
   // Placeholders, never invented testimonials.
   await expect(page.getByText('Real reviews from real members will live here.').first()).toBeVisible();
 });
 
-test('shop filters by goal and product page keeps the clinical gate', async ({ page }) => {
+test('shop filters by category and the expanded view keeps the clinical gate', async ({ page }) => {
   await page.goto('/shop');
-  await page.getByRole('button', { name: 'Sleep deeper' }).click();
-  await expect(page.getByRole('heading', { name: 'Deep Sleep Rebuild', exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'The Glow Up', exact: true })).toHaveCount(0);
-  await page.getByRole('link', { name: 'Deep Sleep Rebuild' }).first().click();
+  await expect(page.getByRole('button', { name: 'All (15)' })).toBeVisible();
+  await page.getByRole('button', { name: 'Energy, Sleep & Recovery' }).click();
+  await expect(page.getByRole('article', { name: 'Deep Sleep Rebuild' })).toBeVisible();
+  await expect(page.getByRole('article', { name: 'The Glow Up' })).toHaveCount(0);
+  await page.getByRole('article', { name: 'Deep Sleep Rebuild' }).getByRole('link', { name: 'View the pen' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Deep Sleep Rebuild' })).toBeVisible();
+  for (const section of ['What it actually is', 'Peptide / stack', 'Verified clinical information', 'Eligibility', 'Screening', 'Safety', 'How the process works']) {
+    await expect(page.getByRole('heading', { name: section, exact: true })).toBeVisible();
+  }
+  await expect(page.getByText('CJC-1295 + Ipamorelin')).toBeVisible();
+  await expect(page.getByText(/Not yet verified\. Clinical information for Deep Sleep Rebuild/)).toBeVisible();
   await expect(page.getByText('You can only order it if your clinician approves it for you.')).toBeVisible();
-  await expect(page.getByText(/Regulatory status not yet confirmed/)).toBeVisible();
   await expect(page.getByRole('button', { name: /add to cart|buy now/i })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Start screening' }).first()).toHaveAttribute('href', '/app?pen=deep-sleep-rebuild');
 });
@@ -45,13 +53,17 @@ test('shop filters by goal and product page keeps the clinical gate', async ({ p
 test('quiz match leads into screening for the matched pen', async ({ page }) => {
   await page.goto('/find-your-prick');
   await page.getByRole('button', { name: "Let's go" }).click();
-  await page.getByRole('button', { name: 'I want better sleep' }).click();
-  await expect(page.getByRole('heading', { name: /Looks like you're a Deep Sleep Rebuild/i })).toBeVisible();
+  await page.getByRole('button', { name: 'I want more energy, sleep or recovery' }).click();
+  await page.getByRole('button', { name: 'Switched on. Capable. Still going.' }).click();
+  await expect(page.getByRole('heading', { name: /Looks like you're an All-Day Energy\./i })).toBeVisible();
   await page.getByRole('button', { name: 'Start over' }).click();
-  await page.getByRole('button', { name: 'I want to glow' }).click();
+  await page.getByRole('button', { name: 'I want to love what I see' }).click();
+  await page.getByRole('button', { name: 'Radiant. Fresh. Confident.' }).click();
   await expect(page.getByRole('heading', { name: /Looks like you're The Glow Up\./i })).toBeVisible();
   await page.getByRole('button', { name: 'Start over' }).click();
-  await page.getByRole('button', { name: 'I want better sleep' }).click();
+  await page.getByRole('button', { name: 'I want more energy, sleep or recovery' }).click();
+  await page.getByRole('button', { name: 'Rested. Rebuilt. Clearer.' }).click();
+  await expect(page.getByRole('heading', { name: /Looks like you're a Deep Sleep Rebuild/i })).toBeVisible();
   await expect(page.getByText('This is a match, not a prescription.')).toBeVisible();
   await page.getByRole('link', { name: 'Start your screening' }).click();
   await page.getByRole('button', { name: 'New member' }).click();

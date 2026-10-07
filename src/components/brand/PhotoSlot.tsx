@@ -1,5 +1,5 @@
 import type { PenBrand } from '@/brand/pens';
-import { Pen } from './Pen';
+import { PenStage } from './Pen';
 
 /**
  * PLACEHOLDER for art-directed photography. Renders a colour-blocked product
@@ -26,7 +26,7 @@ export function PhotoSlot({
       style={{ '--slot-bg': background ?? brand.colours.tint, '--slot-sun': brand.colours.light, '--tilt': `${tilt}deg`, margin: 0 } as React.CSSProperties}
     >
       <div className="photo-slot__sun" />
-      <Pen colours={brand.colours} label={brand.penLabel} className="photo-slot__pen" />
+      <PenStage colours={brand.colours} label={brand.penLabel} angle={tilt} fit={0.8} className="photo-slot__pen" />
       <div className="photo-slot__shadow" />
       {caption && (
         <figcaption className="photo-slot__caption">

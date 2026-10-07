@@ -317,6 +317,8 @@ export interface Treatment {
   requiredLabs: string[];
   followUpDays: number;
   inventorySku: string;
+  /** Peptide or stack the pathway is built around, as named in the catalogue. */
+  peptide?: string;
   demoFictional: boolean;
   createdAt: string;
   updatedAt: string;

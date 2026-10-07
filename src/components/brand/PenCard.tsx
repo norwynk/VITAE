@@ -1,81 +1,78 @@
 'use client';
 import Link from 'next/link';
-import { useRef } from 'react';
+import { useState } from 'react';
 import type { BrandedPen } from '@/hooks/useCatalogue';
-import { formatRand } from '@/domain/model';
-import { Pen } from './Pen';
+import { PenStage } from './Pen';
 import { worldStyle } from './worldStyle';
 
-/** A product as its own colour world. Hover lifts the pen; "Quick look" opens a popup. */
-export function PenCard({ pen, index = 0, onFocusColour }: { pen: BrandedPen; index?: number; onFocusColour?: (c: string | null) => void }) {
+/**
+ * Product card in three layers:
+ * front (colour world, name, hook; hover pops the pen), flip (outcome,
+ * feeling, transformation), then the full product page via "View the pen".
+ */
+export function PenCard({ pen, index = 0 }: { pen: BrandedPen; index?: number }) {
   const { treatment: t, brand } = pen;
-  const dialog = useRef<HTMLDialogElement>(null);
-  const tilt = index % 2 ? 10 : -10;
+  const [flipped, setFlipped] = useState(false);
+  const href = `/pens/${t.slug}`;
+  // Clicking the card itself flips it; links and buttons keep their own job.
+  const flipFromCard = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('a, button')) return;
+    setFlipped((f) => !f);
+  };
   return (
-    <>
-      <article
-        className="pen-card"
-        style={worldStyle(brand.colours, { '--tilt': `${tilt}deg`, '--delay': `${index * 90}ms` })}
-        data-reveal
-        onMouseEnter={() => onFocusColour?.(brand.colours.tint)}
-        onMouseLeave={() => onFocusColour?.(null)}
-      >
-        <Link href={`/pens/${t.slug}`} className="pen-card__world" aria-label={t.name}>
-          <span className="pen-card__sun" />
-          <span className="pen-card__orb a" />
-          <span className="pen-card__orb b" />
-          <Pen colours={brand.colours} label={brand.penLabel} className="pen-card__pen" />
-        </Link>
-        <div className="pen-card__body">
-          <span className="tag">{brand.goalLabel}</span>
-          <h3 className="pen-card__name">{t.name}</h3>
-          <p className="small" style={{ margin: 0 }}>{brand.line}</p>
-          <div className="pen-card__cta">
-            <Link href={`/pens/${t.slug}`} className="link-arrow">
-              Meet it
+    <article
+      className="flip-card"
+      style={worldStyle(brand.colours, { '--delay': `${(index % 3) * 90}ms` })}
+      data-reveal
+      aria-label={t.name}
+    >
+      <div className={`flip-card__inner${flipped ? ' is-flipped' : ''}`}>
+        <div className="flip-card__face flip-card__front" onClick={flipFromCard}>
+          <h3 className="flip-card__name">{t.name}</h3>
+          <div className="flip-card__stage" aria-hidden="true">
+            <span className="flip-card__glow" />
+            <span className="flip-card__burst a" />
+            <span className="flip-card__burst b" />
+            <span className="flip-card__burst c" />
+            <PenStage colours={brand.colours} label={brand.penLabel} angle={index % 2 ? -62 : -54} fit={0.92} />
+          </div>
+          <p className="flip-card__hook">{brand.hook}</p>
+          <div className="flip-card__actions">
+            <button type="button" className="btn small flip-card__btn-strong" onClick={() => setFlipped(true)} aria-expanded={flipped}>
+              What you get
+            </button>
+            <Link href={href} className="btn small flip-card__btn-light">
+              View the pen
             </Link>
-            <button type="button" className="btn small" onClick={() => dialog.current?.showModal()}>
-              Quick look
+          </div>
+        </div>
+        <div className="flip-card__face flip-card__back" onClick={flipFromCard}>
+          <p className="eyebrow">{brand.category}</p>
+          <h3 className="flip-card__name flip-card__name--back">{t.name}</h3>
+          <dl className="flip-card__story">
+            <div>
+              <dt>Outcome</dt>
+              <dd>{brand.outcome}</dd>
+            </div>
+            <div>
+              <dt>Feeling</dt>
+              <dd className="flip-card__feeling">{brand.feeling}</dd>
+            </div>
+            <div>
+              <dt>Transformation</dt>
+              <dd>{brand.transformation}</dd>
+            </div>
+          </dl>
+          <div className="flip-card__actions">
+            <Link href={href} className="btn small flip-card__btn-light">
+              View the pen
+            </Link>
+            <button type="button" className="btn small flip-card__btn-strong" onClick={() => setFlipped(false)}>
+              Flip back
             </button>
           </div>
         </div>
-      </article>
-      <dialog ref={dialog} className="quick-view" style={worldStyle(brand.colours)} aria-label={`${t.name} quick look`} onClick={(e) => e.target === dialog.current && dialog.current?.close()}>
-        <div className="quick-view__grid">
-          <div className="quick-view__art">
-            <span className="pen-card__sun" style={{ width: '70%' }} />
-            <Pen colours={brand.colours} label={brand.penLabel} className="pen-card__pen" style={{ height: 380 }} />
-          </div>
-          <div className="quick-view__body">
-            <span className="tag dark">{brand.colourName}</span>
-            <h2 className="display" style={{ fontSize: 'var(--step-3)' }}>{t.name}</h2>
-            <p className="serif-i" style={{ fontSize: 'var(--step-2)', lineHeight: 1.1, margin: 0 }}>
-              {brand.statement[0]} {brand.statement[1]}
-            </p>
-            {t.priceCents > 0 && (
-              <p className="price" style={{ margin: 0 }}>
-                {formatRand(t.priceCents)} <span className="small muted">demo price</span>
-              </p>
-            )}
-            <p className="small muted" style={{ margin: 0 }}>
-              Every pen starts with a quick health screening and a clinician&apos;s review.
-            </p>
-            <div className="row">
-              <Link href={`/pens/${t.slug}`} className="btn accent">
-                See the full story
-              </Link>
-              <Link href={`/app?pen=${t.slug}`} className="link-arrow">
-                Start screening
-              </Link>
-            </div>
-          </div>
-        </div>
-        <form method="dialog">
-          <button className="quick-view__close secondary small" aria-label="Close quick look">
-            Close
-          </button>
-        </form>
-      </dialog>
-    </>
+      </div>
+    </article>
   );
 }

@@ -12,7 +12,7 @@ export function HomePage() {
     <BrandPage revealKey={pens}>
       <BrandHero />
       <Marquee items={['More good days', 'Small pen. Big plans.', 'Made for real life', 'Well, this is different']} />
-      <Range pens={pens} error={error} />
+      <Range pens={pens} error={error} limit={6} />
       <EditorialStatement top="A little prick." bottom="A lot more you.">
         <p>Colourful on the outside. Clinician-checked on the inside. Feel more like yourself.</p>
       </EditorialStatement>
