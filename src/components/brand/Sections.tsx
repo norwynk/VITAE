@@ -276,7 +276,7 @@ export function CoFounderQuote() {
     <section className="founder-quote" aria-label={`A word from ${founder.name}`}>
       <div className="founder-quote__photo">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={founder.photo} alt={founder.name} width={382} height={918} />
+        <img src={founder.photo} alt={founder.name} width={494} height={1172} />
         <p className="founder-quote__hand" aria-hidden="true">
           {founder.handle},
           <br />
