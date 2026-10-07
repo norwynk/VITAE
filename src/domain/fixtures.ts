@@ -4,7 +4,7 @@
  * unverified and not purchasable, with no clinical claims or dosing.
  */
 import RANGE from '../brand/range.json';
-import { type Actor, type Role, type Store, type Treatment, CONSENT_VERSION, addDays, emptyStore, localDate } from './model';
+import { type Actor, type ProductTruth, type Role, type Store, type Treatment, CONSENT_VERSION, addDays, emptyStore, localDate } from './model';
 
 export const DEMO_USERS: Record<Role, { uid: string; name: string; email: string }> = {
   MEMBER: { uid: 'demo-member-new', name: 'Alex Demo', email: 'alex.demo@example.invalid' },
@@ -50,6 +50,27 @@ function treatment(partial: Partial<Treatment> & Pick<Treatment, 'id' | 'slug' |
   };
 }
 
+type SheetProduct = (typeof RANGE.products)[number];
+
+/** True when the sheet itself says the supplier has not disclosed the actives. */
+export function compositionUndisclosed(p: Pick<SheetProduct, 'clinical_content_status'>): boolean {
+  return /COMPOSITION REQUIRED/i.test(p.clinical_content_status);
+}
+
+/** Layer 3 copied verbatim. A stack's trade name is never used as its ingredient. */
+export function productTruthFromSheet(p: SheetProduct): ProductTruth {
+  const undisclosed = compositionUndisclosed(p);
+  return {
+    activeIngredient: undisclosed ? undefined : p.active_ingredient,
+    supplierName: undisclosed ? p.active_ingredient : undefined,
+    supplierStrength: p.supplier_strength ?? undefined,
+    productClass: p.product_class,
+    mechanism: p.mechanism_summary,
+    evidence: p.evidence_status,
+    contentStatus: p.clinical_content_status,
+  };
+}
+
 export function createFixtureStore(now: Date = new Date()): Store {
   const s = emptyStore();
   const at = now.toISOString();
@@ -61,19 +82,21 @@ export function createFixtureStore(now: Date = new Date()): Store {
   const est = DEMO_ESTABLISHED_MEMBER;
   s.users[est.uid] = { id: est.uid, email: 'sam.example@example.invalid', displayName: est.name, role: 'MEMBER', createdAt: at, updatedAt: at };
 
-  // The PRICK range, from the brand character sheet. Clinical claims, dosing and
-  // registration are deliberately absent: every pathway starts unverified.
+  // The PRICK range, from the complete character sheet. Layer 3 and 4 fields
+  // are copied verbatim; anything the sheet leaves out stays empty, which the
+  // site shows as NEEDS VERIFICATION. Nothing is inferred or generated.
   for (const p of RANGE.products) {
     s.treatments[`trt-${p.id}`] = treatment(
       {
         id: `trt-${p.id}`,
         slug: p.id,
         name: p.name,
-        summary: p.what_it_is,
+        summary: p.one_line_outcome,
         clinicalDescription: '',
         category: p.category,
-        peptide: p.peptide,
-        outcomes: p.short_benefit_lines,
+        outcomes: [],
+        productTruth: productTruthFromSheet(p),
+        clinicalTruth: { reviewNote: p.regulatory_note },
         // Demo price only: no real pricing has been agreed.
         priceCents: 189_900,
         inventorySku: `PRK-${p.id.toUpperCase()}`,

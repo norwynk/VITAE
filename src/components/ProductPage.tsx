@@ -1,23 +1,34 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { feelingLine } from '@/brand/pens';
 import { formatRand } from '@/domain/model';
 import { useCatalogue } from '@/hooks/useCatalogue';
+import { NeedsVerification } from './brand/NeedsVerification';
 import { PenStage } from './brand/Pen';
 import { PenCard } from './brand/PenCard';
 import { worldStyle } from './brand/worldStyle';
 import { BrandPage } from './site/BrandPage';
 
 const REG_STATUS: Record<string, string> = {
-  UNCONFIRMED: 'Regulatory status not yet confirmed. This pen cannot be ordered until it is.',
-  VERIFIED: 'Regulatory status confirmed.',
+  UNCONFIRMED: 'Not yet confirmed for supply in South Africa. This pen cannot be ordered until it is.',
+  VERIFIED: 'Confirmed for supply.',
   NOT_PERMITTED: 'Not available.',
 };
 
+function Truth({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <dt>{label}</dt>
+      <dd>{children}</dd>
+    </div>
+  );
+}
+
 /**
- * Expanded product view: emotion first (outcome, feeling, transformation),
- * then what it is, then verified clinical information, eligibility,
- * screening, safety and the process.
+ * Expanded product view in the four content layers: desire (hero),
+ * transformation (colour band), product truth and clinical truth. Missing
+ * truth fields show NEEDS VERIFICATION; Layers 1 and 2 never stand in for them.
  */
 export function ProductPage({ slug }: { slug: string }) {
   const { pens, error } = useCatalogue();
@@ -47,6 +58,8 @@ export function ProductPage({ slug }: { slug: string }) {
   const { treatment: t, brand } = pen;
   const needsApproval = t.requiresClinicianApproval || t.requiresPrescription;
   const startHref = `/app?pen=${t.slug}`;
+  const truth = t.productTruth ?? {};
+  const clinical = t.clinicalTruth ?? {};
   const related = pens.filter((p) => p.treatment.id !== t.id && p.treatment.category === t.category);
 
   return (
@@ -61,6 +74,7 @@ export function ProductPage({ slug }: { slug: string }) {
             <span className="tag dark">{brand.category}</span>
             <h1 className="display product-hero__name">{t.name}</h1>
             <p className="serif-i product-hero__statement">{brand.hook}</p>
+            <p style={{ margin: 0, maxWidth: '46ch' }}>{brand.outcome}</p>
             {t.priceCents > 0 && (
               <p className="price" style={{ margin: 0 }}>
                 {formatRand(t.priceCents)} <span className="small muted">demo price{t.billing === 'MONTHLY' ? ' per month' : ''}</span>
@@ -102,79 +116,103 @@ export function ProductPage({ slug }: { slug: string }) {
           </div>
         </section>
 
-        {/* Emotion first */}
+        {/* Layer 2: transformation. A feeling, never a medical claim. */}
         <section className="story-band">
-          <div className="container story-band__grid">
-            <div data-reveal>
-              <p className="eyebrow">Outcome</p>
-              <p className="story-band__text">{brand.outcome}</p>
+          <div className="container">
+            <p className="layer-label" style={{ color: 'inherit', opacity: 0.8 }}>How it could feel</p>
+            <div className="story-band__grid">
+              <div data-reveal>
+                <p className="eyebrow">What you want</p>
+                <p className="story-band__text">{brand.outcome}</p>
+              </div>
+              <div data-reveal style={{ '--delay': '120ms' } as React.CSSProperties}>
+                <p className="eyebrow">Feeling</p>
+                <p className="story-band__feeling">{feelingLine(brand)}</p>
+              </div>
+              <div data-reveal style={{ '--delay': '240ms' } as React.CSSProperties}>
+                <p className="eyebrow">Transformation</p>
+                <p className="story-band__text">{brand.transformation}</p>
+              </div>
             </div>
-            <div data-reveal style={{ '--delay': '120ms' } as React.CSSProperties}>
-              <p className="eyebrow">Feeling</p>
-              <p className="story-band__feeling">{brand.feeling}</p>
-            </div>
-            <div data-reveal style={{ '--delay': '240ms' } as React.CSSProperties}>
-              <p className="eyebrow">Transformation</p>
-              <p className="story-band__text">{brand.transformation}</p>
-            </div>
+            <p className="small" style={{ marginTop: 'var(--space-4)', opacity: 0.9 }}>
+              This describes how people hope to feel. It is not a medical claim or a promise. What the pen actually
+              contains, and what the evidence supports, is below.
+            </p>
           </div>
         </section>
 
         <div className="container">
+          {/* Layer 3: product truth, verbatim from the catalogue. */}
           <section className="info-block" data-reveal>
-            <h2 className="display">For when</h2>
             <div>
-              <p className="serif-i" style={{ fontSize: 'var(--step-2)', lineHeight: 1.2 }}>{brand.cardBack}</p>
-              {brand.benefits.length > 0 && (
-                <ul className="outcome-list" style={{ marginTop: 'var(--space-3)' }}>
-                  {brand.benefits.map((b) => (
-                    <li key={b}>{b}</li>
-                  ))}
-                </ul>
+              <span className="layer-label">Product truth</span>
+              <h2 className="display">What&apos;s actually in it</h2>
+            </div>
+            <dl className="truth-list">
+              <Truth label="Active ingredient">
+                {truth.activeIngredient ? (
+                  truth.activeIngredient
+                ) : (
+                  <NeedsVerification
+                    what="activeIngredient"
+                    note={
+                      truth.supplierName
+                        ? `The supplier calls this "${truth.supplierName}" but has not disclosed the individual actives or ratios.`
+                        : undefined
+                    }
+                  />
+                )}
+              </Truth>
+              <Truth label="Strength supplied">
+                {truth.supplierStrength ? (
+                  <>
+                    {truth.supplierStrength} <span className="muted">(as listed by the supplier)</span>
+                    <br />
+                    <span className="small muted">A higher number on a pen does not mean it works better.</span>
+                  </>
+                ) : (
+                  <NeedsVerification what="supplierStrength" />
+                )}
+              </Truth>
+              <Truth label="Type of molecule">{truth.productClass || <NeedsVerification what="productClass" />}</Truth>
+              <Truth label="What it does in the body">{truth.mechanism || <NeedsVerification what="mechanism" />}</Truth>
+              <Truth label="What the evidence supports">{truth.evidence || <NeedsVerification what="evidence" />}</Truth>
+              {truth.contentStatus && (
+                <Truth label="Verification status">
+                  <span className="reviewer-note">Reviewer note: {truth.contentStatus}</span>
+                </Truth>
               )}
-              <p className="small muted" style={{ marginTop: 'var(--space-3)' }}>
-                These describe what people are hoping for, not a promise. Your clinician will talk you through what&apos;s
-                realistic for you.
-              </p>
-            </div>
+            </dl>
           </section>
 
+          {/* Layer 4: clinical truth. Only clinician-reviewed content; the rest needs verification. */}
           <section className="info-block" data-reveal>
-            <h2 className="display">What it actually is</h2>
-            <p>{t.summary}</p>
-          </section>
-
-          <section className="info-block" data-reveal>
-            <h2 className="display">Peptide / stack</h2>
             <div>
-              <p className="display" style={{ fontSize: 'var(--step-3)', lineHeight: 1 }}>{t.peptide || 'To be confirmed'}</p>
-              <p className="muted">Exact composition and strength are confirmed by your clinician as part of your plan.</p>
+              <span className="layer-label">Clinical truth</span>
+              <h2 className="display">The clinical bit</h2>
             </div>
-          </section>
-
-          <section className="info-block" data-reveal>
-            <h2 className="display">Verified clinical information</h2>
-            {/* Only verified clinical content belongs here. None has been supplied yet. */}
-            <div className="placeholder" data-placeholder="clinical">
-              <p style={{ margin: 0 }}>
-                Not yet verified. Clinical information for {t.name} will be published here once it has been reviewed and
-                approved by our clinical team.
-              </p>
-              {t.clinicalDescription && <p style={{ margin: 'var(--space-2) 0 0' }}>{t.clinicalDescription}</p>}
-            </div>
-          </section>
-
-          <section className="info-block" data-reveal>
-            <h2 className="display">Eligibility</h2>
-            <div>
-              <p>
-                Adults aged 18 and over, where a clinician decides after screening that it&apos;s appropriate. Not everyone
-                will be approved, and that&apos;s the point of the screening.
-              </p>
-              {t.requiredLabs.length > 0 && (
-                <p className="muted">Your clinician may ask for testing first ({t.requiredLabs.join(', ')}). If so, they&apos;ll arrange it.</p>
-              )}
-            </div>
+            <dl className="truth-list">
+              <Truth label="Approval status">
+                {clinical.approvalStatus || (
+                  <NeedsVerification what="approvalStatus" note={clinical.reviewNote ? `Reviewer note: ${clinical.reviewNote}` : undefined} />
+                )}
+              </Truth>
+              <Truth label="Local supply">{REG_STATUS[t.regulatoryStatus] ?? <NeedsVerification what="regulatoryStatus" />}</Truth>
+              <Truth label="Approved indication">{clinical.approvedIndication || <NeedsVerification what="approvedIndication" />}</Truth>
+              <Truth label="Who may be eligible">
+                {clinical.eligibility || <NeedsVerification what="eligibility" />}
+                <p className="small muted" style={{ margin: '0.5rem 0 0' }}>
+                  Whatever the criteria, PRICK only serves adults aged 18 and over, and a clinician decides after screening.
+                </p>
+              </Truth>
+              <Truth label="Route">{clinical.route || <NeedsVerification what="route" />}</Truth>
+              <Truth label="Dosing">{clinical.dosing || <NeedsVerification what="dosing" />}</Truth>
+              <Truth label="Warnings">{clinical.warnings || <NeedsVerification what="warnings" />}</Truth>
+              <Truth label="Contraindications">{clinical.contraindications || <NeedsVerification what="contraindications" />}</Truth>
+              <Truth label="Needs clinician approval">
+                {needsApproval ? 'Yes. You can only order it if a clinician approves it for you after screening.' : 'No.'}
+              </Truth>
+            </dl>
           </section>
 
           <section className="info-block" data-reveal>
@@ -190,14 +228,10 @@ export function ProductPage({ slug }: { slug: string }) {
 
           <section className="info-block" data-reveal>
             <h2 className="display">Safety</h2>
-            <div>
-              <p>{REG_STATUS[t.regulatoryStatus] ?? ''}</p>
-              <p>
-                {needsApproval ? 'Requires a clinician’s approval. ' : ''}Your clinician sets your plan; you can&apos;t
-                change the dose yourself. If something feels off, flag it in a check-in or message and it goes straight to
-                your clinician. In an emergency call 10177.
-              </p>
-            </div>
+            <p>
+              Your clinician sets your plan; you can&apos;t change the dose yourself. If something feels off, flag it in a
+              check-in or message and it goes straight to your clinician. In an emergency call 10177.
+            </p>
           </section>
 
           <section className="info-block" data-reveal>

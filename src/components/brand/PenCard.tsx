@@ -2,13 +2,16 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import type { BrandedPen } from '@/hooks/useCatalogue';
+import { feelingLine } from '@/brand/pens';
+import { NeedsVerification } from './NeedsVerification';
 import { PenStage } from './Pen';
 import { worldStyle } from './worldStyle';
 
 /**
- * Product card in three layers:
- * front (colour world, name, hook; hover pops the pen), flip (outcome,
- * feeling, transformation), then the full product page via "View the pen".
+ * Product card. Front is Layer 1 (desire: colour world, name, hook,
+ * one-line outcome; hover pops the pen). The flip is Layer 2
+ * (transformation: feeling, transformation, benefits). Layers 3 and 4 live
+ * on the product page behind "View the pen".
  */
 export function PenCard({ pen, index = 0 }: { pen: BrandedPen; index?: number }) {
   const { treatment: t, brand } = pen;
@@ -37,6 +40,7 @@ export function PenCard({ pen, index = 0 }: { pen: BrandedPen; index?: number })
             <PenStage colours={brand.colours} label={brand.penLabel} angle={index % 2 ? -62 : -54} fit={0.92} />
           </div>
           <p className="flip-card__hook">{brand.hook}</p>
+          <p className="flip-card__outcome">{brand.outcome}</p>
           <div className="flip-card__actions">
             <button type="button" className="btn small flip-card__btn-strong" onClick={() => setFlipped(true)} aria-expanded={flipped}>
               What you get
@@ -51,18 +55,30 @@ export function PenCard({ pen, index = 0 }: { pen: BrandedPen; index?: number })
           <h3 className="flip-card__name flip-card__name--back">{t.name}</h3>
           <dl className="flip-card__story">
             <div>
-              <dt>Outcome</dt>
-              <dd>{brand.outcome}</dd>
-            </div>
-            <div>
               <dt>Feeling</dt>
-              <dd className="flip-card__feeling">{brand.feeling}</dd>
+              <dd className="flip-card__feeling">{feelingLine(brand)}</dd>
             </div>
             <div>
               <dt>Transformation</dt>
               <dd>{brand.transformation}</dd>
             </div>
+            <div>
+              <dt>What you get</dt>
+              <dd>
+                {brand.benefits.length ? (
+                  <ul className="flip-card__benefits">
+                    {brand.benefits.map((b) => (
+                      <li key={b}>{b}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <NeedsVerification what="benefits" />
+                )}
+              </dd>
+            </div>
           </dl>
+          {/* Layers 1 and 2 describe a feeling; the facts live behind "View the pen". */}
+          <p className="flip-card__boundary">A feeling, not a medical claim. The facts are on the next page.</p>
           <div className="flip-card__actions">
             <Link href={href} className="btn small flip-card__btn-light">
               View the pen

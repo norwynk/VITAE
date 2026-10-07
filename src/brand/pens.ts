@@ -1,10 +1,10 @@
 /**
- * PRICK brand presentation for each product, from the character sheet in
- * `range.json`, keyed by catalogue slug.
+ * PRICK brand presentation: Layer 1 (desire) and Layer 2 (transformation)
+ * from the character sheet, keyed by catalogue slug.
  *
- * Presentation only: colour and the emotional copy the brand supplied. Product
- * facts (name, peptide, price, availability, approval rules) always come from
- * the catalogue via the repository. Never add dosing or invented claims here.
+ * These layers describe how people want to feel. They are never medical
+ * claims and never carry product facts: ingredients, strength, evidence and
+ * clinical information live on the catalogue record (Layers 3 and 4).
  */
 import type { Treatment } from '@/domain/model';
 import RANGE from './range.json';
@@ -30,13 +30,19 @@ export interface PenBrand {
   penLabel: string;
   category: string;
   colours: PenColours;
+  // Layer 1: desire
   hook: string;
-  whatItIs: string;
   outcome: string;
-  feeling: string;
+  // Layer 2: transformation
+  feeling: string[];
   transformation: string;
-  cardBack: string;
+  /** Customer-facing benefit statements. Empty means NEEDS VERIFICATION. */
   benefits: string[];
+}
+
+/** "Quieter. Calmer. Less preoccupied." */
+export function feelingLine(brand: Pick<PenBrand, 'feeling'>): string {
+  return brand.feeling.map((f) => `${f}.`).join(' ');
 }
 
 // ---------------------------------------------------------------------------
@@ -97,12 +103,11 @@ export const PEN_BRANDS: Record<string, PenBrand> = Object.fromEntries(
       category: p.category,
       colours: coloursFor(p.hero_colour),
       hook: p.front_hook,
-      whatItIs: p.what_it_is,
-      outcome: p.outcome,
+      outcome: p.one_line_outcome,
       feeling: p.feeling,
       transformation: p.transformation,
-      cardBack: p.card_back_copy,
-      benefits: p.short_benefit_lines,
+      // The sheet supplies no benefit statements yet; never write our own.
+      benefits: [],
     } satisfies PenBrand,
   ]),
 );
@@ -115,12 +120,10 @@ export function penBrand(treatment: Pick<Treatment, 'slug' | 'name' | 'category'
       penLabel: treatment.name.toUpperCase(),
       category: treatment.category,
       colours: coloursFor('#2a2a2e'),
-      hook: 'New in. Details coming soon.',
-      whatItIs: treatment.summary,
-      outcome: 'Details coming soon.',
-      feeling: 'Details coming soon.',
-      transformation: 'Details coming soon.',
-      cardBack: treatment.summary,
+      hook: treatment.summary,
+      outcome: treatment.summary,
+      feeling: [],
+      transformation: '',
       benefits: [],
     }
   );

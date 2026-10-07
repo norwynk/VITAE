@@ -26,6 +26,8 @@ test('home shows colour cards that flip to outcome, feeling and transformation',
   await card.getByRole('button', { name: 'What you get' }).click();
   await expect(feeling).toBeVisible();
   await expect(card.getByText('Transformation')).toBeVisible();
+  await expect(card.locator('[data-needs-verification="benefits"]')).toBeVisible();
+  await expect(card.getByText('A feeling, not a medical claim.', { exact: false })).toBeVisible();
   await card.getByRole('button', { name: 'Flip back' }).click();
   await expect(feeling).toBeHidden();
   // Placeholders, never invented testimonials.
@@ -40,11 +42,24 @@ test('shop filters by category and the expanded view keeps the clinical gate', a
   await expect(page.getByRole('article', { name: 'The Glow Up' })).toHaveCount(0);
   await page.getByRole('article', { name: 'Deep Sleep Rebuild' }).getByRole('link', { name: 'View the pen' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Deep Sleep Rebuild' })).toBeVisible();
-  for (const section of ['What it actually is', 'Peptide / stack', 'Verified clinical information', 'Eligibility', 'Screening', 'Safety', 'How the process works']) {
+  for (const section of ["What's actually in it", 'The clinical bit', 'Screening', 'Safety', 'How the process works']) {
     await expect(page.getByRole('heading', { name: section, exact: true })).toBeVisible();
   }
-  await expect(page.getByText('CJC-1295 + Ipamorelin')).toBeVisible();
-  await expect(page.getByText(/Not yet verified\. Clinical information for Deep Sleep Rebuild/)).toBeVisible();
+  await expect(page.getByText('CJC-1295 without DAC + Ipamorelin', { exact: true })).toBeVisible();
+  await expect(page.getByText('A higher number on a pen does not mean it works better.')).toBeVisible();
+  await expect(page.getByText('It is not a medical claim or a promise.', { exact: false })).toBeVisible();
+  await expect(page.locator(`[data-needs-verification="approvalStatus"]`)).toContainText("Reviewer note:");
+  // Route, dosing, warnings, contraindications, indication and eligibility are not supplied.
+  for (const field of ['route', 'dosing', 'warnings', 'contraindications', 'approvedIndication', 'eligibility']) {
+    await expect(page.locator(`[data-needs-verification="${field}"]`)).toBeVisible();
+  }
+
+  // A stack name is never shown as an ingredient.
+  await page.goto('/pens/the-glow-up');
+  const ingredient = page.locator('[data-needs-verification="activeIngredient"]');
+  await expect(ingredient).toBeVisible();
+  await expect(ingredient).toContainText('has not disclosed the individual actives');
+  await page.goto('/pens/deep-sleep-rebuild');
   await expect(page.getByText('You can only order it if your clinician approves it for you.')).toBeVisible();
   await expect(page.getByRole('button', { name: /add to cart|buy now/i })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Start screening' }).first()).toHaveAttribute('href', '/app?pen=deep-sleep-rebuild');

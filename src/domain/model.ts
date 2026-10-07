@@ -317,8 +317,10 @@ export interface Treatment {
   requiredLabs: string[];
   followUpDays: number;
   inventorySku: string;
-  /** Peptide or stack the pathway is built around, as named in the catalogue. */
-  peptide?: string;
+  /** Layer 3. Missing fields mean NEEDS VERIFICATION, never a generated value. */
+  productTruth?: ProductTruth;
+  /** Layer 4. Missing fields mean NEEDS VERIFICATION, never a generated value. */
+  clinicalTruth?: ClinicalTruth;
   demoFictional: boolean;
   createdAt: string;
   updatedAt: string;
@@ -335,6 +337,51 @@ export const REQUEST_STATUSES = [
 export type RequestStatus = (typeof REQUEST_STATUSES)[number];
 /** A request in one of these states blocks a duplicate request for the same treatment. */
 export const PENDING_REQUEST_STATUSES: readonly RequestStatus[] = ['OPEN', 'IN_REVIEW', 'NEEDS_INFORMATION'];
+
+/**
+ * What is actually in the pen, as supplied. `activeIngredient` stays empty
+ * when the supplier has not disclosed the composition: a stack's trade name
+ * is kept in `supplierName` and is never treated as an ingredient.
+ */
+export interface ProductTruth {
+  activeIngredient?: string;
+  supplierName?: string;
+  /** Exactly as the supplier lists it. Not a measure of effectiveness. */
+  supplierStrength?: string;
+  productClass?: string;
+  mechanism?: string;
+  evidence?: string;
+  /** Internal note on what is and isn't verified. */
+  contentStatus?: string;
+}
+
+/** Clinician-reviewed facts. Nothing here is filled in automatically. */
+export interface ClinicalTruth {
+  /** Approved or investigational status, once clinically and legally reviewed. */
+  approvalStatus?: string;
+  /**
+   * Internal reviewer note from the character sheet. It mixes facts with
+   * instructions to the team, so it is never shown as customer copy.
+   */
+  reviewNote?: string;
+  approvedIndication?: string;
+  eligibility?: string;
+  route?: string;
+  dosing?: string;
+  warnings?: string;
+  contraindications?: string;
+}
+
+export const PRODUCT_TRUTH_FIELDS = ['activeIngredient', 'supplierStrength', 'productClass', 'mechanism', 'evidence'] as const;
+export const CLINICAL_TRUTH_FIELDS = ['approvalStatus', 'approvedIndication', 'eligibility', 'route', 'dosing', 'warnings', 'contraindications'] as const;
+
+/** Fields a product page must show as NEEDS VERIFICATION because they are missing. */
+export function missingTruth(t: Pick<Treatment, 'productTruth' | 'clinicalTruth'>): string[] {
+  const missing: string[] = [];
+  for (const f of PRODUCT_TRUTH_FIELDS) if (!t.productTruth?.[f]?.trim()) missing.push(`productTruth.${f}`);
+  for (const f of CLINICAL_TRUTH_FIELDS) if (!t.clinicalTruth?.[f]?.trim()) missing.push(`clinicalTruth.${f}`);
+  return missing;
+}
 
 export interface TreatmentRequest {
   id: string;

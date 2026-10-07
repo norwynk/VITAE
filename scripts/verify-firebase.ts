@@ -19,6 +19,8 @@ const PASSWORD = 'emulator-only-password';
 initializeApp({ projectId: PROJECT, storageBucket: `${PROJECT}.appspot.com` });
 const auth = getAuth();
 const db = getFirestore();
+// Match the functions: empty optional fields (e.g. undisclosed ingredients) are omitted.
+db.settings({ ignoreUndefinedProperties: true });
 
 let passed = 0;
 async function step(name: string, fn: () => Promise<void>) {

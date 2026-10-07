@@ -1,281 +1,342 @@
 {
   "brand": "PRICK",
-  "interaction_pattern": {
-    "front": "Visual-first product world. Large pen, colour, texture, short emotional hook.",
-    "hover_or_tap": "Reveal outcome, feeling and one-line transformation.",
-    "expanded_view": "Show What it is, Outcome, Feeling, Transformation, then verified clinical/science content.",
-    "rule": "Outcome and emotion lead. Clinical detail follows. Never invent medical claims."
+  "product_spec_layers": {
+    "layer_1_desire": "Front of card: colour world, product name, emotional hook, one-line outcome.",
+    "layer_2_transformation": "Tap/hover: feeling, transformation, 2-3 customer-facing benefit statements.",
+    "layer_3_product_truth": "Expanded view: active ingredient, supplier-listed strength, product class, mechanism summary and evidence status.",
+    "layer_4_clinical": "Clinician-reviewed indication, eligibility, contraindications, safety, route, dose and patient information.",
+    "hard_rule": "Never convert research rationale into an approved medical claim. Never infer composition of proprietary stacks. Missing formulation data must remain marked as missing."
   },
   "products": [
     {
       "id": "total-body-reset",
       "name": "Total Body Reset",
-      "peptide": "Retatrutide",
       "category": "Weight & Body",
       "hero_colour": "#FF6A21",
+      "active_ingredient": "Retatrutide",
+      "supplier_strength": "30 mg pen",
       "front_hook": "A different chapter with your weight.",
-      "what_it_is": "A weight-management care pathway built around Retatrutide.",
-      "outcome": "A lighter, more in-control relationship with your body and weight goals.",
-      "feeling": "More capable. More in control. Less stuck.",
+      "one_line_outcome": "A lighter, more in-control relationship with your body and weight goals.",
+      "feeling": [
+        "More capable",
+        "More in control",
+        "Less stuck"
+      ],
       "transformation": "From feeling trapped in the same cycle to feeling like your body is finally moving in the direction you want.",
-      "card_back_copy": "For when you want a real reset in how your body feels, looks and responds. Built around a doctor-led pathway, with the goal of helping you feel lighter, more in control and more confident in the next chapter.",
-      "short_benefit_lines": [
-        "Weight-management support",
-        "More control around your body goals",
-        "A clearer path forward"
-      ]
+      "product_class": "Investigational GIP/GLP-1/glucagon receptor agonist.",
+      "mechanism_summary": "Retatrutide is a single molecule designed to activate GIP, GLP-1 and glucagon receptors, pathways involved in appetite, glucose regulation and energy balance.",
+      "evidence_status": "Phase 3 clinical development. Public Phase 3 data report substantial weight loss in studied populations, but the molecule remains investigational.",
+      "regulatory_note": "Not currently approved by FDA and described by Lilly as investigational. Local South African legal and regulatory status must be checked before any public marketing or supply.",
+      "product_detail_copy": "A doctor-led weight-management pathway built around retatrutide. The customer-facing story should lead with control, momentum and a new chapter with weight, while the detail view explains the active ingredient, triple-agonist mechanism, investigational status and clinician-led screening.",
+      "clinical_content_status": "Ingredient and mechanism supported by public sources. Exact pen formulation, route, dosing and local legality require clinical/regulatory sign-off."
     },
     {
       "id": "craving-control",
       "name": "Craving Control",
-      "peptide": "Tirzepatide",
       "category": "Weight & Body",
       "hero_colour": "#FF3D8D",
+      "active_ingredient": "Tirzepatide",
+      "supplier_strength": "30 mg pen",
       "front_hook": "Stop letting food take up so much space in your head.",
-      "what_it_is": "A doctor-led appetite and weight-management pathway built around Tirzepatide.",
-      "outcome": "Less mental noise around food and more freedom to get on with your day.",
-      "feeling": "Quieter. Calmer. Less preoccupied.",
+      "one_line_outcome": "Less mental noise around food and more freedom to get on with your day.",
+      "feeling": [
+        "Quieter",
+        "Calmer",
+        "Less preoccupied"
+      ],
       "transformation": "From food constantly occupying your attention to feeling like you have room in your head for everything else.",
-      "card_back_copy": "For when cravings, appetite or food thoughts feel louder than you want them to. The outcome is not just eating less. It is feeling less mentally consumed by food and more able to focus on your life.",
-      "short_benefit_lines": [
-        "Less food noise",
-        "More mental space",
-        "More control around appetite"
-      ]
+      "product_class": "Dual GIP/GLP-1 receptor agonist.",
+      "mechanism_summary": "Tirzepatide activates GIP and GLP-1 receptors and has established clinical evidence in chronic weight management and type 2 diabetes, depending on product and jurisdiction.",
+      "evidence_status": "Large randomized clinical-trial evidence base exists for weight management and glycaemic control.",
+      "regulatory_note": "Prescription medicine. Public-facing claims, eligibility and indications must match the locally authorised product and jurisdiction.",
+      "product_detail_copy": "The emotional story is freedom from constant food noise. The detail layer should then explain that the pen contains tirzepatide, a dual GIP/GLP-1 receptor agonist, and place eligibility, safety and prescription information directly behind the outcome-led copy.",
+      "clinical_content_status": "Ingredient and class are established. Exact supplier pen strength, route and local label need verification."
     },
     {
       "id": "body-sculpt",
       "name": "Body Sculpt",
-      "peptide": "Tesamorelin",
       "category": "Weight & Body",
       "hero_colour": "#B874FF",
+      "active_ingredient": "Tesamorelin",
+      "supplier_strength": "10 mg pen",
       "front_hook": "Less of what you don’t want. More of the shape you do.",
-      "what_it_is": "A body-composition pathway built around Tesamorelin.",
-      "outcome": "A body shape that feels closer to the one you want to see and live in.",
-      "feeling": "Sharper. More defined. More confident.",
+      "one_line_outcome": "A body-composition pathway aimed at moving you closer to the shape you want.",
+      "feeling": [
+        "Sharper",
+        "More defined",
+        "More confident"
+      ],
       "transformation": "From feeling dissatisfied with body composition to feeling more at home in your shape.",
-      "card_back_copy": "For when the goal is not simply weight loss, but shape. This pathway is about helping you move toward a body composition that feels more intentional, more defined and more like you.",
-      "short_benefit_lines": [
-        "Body-composition support",
-        "A more defined shape",
-        "More confidence in your body"
-      ]
+      "product_class": "Growth-hormone-releasing factor analogue.",
+      "mechanism_summary": "Tesamorelin stimulates growth-hormone release through the GHRH receptor. Its approved U.S. indication is reduction of excess abdominal fat in adults with HIV-associated lipodystrophy, not general cosmetic body sculpting.",
+      "evidence_status": "Established evidence for the approved HIV-lipodystrophy indication; general body-composition positioning needs separate clinical justification.",
+      "regulatory_note": "Do not present broad cosmetic fat-loss or body-sculpting claims as approved indications unless locally authorised.",
+      "product_detail_copy": "Lead with shape, definition and confidence. The expanded product view should clearly distinguish the desired outcome from the medicine's established clinical indication and explain that any use outside that indication requires clinician oversight.",
+      "clinical_content_status": "Mechanism and approved U.S. indication supported. Consumer positioning requires strict review."
     },
     {
       "id": "the-glow-up",
       "name": "The Glow Up",
-      "peptide": "Glow Stack",
       "category": "Appearance & Skin",
       "hero_colour": "#FF0F78",
+      "active_ingredient": "Glow Stack",
+      "supplier_strength": "70 mg pen",
       "front_hook": "Look as good as you want to feel.",
-      "what_it_is": "A skin and appearance-focused peptide stack.",
-      "outcome": "Skin that looks brighter, fresher and more alive.",
-      "feeling": "Radiant. Fresh. Confident.",
-      "transformation": "From looking tired or flat to feeling like your outside finally matches how good you want to feel inside.",
-      "card_back_copy": "For when you want to look in the mirror and see more life looking back. The Glow Up is about radiance, freshness and that visible sense that you are taking care of yourself.",
-      "short_benefit_lines": [
-        "Brighter-looking skin",
-        "A fresher appearance",
-        "More confidence in how you look"
-      ]
+      "one_line_outcome": "A skin and appearance-focused pathway built around radiance, freshness and confidence.",
+      "feeling": [
+        "Radiant",
+        "Fresh",
+        "Confident"
+      ],
+      "transformation": "From looking tired or flat to feeling like your outside better matches how good you want to feel inside.",
+      "product_class": "Supplier-defined peptide combination.",
+      "mechanism_summary": "The supplied product sheet describes a combination of performance and recovery peptides, but does not list the individual actives or ratios.",
+      "evidence_status": "Cannot be clinically characterised as a single product until the exact composition is confirmed.",
+      "regulatory_note": "Do not publish ingredient-specific mechanism or efficacy claims until the full formulation, concentration and route are supplied and reviewed.",
+      "product_detail_copy": "This is one of the strongest emotional products in the range. The front should sell radiance and freshness. The detail drawer must list the actual active ingredients once confirmed, then explain each ingredient's role separately rather than treating 'Glow Stack' as a medically established ingredient.",
+      "clinical_content_status": "COMPOSITION REQUIRED FROM SUPPLIER."
     },
     {
       "id": "skin-rewind",
       "name": "Skin Rewind",
-      "peptide": "GHK-Cu 50mg",
       "category": "Appearance & Skin",
       "hero_colour": "#42D6C8",
+      "active_ingredient": "GHK-Cu",
+      "supplier_strength": "50 mg pen",
       "front_hook": "When you want the mirror to look a little kinder.",
-      "what_it_is": "A skin-focused pathway built around GHK-Cu 50mg.",
-      "outcome": "A fresher, more restored-looking complexion.",
-      "feeling": "Refreshed. Restored. Better in your skin.",
-      "transformation": "From seeing tiredness and wear in the mirror to seeing a fresher, more cared-for version of yourself.",
-      "card_back_copy": "For when your skin feels like it is showing more stress than you want it to. Skin Rewind is positioned around helping you feel fresher, more restored and better when you catch your reflection.",
-      "short_benefit_lines": [
-        "Fresher-looking skin",
-        "A more restored appearance",
-        "More confidence in the mirror"
-      ]
+      "one_line_outcome": "A fresher, more restored-looking skin-focused pathway.",
+      "feeling": [
+        "Refreshed",
+        "Restored",
+        "Better in your skin"
+      ],
+      "transformation": "From seeing more stress and wear than you want to seeing a fresher, more cared-for version of yourself.",
+      "product_class": "Copper-binding tripeptide / metallopeptide.",
+      "mechanism_summary": "GHK-Cu is a copper complex of glycyl-L-histidyl-L-lysine. It has been studied for extracellular-matrix remodelling, inflammation, angiogenesis and tissue repair, but injectable human evidence is limited.",
+      "evidence_status": "Substantial laboratory and translational interest; limited human evidence for injectable use.",
+      "regulatory_note": "FDA has noted limited human safety data and potential immunogenicity concerns for compounded injectable GHK-Cu.",
+      "product_detail_copy": "Lead with a fresher, more restored appearance. Behind the image, explain what GHK-Cu is, why copper-peptide biology is of interest, and clearly state that injectable evidence is limited.",
+      "clinical_content_status": "Mechanism supported by literature; injectable claims require clinician/regulatory review."
     },
     {
       "id": "skin-rewind-reserve",
       "name": "Skin Rewind Reserve",
-      "peptide": "GHK-Cu 100mg",
       "category": "Appearance & Skin",
       "hero_colour": "#6E42C1",
+      "active_ingredient": "GHK-Cu",
+      "supplier_strength": "100 mg pen",
       "front_hook": "The elevated Skin Rewind.",
-      "what_it_is": "The higher-strength Skin Rewind pathway built around GHK-Cu 100mg.",
-      "outcome": "A more premium, intensive skin-support experience.",
-      "feeling": "Elevated. Invested. Luxurious.",
-      "transformation": "From wanting basic skin support to choosing a more elevated, deliberate approach to how your skin looks and feels.",
-      "card_back_copy": "For someone who wants the more elevated version of the Skin Rewind experience. Same visual world, but positioned as the premium, more intensive path.",
-      "short_benefit_lines": [
-        "Elevated skin support",
-        "Premium treatment pathway",
-        "A more intensive approach"
-      ]
+      "one_line_outcome": "The higher-strength version of the Skin Rewind skin-support concept.",
+      "feeling": [
+        "Elevated",
+        "Invested",
+        "Luxurious"
+      ],
+      "transformation": "From wanting basic skin support to choosing a more intensive, deliberate skin-focused pathway.",
+      "product_class": "Copper-binding tripeptide / metallopeptide.",
+      "mechanism_summary": "Same active molecule as Skin Rewind, but with a supplier-listed 100 mg pen strength.",
+      "evidence_status": "Injectable human evidence remains limited. Higher nominal content is not proof of greater clinical efficacy.",
+      "regulatory_note": "Avoid 'stronger is better' or superiority claims unless supported by product-specific evidence.",
+      "product_detail_copy": "Position Reserve as the premium version visually, not as automatically superior clinically. The detail view should explain that it uses the same GHK-Cu molecule at a different supplier-listed strength and avoid implying linear benefit with dose.",
+      "clinical_content_status": "Strength comes from supplier sheet; superiority claims are NOT verified."
     },
     {
       "id": "holiday-tan",
       "name": "Holiday Tan",
-      "peptide": "Melanotan II",
       "category": "Appearance & Skin",
       "hero_colour": "#FFB000",
+      "active_ingredient": "Melanotan II",
+      "supplier_strength": "10 mg pen",
       "front_hook": "That just-got-back look, without waiting for the holiday.",
-      "what_it_is": "A tanning-focused pathway built around Melanotan II.",
-      "outcome": "A sun-kissed look that feels like you have just come back from somewhere good.",
-      "feeling": "Sun-kissed. Fresh. Holiday-ready.",
-      "transformation": "From pale, flat or wintery to looking like life has been a little sunnier lately.",
-      "card_back_copy": "For when you want that just-back-from-holiday look. The emotional outcome is simple: warmer, fresher, more sun-kissed and more alive.",
-      "short_benefit_lines": [
-        "A sun-kissed appearance",
-        "Holiday-look energy",
-        "A warmer-looking complexion"
-      ]
+      "one_line_outcome": "A tanning-focused concept aimed at a more sun-kissed appearance.",
+      "feeling": [
+        "Sun-kissed",
+        "Fresh",
+        "Holiday-ready"
+      ],
+      "transformation": "From feeling pale or wintery to wanting a warmer, more sun-kissed appearance.",
+      "product_class": "Synthetic melanocortin peptide analogue.",
+      "mechanism_summary": "Melanotan II acts on melanocortin receptors and can stimulate melanogenesis.",
+      "evidence_status": "Unapproved for tanning in major regulated markets such as Australia. Regulators have raised safety, quality and dosing concerns.",
+      "regulatory_note": "High-risk marketing area. Do not imply that Melanotan II makes tanning safe or that the product is approved for tanning unless local authorisation explicitly supports that claim.",
+      "product_detail_copy": "The emotional sell is 'just got back' energy. The product detail must immediately temper that with clear status, safety and clinician oversight, because this ingredient has significant regulatory sensitivity.",
+      "clinical_content_status": "Mechanism known. Marketing and supply status require local legal/regulatory confirmation."
     },
     {
       "id": "all-day-energy",
       "name": "All-Day Energy",
-      "peptide": "MOTS-c",
       "category": "Energy, Sleep & Recovery",
       "hero_colour": "#FFEA00",
+      "active_ingredient": "MOTS-c",
+      "supplier_strength": "40 mg pen",
       "front_hook": "Still have something left when the day isn’t finished yet.",
-      "what_it_is": "An energy-focused pathway built around MOTS-c.",
-      "outcome": "More usable energy across the day.",
-      "feeling": "Switched on. Capable. Still going.",
-      "transformation": "From fading before the day is done to feeling like you still have something left for work, training, people and life.",
-      "card_back_copy": "For when your day keeps going after your energy has checked out. The goal is simple: feel like you have more left in the tank when you still have things you want to do.",
-      "short_benefit_lines": [
-        "More day-long energy",
-        "Less end-of-day drop-off",
-        "More capacity for real life"
-      ]
+      "one_line_outcome": "An energy-focused concept for people who want more usable capacity across the day.",
+      "feeling": [
+        "Switched on",
+        "Capable",
+        "Still going"
+      ],
+      "transformation": "From fading before the day is done to feeling like you have more left for work, training, people and life.",
+      "product_class": "Mitochondrial-derived peptide.",
+      "mechanism_summary": "MOTS-c is a 16-amino-acid mitochondrial-derived peptide studied for metabolic signalling, stress adaptation and energy homeostasis.",
+      "evidence_status": "Promising research area, but much of the evidence is preclinical or early translational. Robust human evidence for general energy enhancement is not established.",
+      "regulatory_note": "Avoid definitive energy, endurance, fat-loss or anti-ageing claims without product-specific clinical support.",
+      "product_detail_copy": "Lead with usable energy in real life. Behind the card, explain that MOTS-c is a mitochondrial-derived peptide and make the research status visible rather than presenting exploratory biology as settled clinical benefit.",
+      "clinical_content_status": "Mechanism supported by peer-reviewed literature; consumer efficacy claims need review."
     },
     {
       "id": "deep-sleep-rebuild",
       "name": "Deep Sleep Rebuild",
-      "peptide": "CJC-1295 + Ipamorelin",
       "category": "Energy, Sleep & Recovery",
       "hero_colour": "#1267E8",
+      "active_ingredient": "CJC-1295 without DAC + Ipamorelin",
+      "supplier_strength": "10 mg pen",
       "front_hook": "Make your nights count again.",
-      "what_it_is": "A sleep and recovery-focused pathway built around CJC-1295 and Ipamorelin.",
-      "outcome": "Deeper-feeling rest and better mornings.",
-      "feeling": "Rested. Rebuilt. Clearer.",
-      "transformation": "From getting through the night to waking up feeling like the night actually did something for you.",
-      "card_back_copy": "For when sleep technically happens, but recovery does not feel like it does. The outcome is a night that feels more restorative and a morning that feels less like recovery from sleep itself.",
-      "short_benefit_lines": [
-        "Deeper-feeling rest",
-        "Better recovery overnight",
-        "Brighter mornings"
-      ]
+      "one_line_outcome": "A sleep-and-recovery concept centred on deeper-feeling rest and better mornings.",
+      "feeling": [
+        "Rested",
+        "Rebuilt",
+        "Clearer"
+      ],
+      "transformation": "From getting through the night to wanting to wake up feeling like the night actually restored you.",
+      "product_class": "GHRH analogue + growth-hormone secretagogue combination.",
+      "mechanism_summary": "CJC-1295 analogues act on growth-hormone-releasing hormone pathways; ipamorelin is a ghrelin-receptor agonist and growth-hormone secretagogue.",
+      "evidence_status": "Human data for this exact combination and for sleep outcomes are limited. FDA has flagged safety and data gaps for compounded CJC-1295 and ipamorelin.",
+      "regulatory_note": "Do not promise deeper sleep, fat loss, tissue repair or growth-hormone benefits as established outcomes without clinician-approved evidence.",
+      "product_detail_copy": "The emotional story is restorative nights and better mornings. The clinical layer must identify the exact CJC-1295 form, the ratio with ipamorelin and the limited evidence for the marketed sleep outcome.",
+      "clinical_content_status": "Exact ingredient ratio and formulation REQUIRED from supplier."
     },
     {
       "id": "rapid-recovery",
       "name": "Rapid Recovery",
-      "peptide": "Wolverine Stack",
       "category": "Energy, Sleep & Recovery",
       "hero_colour": "#00B85A",
+      "active_ingredient": "Wolverine Stack",
+      "supplier_strength": "20 mg pen",
       "front_hook": "Get back to doing what you love sooner.",
-      "what_it_is": "A recovery-focused peptide stack.",
-      "outcome": "Less time feeling sidelined and more time feeling ready to move again.",
-      "feeling": "Capable. Recovered. Back in it.",
-      "transformation": "From feeling held back by recovery to feeling like you can return to the things your body lets you enjoy.",
-      "card_back_copy": "For when being out of action is the part you hate most. Rapid Recovery is emotionally about getting back to movement, training, routine and the parts of life that make you feel like yourself.",
-      "short_benefit_lines": [
-        "Recovery support",
-        "A faster return to routine",
-        "More confidence in movement"
-      ]
+      "one_line_outcome": "A recovery-focused concept built around getting back to movement, routine and the things you enjoy.",
+      "feeling": [
+        "Capable",
+        "Recovered",
+        "Back in it"
+      ],
+      "transformation": "From feeling sidelined by recovery to wanting to return to your normal rhythm sooner.",
+      "product_class": "Supplier-defined peptide combination.",
+      "mechanism_summary": "The supplied sheet describes an advanced tissue-repair and regeneration stack, but it does not disclose the active ingredients or ratios.",
+      "evidence_status": "Cannot be clinically characterised or verified until exact stack composition is supplied.",
+      "regulatory_note": "Do not publish tissue-healing, inflammation or accelerated-recovery claims until the exact actives, evidence and regulatory position are reviewed.",
+      "product_detail_copy": "Sell the feeling of getting back to your life, not comic-book healing. Behind the card, the stack must be broken down ingredient by ingredient once the supplier confirms composition.",
+      "clinical_content_status": "COMPOSITION REQUIRED FROM SUPPLIER."
     },
     {
       "id": "age-defiance",
       "name": "Age Defiance",
-      "peptide": "NAD+",
       "category": "Energy, Sleep & Recovery",
       "hero_colour": "#FF4F45",
+      "active_ingredient": "NAD+",
+      "supplier_strength": null,
       "front_hook": "Getting older doesn’t have to mean feeling older.",
-      "what_it_is": "A longevity and vitality-focused pathway built around NAD+.",
-      "outcome": "More vitality and a stronger sense of staying engaged with life.",
-      "feeling": "Vital. Capable. Still yourself.",
+      "one_line_outcome": "A vitality and healthy-ageing concept focused on staying engaged with life.",
+      "feeling": [
+        "Vital",
+        "Capable",
+        "Still yourself"
+      ],
       "transformation": "From feeling like age is becoming the story to feeling like you still have plenty of story left.",
-      "card_back_copy": "For when you are less interested in your age than in how you feel living it. Age Defiance is positioned around vitality, presence and staying fully engaged in the life you are already building.",
-      "short_benefit_lines": [
-        "Vitality support",
-        "More energy for life",
-        "A more capable sense of ageing"
-      ]
+      "product_class": "Nicotinamide adenine dinucleotide, a cellular redox cofactor.",
+      "mechanism_summary": "NAD+ is central to cellular energy metabolism and signalling. Human studies of NAD-boosting strategies show biological target engagement, but clinical effectiveness for anti-ageing and wellness outcomes remains inconclusive.",
+      "evidence_status": "Evidence is stronger for some oral NAD+ precursors than for parenteral NAD+ itself; direct injectable anti-ageing outcomes are not well established.",
+      "regulatory_note": "Do not imply proven anti-ageing effects. Exact route, formulation and strength must be confirmed.",
+      "product_detail_copy": "Lead with vitality, not age anxiety. The expanded view should explain NAD+'s cellular role while clearly separating biological plausibility from proven anti-ageing outcomes.",
+      "clinical_content_status": "SUPPLIER SPEC REQUIRED for strength, route and formulation."
     },
     {
       "id": "hormone-reset",
       "name": "Hormone Reset",
-      "peptide": "Kisspeptin",
       "category": "Hormones, Intimacy & Mind",
       "hero_colour": "#C65B7C",
+      "active_ingredient": "Kisspeptin",
+      "supplier_strength": "10 mg pen",
       "front_hook": "When you haven’t quite felt like yourself lately.",
-      "what_it_is": "A hormone-focused pathway built around Kisspeptin.",
-      "outcome": "A greater sense of rhythm, balance and feeling like yourself again.",
-      "feeling": "Balanced. Familiar. More like you.",
-      "transformation": "From feeling subtly off or disconnected from yourself to feeling more settled in your own rhythm again.",
-      "card_back_copy": "For that hard-to-describe feeling that something is just off. The transformation is not about becoming someone new. It is about feeling more like yourself again.",
-      "short_benefit_lines": [
-        "Hormone-focused support",
-        "A greater sense of balance",
-        "More like yourself again"
-      ]
+      "one_line_outcome": "A hormone-focused concept centred on rhythm, balance and feeling more like yourself.",
+      "feeling": [
+        "Balanced",
+        "Familiar",
+        "More like you"
+      ],
+      "transformation": "From feeling subtly off or disconnected from yourself to wanting to feel more settled in your own rhythm again.",
+      "product_class": "Endogenous neuropeptide / KISS1 receptor pathway.",
+      "mechanism_summary": "Kisspeptin is a key regulator of the hypothalamic-pituitary-gonadal axis and stimulates GnRH signalling, influencing downstream reproductive hormones.",
+      "evidence_status": "Studied in human reproductive endocrinology, but many proposed wellness, libido and hormone-balancing uses remain investigational.",
+      "regulatory_note": "Avoid generic 'balances hormones', fertility or libido claims across all users. Indication, sex, reproductive context and eligibility matter.",
+      "product_detail_copy": "The emotional outcome is feeling like yourself again. The detail view should explain kisspeptin's role in reproductive hormone signalling without collapsing that into a vague 'hormone balance' promise.",
+      "clinical_content_status": "Mechanism supported; consumer claims require clinician/regulatory approval."
     },
     {
       "id": "bedroom-confidence",
       "name": "Bedroom Confidence",
-      "peptide": "PT-141",
       "category": "Hormones, Intimacy & Mind",
       "hero_colour": "#8E1F5D",
+      "active_ingredient": "PT-141 / Bremelanotide",
+      "supplier_strength": "10 mg pen",
       "front_hook": "Want it again. Feel wanted again.",
-      "what_it_is": "An intimacy-focused pathway built around PT-141.",
-      "outcome": "More confidence, desire and presence in intimate moments.",
-      "feeling": "Wanted. Present. Confident.",
-      "transformation": "From feeling disconnected from intimacy to feeling like that part of you has a place in your life again.",
-      "card_back_copy": "For when intimacy has gone quieter than you want it to. The outcome is not performance for performance’s sake. It is confidence, desire, presence and feeling connected to that part of yourself again.",
-      "short_benefit_lines": [
-        "Intimacy support",
-        "More confidence",
-        "A stronger sense of desire and presence"
-      ]
+      "one_line_outcome": "An intimacy-focused pathway centred on confidence, desire and presence.",
+      "feeling": [
+        "Wanted",
+        "Present",
+        "Confident"
+      ],
+      "transformation": "From feeling disconnected from intimacy to wanting that part of yourself to feel present again.",
+      "product_class": "Melanocortin receptor agonist.",
+      "mechanism_summary": "Bremelanotide activates melanocortin receptors. In the U.S., Vyleesi is approved for acquired, generalized hypoactive sexual desire disorder in premenopausal women under specific conditions.",
+      "evidence_status": "Clinical evidence exists for the approved HSDD indication. The U.S. label states it is not indicated to enhance sexual performance and is not indicated for men or postmenopausal women.",
+      "regulatory_note": "Do not market as a general libido or performance enhancer. Local approved indication and patient eligibility must control copy.",
+      "product_detail_copy": "The front sells confidence and reconnection. The clinical layer must be unusually precise here because the approved indication is narrow and does not support a general sexual-performance claim.",
+      "clinical_content_status": "Mechanism and U.S. indication verified; local indication and 10 mg pen format require review."
     },
     {
       "id": "sharp-mind",
       "name": "Sharp Mind",
-      "peptide": "Semax",
       "category": "Hormones, Intimacy & Mind",
       "hero_colour": "#8EEA12",
+      "active_ingredient": "Semax",
+      "supplier_strength": "10 mg pen",
       "front_hook": "For the days when you want your brain properly switched on.",
-      "what_it_is": "A focus and mental-performance pathway built around Semax.",
-      "outcome": "Clearer thinking and a stronger sense of mental sharpness.",
-      "feeling": "Clear. Focused. Switched on.",
-      "transformation": "From foggy, scattered or mentally flat to feeling like your brain is working with you again.",
-      "card_back_copy": "For the days when your brain is technically present but not really helping. Sharp Mind is about clarity, focus and feeling properly switched on again.",
-      "short_benefit_lines": [
-        "Sharper focus",
-        "Greater mental clarity",
-        "More productive, present days"
-      ]
+      "one_line_outcome": "A focus-and-clarity concept for people who want to feel mentally sharper.",
+      "feeling": [
+        "Clear",
+        "Focused",
+        "Switched on"
+      ],
+      "transformation": "From foggy, scattered or mentally flat to wanting your brain to feel more available again.",
+      "product_class": "Synthetic peptide analogue derived from an ACTH fragment.",
+      "mechanism_summary": "Semax is a synthetic peptide studied for neuroactive and neuroprotective effects. Published human literature exists, but evidence quality, approved uses and regulatory status vary substantially by country.",
+      "evidence_status": "Not an established broadly approved cognitive-enhancement medicine in major Western markets.",
+      "regulatory_note": "Avoid claims of improved memory, learning, focus or neuroprotection unless supported by locally acceptable evidence.",
+      "product_detail_copy": "Sell mental clarity first. Behind the card, explain what Semax is and make its jurisdiction-dependent evidence and approval status easy to see.",
+      "clinical_content_status": "Exact route, formulation and local status required."
     },
     {
       "id": "gut-reset",
       "name": "Gut Reset",
-      "peptide": "KPV",
       "category": "Hormones, Intimacy & Mind",
       "hero_colour": "#24BFA3",
+      "active_ingredient": "KPV",
+      "supplier_strength": "10 mg pen",
       "front_hook": "When you’d like to stop thinking about your stomach all the time.",
-      "what_it_is": "A gut-focused pathway built around KPV.",
-      "outcome": "A calmer-feeling gut and less mental attention spent on digestive discomfort.",
-      "feeling": "Settled. Easier. Less preoccupied.",
-      "transformation": "From constantly noticing your stomach to getting through more of the day without thinking about it.",
-      "card_back_copy": "For when your stomach occupies too much attention. The emotional outcome is simple: feeling more settled, less preoccupied and more able to get on with your day.",
-      "short_benefit_lines": [
-        "Gut-focused support",
-        "A calmer-feeling middle",
-        "Less day-to-day preoccupation"
-      ]
+      "one_line_outcome": "A gut-focused concept aimed at feeling more settled and less preoccupied by digestive discomfort.",
+      "feeling": [
+        "Settled",
+        "Easier",
+        "Less preoccupied"
+      ],
+      "transformation": "From constantly noticing your stomach to wanting to get through more of the day without thinking about it.",
+      "product_class": "Short tripeptide fragment associated with alpha-MSH biology.",
+      "mechanism_summary": "KPV has been investigated preclinically for anti-inflammatory activity, including in gut-related models. Human clinical evidence for injectable therapeutic use is limited.",
+      "evidence_status": "Predominantly experimental or preclinical for the wellness uses described.",
+      "regulatory_note": "Do not claim treatment of inflammatory bowel disease, tissue repair or gut disease without robust product-specific evidence and approved positioning.",
+      "product_detail_copy": "Lead with the human outcome of not having to think about your stomach all day. The detail layer should state clearly that the anti-inflammatory rationale is research-led and not the same as an approved gut-disease treatment.",
+      "clinical_content_status": "Research summary only; clinical claims require review."
     }
   ]
 }

@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
-import { CATEGORIES } from '@/brand/pens';
+import { CATEGORIES, feelingLine } from '@/brand/pens';
 import { type BrandedPen, useCatalogue } from '@/hooks/useCatalogue';
 import { PenStage } from './brand/Pen';
 import { worldStyle } from './brand/worldStyle';
@@ -114,7 +114,7 @@ export function QuizPage() {
                       setStep('match');
                     }}
                   >
-                    {brand.feeling}
+                    {feelingLine(brand)}
                     <span className="dot" />
                   </button>
                 ))}

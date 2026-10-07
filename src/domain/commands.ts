@@ -212,7 +212,29 @@ const treatmentEditable = z.object({
   requiredAssessment: z.boolean(),
   requiredLabs: z.array(requiredText(80)).max(20),
   followUpDays: z.number().int().min(1).max(365),
-  peptide: text(80),
+  productTruth: z
+    .object({
+      activeIngredient: text(200),
+      supplierName: text(120),
+      supplierStrength: text(80),
+      productClass: text(300),
+      mechanism: text(2000),
+      evidence: text(2000),
+      contentStatus: text(1000),
+    })
+    .partial(),
+  clinicalTruth: z
+    .object({
+      approvalStatus: text(2000),
+      reviewNote: text(2000),
+      approvedIndication: text(2000),
+      eligibility: text(2000),
+      route: text(300),
+      dosing: text(2000),
+      warnings: text(4000),
+      contraindications: text(4000),
+    })
+    .partial(),
 });
 
 export const commandSchema = z.discriminatedUnion('type', [
