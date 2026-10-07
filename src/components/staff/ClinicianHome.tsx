@@ -95,6 +95,17 @@ function MemberChart({ memberId }: { memberId: string }) {
               <li>Medications: {history.medications || 'None reported'}</li>
               <li>Allergies: {history.allergies || 'None reported'}</li>
               <li>Pregnant or breastfeeding: {history.pregnancyOrBreastfeeding ? 'Yes' : 'No'}</li>
+              {history.reproductiveHealth && (
+                <>
+                  <li>
+                    Pregnant: {history.reproductiveHealth.pregnant ? 'Yes' : 'No'} · Breastfeeding:{' '}
+                    {history.reproductiveHealth.breastfeeding ? 'Yes' : 'No'} · Planning pregnancy (12 months):{' '}
+                    {history.reproductiveHealth.planningPregnancy ? 'Yes' : 'No'}
+                  </li>
+                  <li>Contraception: {history.reproductiveHealth.contraception || 'Not stated'}</li>
+                  <li>Menopause stage: {humanise(history.reproductiveHealth.menopauseStage)}</li>
+                </>
+              )}
               <li>Previous peptide use: {history.previousPeptideUse ? 'Yes' : 'No'}</li>
               {history.notes && <li>Notes: {history.notes}</li>}
               {lifestyle && (

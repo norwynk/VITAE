@@ -205,6 +205,26 @@ describe('onboarding', () => {
     }
   });
 
+  it('stores women-first screening answers for the clinician only', () => {
+    const cmd = onboardCommand();
+    (cmd as { health: Record<string, unknown> }).health.reproductiveHealth = {
+      pregnant: false,
+      breastfeeding: true,
+      planningPregnancy: true,
+      contraception: 'IUD',
+      menopauseStage: 'PRE',
+    };
+    const { store } = run(createFixtureStore(NOW), member, cmd);
+    expect(store.medicalHistories[NEW].reproductiveHealth).toMatchObject({ breastfeeding: true, planningPregnancy: true, contraception: 'IUD' });
+    // The combined flag follows the detailed answers.
+    expect(store.medicalHistories[NEW].pregnancyOrBreastfeeding).toBe(true);
+    expect(visible(store, clinician).medicalHistories[NEW].reproductiveHealth?.menopauseStage).toBe('PRE');
+    for (const actor of [ops, fulfilment, admin, corporate]) expect(visible(store, actor).medicalHistories[NEW]).toBeUndefined();
+    const bad = onboardCommand();
+    (bad as { health: Record<string, unknown> }).health.reproductiveHealth = { pregnant: false, breastfeeding: false, planningPregnancy: false, contraception: '', menopauseStage: 'SOMETIMES' };
+    expectError(() => run(createFixtureStore(NOW), member, bad), 'INVALID');
+  });
+
   it('validates input shape and blocks repeat onboarding and staff onboarding', () => {
     expectError(() => run(createFixtureStore(NOW), member, onboardCommand({ body: { heightCm: 175, weightKg: 5 } })), 'INVALID');
     expectError(() => run(onboarded(), member, onboardCommand()), 'CONFLICT');

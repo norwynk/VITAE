@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { SA_PROVINCES } from '@/domain/model';
+import { MENOPAUSE_STAGES, SA_PROVINCES } from '@/domain/model';
 import { Notice, formValues } from '../ui';
 import { useWorkspace } from '../workspace-context';
 
@@ -40,8 +40,15 @@ export function OnboardingForm() {
               conditions: list(v.conditions),
               medications: v.medications,
               allergies: v.allergies,
-              pregnancyOrBreastfeeding: v.checked('pregnancy'),
+              pregnancyOrBreastfeeding: v.checked('pregnant') || v.checked('breastfeeding'),
               previousPeptideUse: v.checked('previousPeptideUse'),
+              reproductiveHealth: {
+                pregnant: v.checked('pregnant'),
+                breastfeeding: v.checked('breastfeeding'),
+                planningPregnancy: v.checked('planningPregnancy'),
+                contraception: v.contraception ?? '',
+                menopauseStage: (v.menopauseStage || 'PREFER_NOT_TO_SAY') as (typeof MENOPAUSE_STAGES)[number],
+              },
               notes: v.healthNotes,
             },
             lifestyle: {
@@ -158,9 +165,37 @@ export function OnboardingForm() {
           Allergies
           <input name="allergies" />
         </label>
-        <label className="check">
-          <input type="checkbox" name="pregnancy" /> I am pregnant, may be pregnant, or am breastfeeding
-        </label>
+        <fieldset className="nested">
+          <legend>Your body, your cycle</legend>
+          <p className="muted small" style={{ margin: 0 }}>
+            These matter for your safety with several pens. Only your clinician sees them.
+          </p>
+          <label className="check">
+            <input type="checkbox" name="pregnant" /> I am pregnant or may be pregnant
+          </label>
+          <label className="check">
+            <input type="checkbox" name="breastfeeding" /> I am breastfeeding
+          </label>
+          <label className="check">
+            <input type="checkbox" name="planningPregnancy" /> I am planning a pregnancy in the next 12 months
+          </label>
+          <div className="form-grid">
+            <label>
+              Contraception (if any)
+              <input name="contraception" placeholder="e.g. pill, IUD, none" />
+            </label>
+            <label>
+              Menopause stage
+              <select name="menopauseStage" defaultValue="PREFER_NOT_TO_SAY">
+                <option value="PRE">Before menopause</option>
+                <option value="PERI">Perimenopause</option>
+                <option value="POST">After menopause</option>
+                <option value="NOT_APPLICABLE">Not applicable to me</option>
+                <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
+              </select>
+            </label>
+          </div>
+        </fieldset>
         <label className="check">
           <input type="checkbox" name="previousPeptideUse" /> I have used peptide or injectable treatments before
         </label>

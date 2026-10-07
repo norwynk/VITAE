@@ -32,6 +32,7 @@ export function SiteFooter() {
             </p>
           </div>
         </div>
+        <p className="site-footer__women">Made by women, for women.</p>
         <div className="site-footer__legal">
           © {new Date().getFullYear()} PRICK. Preview build: products are fictional demos, not available to buy, and
           nothing here is medical advice. In an emergency call 10177.

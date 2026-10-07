@@ -19,6 +19,9 @@ test('home shows colour cards that flip to outcome, feeling and transformation',
     await expect(page.getByRole('heading', { name, exact: true }).first()).toBeVisible();
   }
   await expect(page.getByRole('link', { name: 'See all 15 pens' })).toBeVisible();
+  await expect(page.getByText('Made by women, for women.').first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Made by women\.\s*For women\./ })).toBeVisible();
+  await expect(page.locator('[data-placeholder="founder"]')).toBeVisible();
   const card = page.getByRole('article', { name: 'Craving Control' });
   await expect(card.getByText('Stop letting food take up so much space in your head.')).toBeVisible();
   const feeling = card.getByText('Quieter. Calmer. Less preoccupied.');
@@ -106,6 +109,8 @@ test('full journey across roles', async ({ page }) => {
   await page.getByLabel('Weight (kg)').fill('82');
   await page.getByLabel('Energy').check();
   await page.getByLabel('Average sleep (hours)').fill('7');
+  await page.getByLabel('I am planning a pregnancy in the next 12 months').check();
+  await page.getByLabel('Menopause stage').selectOption('PRE');
   await page.getByLabel(/privacy notice/).check();
   await page.getByLabel(/terms of use/).check();
   await page.getByLabel(/health information being processed/).check();

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { FOUNDER, founderReady } from '@/brand/founder';
 import { PEN_BRANDS } from '@/brand/pens';
 import { PenStage } from './Pen';
 import { PhotoSlot } from './PhotoSlot';
@@ -220,6 +221,53 @@ export function FinalCta() {
           {FINALE.map((b, i) => (
             <PenStage key={b.slug} colours={b.colours} label={b.penLabel} angle={i % 2 ? -84 : -96} fit={0.95} />
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function MadeByWomen() {
+  const founder = founderReady(FOUNDER) ? FOUNDER : null;
+  const trio = ['the-glow-up', 'hormone-reset', 'bedroom-confidence'].map((slug) => PEN_BRANDS[slug]);
+  return (
+    <section className="women section">
+      <div className="container women__grid">
+        <div data-reveal>
+          <p className="eyebrow">Our stance</p>
+          <h2 className="display women__title">
+            Made by women.
+            <br />
+            <span className="serif-i">For women.</span>
+          </h2>
+          <p className="women__body">
+            PRICK is built by women who got tired of wellness that talks down to us or talks past us. Every pen, every
+            question in your screening and every word on this site starts with women in mind.
+          </p>
+          <p className="women__welcome">Everyone&apos;s welcome. But we know who we&apos;re building for.</p>
+        </div>
+        <div className="women__founder" data-reveal style={{ '--delay': '150ms' } as React.CSSProperties}>
+          <div className="women__pens" aria-hidden="true">
+            {trio.map((b, i) => (
+              <PenStage key={b.slug} colours={b.colours} label={b.penLabel} angle={[-70, -90, -110][i]} fit={0.95} />
+            ))}
+          </div>
+          {founder ? (
+            <figure className="women__quote">
+              <blockquote className="serif-i">&ldquo;{founder.quote}&rdquo;</blockquote>
+              <figcaption>
+                <strong>{founder.name}</strong>
+                <br />
+                {founder.role}
+              </figcaption>
+            </figure>
+          ) : (
+            // PLACEHOLDER: founder name, role and quote to be supplied and approved by her.
+            <div className="women__quote women__quote--pending" data-placeholder="founder">
+              <p className="eyebrow">Founder</p>
+              <p className="muted" style={{ margin: 0 }}>Our founder&apos;s story is coming soon, in her own words.</p>
+            </div>
+          )}
         </div>
       </div>
     </section>

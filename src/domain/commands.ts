@@ -21,6 +21,7 @@ import {
   type Treatment,
   CONSENT_VERSION,
   MEASUREMENT_UNITS,
+  MENOPAUSE_STAGES,
   OPERATIONS_TOPICS,
   OPTIONAL_CONSENTS,
   PENDING_REQUEST_STATUSES,
@@ -141,6 +142,15 @@ const onboardSchema = z.object({
     pregnancyOrBreastfeeding: z.boolean(),
     previousPeptideUse: z.boolean(),
     notes: text(2000),
+    reproductiveHealth: z
+      .object({
+        pregnant: z.boolean(),
+        breastfeeding: z.boolean(),
+        planningPregnancy: z.boolean(),
+        contraception: text(300),
+        menopauseStage: z.enum(MENOPAUSE_STAGES),
+      })
+      .optional(),
   }),
   lifestyle: z.object({
     activityLevel: z.enum(['SEDENTARY', 'LIGHT', 'MODERATE', 'ACTIVE']),
@@ -652,7 +662,10 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
         testingInterest: command.testingInterest,
         completedAt: at,
       };
-      store.medicalHistories[member.id] = { id: member.id, memberId: member.id, ...health, updatedAt: at };
+      // Keep the combined flag consistent with the detailed answers.
+      const pregnancyOrBreastfeeding =
+        health.pregnancyOrBreastfeeding || Boolean(health.reproductiveHealth?.pregnant || health.reproductiveHealth?.breastfeeding);
+      store.medicalHistories[member.id] = { id: member.id, memberId: member.id, ...health, pregnancyOrBreastfeeding, updatedAt: at };
       store.lifestyleProfiles[member.id] = { id: member.id, memberId: member.id, ...lifestyle, updatedAt: at };
       const weightId = ctx.newId('meas');
       store.measurements[weightId] = {

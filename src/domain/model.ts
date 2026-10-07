@@ -195,7 +195,19 @@ export interface MedicalHistory {
   pregnancyOrBreastfeeding: boolean;
   previousPeptideUse: boolean;
   notes: string;
+  /** Women-first screening. Clinician-visible only; never decides eligibility by itself. */
+  reproductiveHealth?: ReproductiveHealth;
   updatedAt: string;
+}
+
+export const MENOPAUSE_STAGES = ['PRE', 'PERI', 'POST', 'NOT_APPLICABLE', 'PREFER_NOT_TO_SAY'] as const;
+
+export interface ReproductiveHealth {
+  pregnant: boolean;
+  breastfeeding: boolean;
+  planningPregnancy: boolean;
+  contraception: string;
+  menopauseStage: (typeof MENOPAUSE_STAGES)[number];
 }
 
 export interface LifestyleProfile {
