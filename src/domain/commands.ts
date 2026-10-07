@@ -212,6 +212,7 @@ const treatmentEditable = z.object({
   requiredAssessment: z.boolean(),
   requiredLabs: z.array(requiredText(80)).max(20),
   followUpDays: z.number().int().min(1).max(365),
+  certificateOfAnalysisUrl: z.string().trim().url().max(500).regex(/^https:\/\//, 'Use an https link'),
   productTruth: z
     .object({
       activeIngredient: text(200),

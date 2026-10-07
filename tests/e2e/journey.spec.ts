@@ -42,16 +42,16 @@ test('shop filters by category and the expanded view keeps the clinical gate', a
   await expect(page.getByRole('article', { name: 'The Glow Up' })).toHaveCount(0);
   await page.getByRole('article', { name: 'Deep Sleep Rebuild' }).getByRole('link', { name: 'View the pen' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Deep Sleep Rebuild' })).toBeVisible();
-  for (const section of ["What's actually in it", 'The clinical bit', 'Screening', 'Safety', 'How the process works']) {
+  for (const section of ["What's actually in it", 'Certificate of analysis', 'Screening', 'Safety', 'How the process works']) {
     await expect(page.getByRole('heading', { name: section, exact: true })).toBeVisible();
   }
   await expect(page.getByText('CJC-1295 without DAC + Ipamorelin', { exact: true })).toBeVisible();
   await expect(page.getByText('A higher number on a pen does not mean it works better.')).toBeVisible();
   await expect(page.getByText('It is not a medical claim or a promise.', { exact: false })).toBeVisible();
-  await expect(page.locator(`[data-needs-verification="approvalStatus"]`)).toContainText("Reviewer note:");
-  // Route, dosing, warnings, contraindications, indication and eligibility are not supplied.
-  for (const field of ['route', 'dosing', 'warnings', 'contraindications', 'approvedIndication', 'eligibility']) {
-    await expect(page.locator(`[data-needs-verification="${field}"]`)).toBeVisible();
+  await expect(page.locator('[data-coa="pending"]')).toBeVisible();
+  // Evidence, reviewer notes and clinical detail stay in the back end.
+  for (const hidden of ['The clinical bit', 'What the evidence supports', 'Verification status', 'Reviewer note', 'Approval status']) {
+    await expect(page.getByText(hidden, { exact: false })).toHaveCount(0);
   }
 
   // A stack name is never shown as an ingredient.

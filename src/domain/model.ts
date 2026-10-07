@@ -317,6 +317,8 @@ export interface Treatment {
   requiredLabs: string[];
   followUpDays: number;
   inventorySku: string;
+  /** Link to the batch certificate of analysis, the one verification document shown publicly. */
+  certificateOfAnalysisUrl?: string;
   /** Layer 3. Missing fields mean NEEDS VERIFICATION, never a generated value. */
   productTruth?: ProductTruth;
   /** Layer 4. Missing fields mean NEEDS VERIFICATION, never a generated value. */

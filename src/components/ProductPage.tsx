@@ -10,12 +10,6 @@ import { PenCard } from './brand/PenCard';
 import { worldStyle } from './brand/worldStyle';
 import { BrandPage } from './site/BrandPage';
 
-const REG_STATUS: Record<string, string> = {
-  UNCONFIRMED: 'Not yet confirmed for supply in South Africa. This pen cannot be ordered until it is.',
-  VERIFIED: 'Confirmed for supply.',
-  NOT_PERMITTED: 'Not available.',
-};
-
 function Truth({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
@@ -26,9 +20,10 @@ function Truth({ label, children }: { label: string; children: React.ReactNode }
 }
 
 /**
- * Expanded product view in the four content layers: desire (hero),
- * transformation (colour band), product truth and clinical truth. Missing
- * truth fields show NEEDS VERIFICATION; Layers 1 and 2 never stand in for them.
+ * Expanded product view: desire (hero), transformation (colour band), then
+ * what's in the pen and its certificate of analysis. Evidence, verification
+ * notes and clinical truth stay in the back-end catalogue and are not shown
+ * to customers. Layers 1 and 2 never stand in for missing product facts.
  */
 export function ProductPage({ slug }: { slug: string }) {
   const { pens, error } = useCatalogue();
@@ -59,7 +54,6 @@ export function ProductPage({ slug }: { slug: string }) {
   const needsApproval = t.requiresClinicianApproval || t.requiresPrescription;
   const startHref = `/app?pen=${t.slug}`;
   const truth = t.productTruth ?? {};
-  const clinical = t.clinicalTruth ?? {};
   const related = pens.filter((p) => p.treatment.id !== t.id && p.treatment.category === t.category);
 
   return (
@@ -136,7 +130,7 @@ export function ProductPage({ slug }: { slug: string }) {
             </div>
             <p className="small" style={{ marginTop: 'var(--space-4)', opacity: 0.9 }}>
               This describes how people hope to feel. It is not a medical claim or a promise. What the pen actually
-              contains, and what the evidence supports, is below.
+              contains is below.
             </p>
           </div>
         </section>
@@ -176,43 +170,23 @@ export function ProductPage({ slug }: { slug: string }) {
               </Truth>
               <Truth label="Type of molecule">{truth.productClass || <NeedsVerification what="productClass" />}</Truth>
               <Truth label="What it does in the body">{truth.mechanism || <NeedsVerification what="mechanism" />}</Truth>
-              <Truth label="What the evidence supports">{truth.evidence || <NeedsVerification what="evidence" />}</Truth>
-              {truth.contentStatus && (
-                <Truth label="Verification status">
-                  <span className="reviewer-note">Reviewer note: {truth.contentStatus}</span>
-                </Truth>
-              )}
             </dl>
           </section>
 
-          {/* Layer 4: clinical truth. Only clinician-reviewed content; the rest needs verification. */}
+          {/* Certificate of analysis: the only verification document shown to customers. */}
           <section className="info-block" data-reveal>
+            <h2 className="display">Certificate of analysis</h2>
             <div>
-              <span className="layer-label">Clinical truth</span>
-              <h2 className="display">The clinical bit</h2>
-            </div>
-            <dl className="truth-list">
-              <Truth label="Approval status">
-                {clinical.approvalStatus || (
-                  <NeedsVerification what="approvalStatus" note={clinical.reviewNote ? `Reviewer note: ${clinical.reviewNote}` : undefined} />
-                )}
-              </Truth>
-              <Truth label="Local supply">{REG_STATUS[t.regulatoryStatus] ?? <NeedsVerification what="regulatoryStatus" />}</Truth>
-              <Truth label="Approved indication">{clinical.approvedIndication || <NeedsVerification what="approvedIndication" />}</Truth>
-              <Truth label="Who may be eligible">
-                {clinical.eligibility || <NeedsVerification what="eligibility" />}
-                <p className="small muted" style={{ margin: '0.5rem 0 0' }}>
-                  Whatever the criteria, PRICK only serves adults aged 18 and over, and a clinician decides after screening.
+              {t.certificateOfAnalysisUrl ? (
+                <a href={t.certificateOfAnalysisUrl} className="link-arrow" target="_blank" rel="noopener noreferrer">
+                  View the certificate of analysis
+                </a>
+              ) : (
+                <p className="muted" data-coa="pending" style={{ margin: 0 }}>
+                  The certificate of analysis for {t.name} will be published here.
                 </p>
-              </Truth>
-              <Truth label="Route">{clinical.route || <NeedsVerification what="route" />}</Truth>
-              <Truth label="Dosing">{clinical.dosing || <NeedsVerification what="dosing" />}</Truth>
-              <Truth label="Warnings">{clinical.warnings || <NeedsVerification what="warnings" />}</Truth>
-              <Truth label="Contraindications">{clinical.contraindications || <NeedsVerification what="contraindications" />}</Truth>
-              <Truth label="Needs clinician approval">
-                {needsApproval ? 'Yes. You can only order it if a clinician approves it for you after screening.' : 'No.'}
-              </Truth>
-            </dl>
+              )}
+            </div>
           </section>
 
           <section className="info-block" data-reveal>
