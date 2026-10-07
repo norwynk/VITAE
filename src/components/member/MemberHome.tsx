@@ -134,7 +134,7 @@ function DashboardPenCard({ chosenSlug }: { chosenSlug: string | null }) {
         <div className="dash-pen">
           <div className="dash-pen__art">
             <span className="flip-card__glow" style={{ opacity: 1 }} />
-            <PenStage colours={brand.colours} label={brand.penLabel} angle={-50} fit={0.9} />
+            <PenStage colours={brand.colours} label={brand.penLabel} botanical={brand.botanical} angle={-50} fit={0.9} />
           </div>
           <div className="dash-pen__info">
             <span className="tag dark">{brand.category}</span>

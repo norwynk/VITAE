@@ -1,7 +1,7 @@
 'use client';
 import { BrandHero } from './brand/BrandHero';
 import { Range } from './brand/Range';
-import { ClinicalTrustPanel, EditorialStatement, FinalCta, HowItWorks, DesignedForWomen, LifestylePanel, Reviews, SubscriptionPanel } from './brand/Sections';
+import { ClinicalTrustPanel, CoFounderQuote, EditorialStatement, FinalCta, HowItWorks, DesignedForWomen, LifestylePanel, Reviews, SubscriptionPanel } from './brand/Sections';
 import { BrandPage } from './site/BrandPage';
 import { Marquee } from './site/Marquee';
 import { useCatalogue } from '@/hooks/useCatalogue';
@@ -17,6 +17,7 @@ export function HomePage() {
         <p>Colourful on the outside. Clinician-checked on the inside. Feel more like yourself.</p>
       </EditorialStatement>
       <DesignedForWomen />
+      <CoFounderQuote />
       <HowItWorks />
       <LifestylePanel />
       <ClinicalTrustPanel />

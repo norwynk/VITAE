@@ -62,7 +62,7 @@ export function ProductPage({ slug }: { slug: string }) {
         <section className="product-hero">
           <div className="product-hero__art product-hero__art--world">
             <span className="flip-card__glow" style={{ opacity: 1 }} />
-            <PenStage colours={brand.colours} label={brand.penLabel} angle={-52} fit={0.86} className="pen-stage--float" title={`PRICK ${t.name} pen`} />
+            <PenStage colours={brand.colours} label={brand.penLabel} botanical={brand.botanical} angle={-52} fit={0.86} className="pen-stage--float" title={`PRICK ${t.name} pen`} />
           </div>
           <div className="product-hero__info">
             <span className="tag dark">{brand.category}</span>

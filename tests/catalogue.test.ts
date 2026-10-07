@@ -80,7 +80,7 @@ describe('Layers 1 and 2', () => {
 
   it('carry no product facts', () => {
     for (const b of Object.values(PEN_BRANDS)) {
-      expect(Object.keys(b).sort()).toEqual(['benefits', 'category', 'colours', 'feeling', 'hook', 'outcome', 'penLabel', 'slug', 'transformation']);
+      expect(Object.keys(b).sort()).toEqual(['benefits', 'botanical', 'cardImage', 'category', 'colours', 'feeling', 'hook', 'outcome', 'penLabel', 'slug', 'transformation']);
     }
   });
 

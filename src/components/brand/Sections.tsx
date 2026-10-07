@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { CO_FOUNDERS } from '@/brand/team';
 import { PEN_BRANDS } from '@/brand/pens';
+import { Motif } from './Botanicals';
 import { PenStage } from './Pen';
 import { PhotoSlot } from './PhotoSlot';
 
@@ -173,7 +174,7 @@ export function SubscriptionPanel() {
           <div className="repeat__grid">
             <div className="repeat__pens" data-reveal>
               {trio.map((b, i) => (
-                <PenStage key={b.slug} colours={b.colours} label={b.penLabel} angle={angles[i]} fit={0.95} />
+                <PenStage key={b.slug} colours={b.colours} label={b.penLabel} botanical={b.botanical} angle={angles[i]} fit={0.95} />
               ))}
             </div>
             <div data-reveal style={{ '--delay': '150ms', '--accent': 'var(--pink)' } as React.CSSProperties}>
@@ -219,7 +220,7 @@ export function FinalCta() {
         </div>
         <div className="final-cta__pens" data-reveal>
           {FINALE.map((b, i) => (
-            <PenStage key={b.slug} colours={b.colours} label={b.penLabel} angle={i % 2 ? -84 : -96} fit={0.95} />
+            <PenStage key={b.slug} colours={b.colours} label={b.penLabel} botanical={b.botanical} angle={i % 2 ? -84 : -96} fit={0.95} />
           ))}
         </div>
       </div>
@@ -233,7 +234,6 @@ export function FinalCta() {
  */
 export function DesignedForWomen() {
   const trio = ['the-glow-up', 'hormone-reset', 'skin-rewind'].map((slug) => PEN_BRANDS[slug]);
-  const withPhoto = CO_FOUNDERS.find((f) => f.photo);
   return (
     <section className="women section">
       <div className="container women__grid">
@@ -254,17 +254,61 @@ export function DesignedForWomen() {
         <div className="women__side" data-reveal style={{ '--delay': '150ms' } as React.CSSProperties}>
           <div className="women__pens" aria-hidden="true">
             {trio.map((b, i) => (
-              <PenStage key={b.slug} colours={b.colours} label={b.penLabel} angle={[-70, -90, -110][i]} fit={0.95} />
+              <PenStage key={b.slug} colours={b.colours} label={b.penLabel} botanical={b.botanical} angle={[-70, -90, -110][i]} fit={0.95} />
             ))}
           </div>
-          {withPhoto?.photo && (
-            <figure className="cofounders">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="cofounders__photo" src={withPhoto.photo} alt={withPhoto.name} width={120} height={288} />
-              <figcaption className="cofounders__name">{withPhoto.name}</figcaption>
-            </figure>
-          )}
         </div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Co-founder quote, two halves: her photo with a handwritten name on the
+ * left, the quote on a pastel panel on the right.
+ */
+export function CoFounderQuote() {
+  const founder = CO_FOUNDERS.find((f) => f.quote && f.photo);
+  if (!founder?.photo || !founder.quote) return null;
+  const glow = PEN_BRANDS['the-glow-up'].colours;
+  const citrus = PEN_BRANDS['holiday-tan'].colours;
+  return (
+    <section className="founder-quote" aria-label={`A word from ${founder.name}`}>
+      <div className="founder-quote__photo">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={founder.photo} alt={founder.name} width={382} height={918} />
+        <p className="founder-quote__hand" aria-hidden="true">
+          {founder.handle},
+          <br />
+          <span>Co-Founder</span>
+        </p>
+        <svg className="founder-quote__arrow" viewBox="0 0 120 90" aria-hidden="true">
+          <path d="M6 10 C40 4 82 18 96 66" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+          <path d="M82 58 L97 70 L104 52" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+      <div className="founder-quote__panel" data-reveal>
+        {/* Decoration pinned to the panel's corners so it never crops or stretches. */}
+        {(
+          [
+            ['berry', glow, 'tl', -18],
+            ['blossom', glow, 'tr', 20],
+            ['citrus', citrus, 'br', 12],
+          ] as const
+        ).map(([kind, colours, corner, rotate]) => (
+          <svg key={corner} className={`founder-quote__decor founder-quote__decor--${corner}`} viewBox="-50 -50 100 100" aria-hidden="true">
+            <Motif kind={kind} colours={colours} x={0} y={0} size={40} rotate={rotate} />
+          </svg>
+        ))}
+        {['s1', 's2', 's3'].map((k) => (
+          <svg key={k} className={`founder-quote__spark founder-quote__spark--${k}`} viewBox="-10 -10 20 20" aria-hidden="true">
+            <path d="M0 -9 L2.5 -2.5 L9 0 L2.5 2.5 L0 9 L-2.5 2.5 L-9 0 L-2.5 -2.5 Z" fill="#fff" />
+          </svg>
+        ))}
+        <blockquote className="founder-quote__text">
+          <p>{founder.quote}</p>
+          <footer>– {founder.name}, Co-Founder of PRICK</footer>
+        </blockquote>
       </div>
     </section>
   );

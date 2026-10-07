@@ -1,19 +1,27 @@
 import { useId, type CSSProperties } from 'react';
-import type { PenColours } from '@/brand/pens';
+import type { Botanical, PenColours } from '@/brand/pens';
+import { Motif } from './Botanicals';
 
 /**
- * The PRICK pen, drawn in SVG from the product reference: a long horizontal
- * body with a rounded end, a recessed grip slot, a colour band, a printed label
- * panel, a dose window and a ridged dial cap. The dose window is left blank on
- * purpose: no verified doses exist yet. Stand-in until product photography.
+ * The PRICK pen, drawn in SVG from the product reference: a pastel
+ * watercolour wrap painted with the pen's botanical, a rounded grip end with a
+ * coloured pill, a bronze ring, the PRICK / PEPTIDE PENS wordmark, the product
+ * name, a silver dose window and a grey end cap. The dose window is left blank
+ * on purpose: no verified doses exist yet. Stand-in until product photography.
  */
-export function Pen({ colours, label, className, style, title }: { colours: PenColours; label: string; className?: string; style?: CSSProperties; title?: string }) {
+export function Pen({ colours, label, botanical = 'leaf', className, style, title }: { colours: PenColours; label: string; botanical?: Botanical; className?: string; style?: CSSProperties; title?: string }) {
   const id = useId().replace(/:/g, '');
   const g = (name: string) => `${name}-${id}`;
-  // The label panel is ~180 units wide (between the divider and the window).
-  const LABEL_WIDTH = 176;
-  const labelSize = Math.min(26, LABEL_WIDTH / Math.max(label.length * 0.72, 1));
-  const estimated = label.length * labelSize * 0.66 + label.length * 1.6;
+  // Product name sits between the divider (x 520) and the window (x 790).
+  const LABEL_WIDTH = 230;
+  const labelSize = Math.min(30, LABEL_WIDTH / Math.max(label.length * 0.62, 1));
+  const estimated = label.length * labelSize * 0.74;
+  const body = 'M95 28 H860 V142 H95 A57 57 0 0 1 95 28 Z';
+  // Botanicals scattered over the wrap, kept away from the printed label.
+  const motifs: [number, number, number, number][] = [
+    [150, 38, 40, -20], [232, 138, 38, 25], [300, 30, 28, 60], [356, 124, 32, -35], [262, 84, 18, 10],
+    [560, 28, 24, 15], [610, 148, 28, -50], [700, 30, 22, 80], [752, 144, 30, 10], [790, 30, 16, 40],
+  ];
   return (
     <svg
       viewBox="0 0 1000 170"
@@ -24,101 +32,102 @@ export function Pen({ colours, label, className, style, title }: { colours: PenC
       aria-hidden={title ? undefined : true}
     >
       <defs>
-        {/* Cylinder shading runs top to bottom on a horizontal pen. */}
-        <linearGradient id={g('body')} x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor={colours.deep} />
-          <stop offset="0.14" stopColor={colours.main} />
-          <stop offset="0.3" stopColor={colours.light} />
-          <stop offset="0.46" stopColor={colours.main} />
-          <stop offset="0.86" stopColor={colours.deep} />
-          <stop offset="1" stopColor={colours.deep} />
+        <linearGradient id={g('wash')} x1="0" x2="1" y1="0" y2="0.3">
+          <stop offset="0" stopColor={colours.pastel} />
+          <stop offset="0.45" stopColor={colours.mist} />
+          <stop offset="1" stopColor={colours.pastel} />
+        </linearGradient>
+        {/* Cylinder shading laid over the wash. */}
+        <linearGradient id={g('round')} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stopColor="#000" stopOpacity="0.16" />
+          <stop offset="0.22" stopColor="#fff" stopOpacity="0.5" />
+          <stop offset="0.4" stopColor="#fff" stopOpacity="0" />
+          <stop offset="0.82" stopColor="#000" stopOpacity="0.06" />
+          <stop offset="1" stopColor="#000" stopOpacity="0.22" />
+        </linearGradient>
+        <linearGradient id={g('bronze')} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stopColor="#7a4a2a" />
+          <stop offset="0.25" stopColor="#e8b48a" />
+          <stop offset="0.5" stopColor="#b9774c" />
+          <stop offset="1" stopColor="#6b3d22" />
+        </linearGradient>
+        <linearGradient id={g('silver')} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stopColor="#8d9096" />
+          <stop offset="0.3" stopColor="#f4f5f7" />
+          <stop offset="0.6" stopColor="#c3c6cb" />
+          <stop offset="1" stopColor="#7e8187" />
         </linearGradient>
         <linearGradient id={g('cap')} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stopColor="#8a8c90" />
+          <stop offset="0.28" stopColor="#e6e7e9" />
+          <stop offset="0.6" stopColor="#b4b6ba" />
+          <stop offset="1" stopColor="#6e7074" />
+        </linearGradient>
+        <linearGradient id={g('pill')} x1="0" x2="0" y1="0" y2="1">
           <stop offset="0" stopColor={colours.deep} />
-          <stop offset="0.3" stopColor={colours.main} />
-          <stop offset="0.55" stopColor={colours.deep} />
-          <stop offset="1" stopColor="#000" stopOpacity="0.85" />
+          <stop offset="0.35" stopColor={colours.main} />
+          <stop offset="1" stopColor={colours.deep} />
         </linearGradient>
-        <linearGradient id={g('slot')} x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor="#000" stopOpacity="0.38" />
-          <stop offset="0.5" stopColor="#000" stopOpacity="0.12" />
-          <stop offset="1" stopColor="#fff" stopOpacity="0.28" />
-        </linearGradient>
-        <linearGradient id={g('glass')} x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor="#0c0c0f" />
-          <stop offset="0.55" stopColor="#25252b" />
-          <stop offset="1" stopColor="#08080a" />
-        </linearGradient>
-        <linearGradient id={g('shine')} x1="0" x2="1">
-          <stop offset="0" stopColor="#fff" stopOpacity="0" />
-          <stop offset="0.5" stopColor="#fff" stopOpacity="0.55" />
-          <stop offset="1" stopColor="#fff" stopOpacity="0" />
-        </linearGradient>
+        <filter id={g('paint')} x="-5%" y="-20%" width="110%" height="140%">
+          <feGaussianBlur stdDeviation="0.8" />
+        </filter>
         <clipPath id={g('clip')}>
-          <path d="M85 25 H905 V145 H85 A60 60 0 0 1 85 25 Z" />
+          <path d={body} />
         </clipPath>
       </defs>
 
-      {/* Body with rounded end */}
-      <path d="M85 25 H905 V145 H85 A60 60 0 0 1 85 25 Z" fill={`url(#${g('body')})`} />
+      {/* Wrap: wash, painted botanicals, then roundness. */}
+      <path d={body} fill={`url(#${g('wash')})`} />
       <g clipPath={`url(#${g('clip')})`}>
-        <rect x="40" y="44" width="860" height="9" rx="4.5" fill={`url(#${g('shine')})`} opacity="0.7" />
-        {/* Section seams */}
-        <rect x="395" y="25" width="2.5" height="120" fill="#000" opacity="0.14" />
-        <rect x="770" y="25" width="2.5" height="120" fill="#000" opacity="0.14" />
+        <g filter={`url(#${g('paint')})`} opacity="0.85">
+          {motifs.map(([x, y, s, r], i) => (
+            <Motif key={i} kind={botanical} colours={colours} x={x} y={y} size={s} rotate={r} />
+          ))}
+        </g>
+        {/* Soft panel so the print stays legible over the painting. */}
+        <rect x="408" y="44" width="372" height="82" rx="41" fill={colours.mist} opacity="0.72" />
+        <rect x="0" y="0" width="1000" height="170" fill={`url(#${g('round')})`} />
       </g>
 
-      {/* Recessed grip slot */}
-      <rect x="62" y="66" width="230" height="40" rx="20" fill={`url(#${g('slot')})`} />
-      <rect x="66" y="69" width="222" height="5" rx="2.5" fill="#000" opacity="0.18" />
+      {/* Coloured pill on the grip end */}
+      <rect x="70" y="72" width="150" height="26" rx="13" fill={`url(#${g('pill')})`} />
+      <rect x="78" y="76" width="120" height="5" rx="2.5" fill="#fff" opacity="0.4" />
 
-      {/* Colour band */}
-      <rect x="330" y="25" width="16" height="120" fill={colours.deep} />
-      <rect x="330" y="25" width="16" height="120" fill={`url(#${g('body')})`} opacity="0.35" />
+      {/* Bronze ring */}
+      <rect x="386" y="28" width="14" height="114" fill={`url(#${g('bronze')})`} />
 
-      {/* Label panel: wordmark | product */}
-      <g fill={colours.ink}>
-        <text
-          x="482"
-          y="96"
-          textAnchor="middle"
-          style={{ fontFamily: 'var(--font-display), Impact, sans-serif', fontSize: 50, letterSpacing: 1.5 }}
-        >
+      {/* Print: wordmark | product name */}
+      <g fill={colours.print}>
+        <text x="463" y="88" textAnchor="middle" style={{ fontFamily: 'var(--font-display), Impact, sans-serif', fontSize: 36, letterSpacing: 2 }}>
           PRICK
         </text>
-        <text x="482" y="118" textAnchor="middle" style={{ fontFamily: 'var(--font-sans), sans-serif', fontSize: 10.5, fontWeight: 700, letterSpacing: 3 }}>
-          PEPTIDE PEN
+        <text x="463" y="106" textAnchor="middle" style={{ fontFamily: 'var(--font-sans), sans-serif', fontSize: 8.5, fontWeight: 700, letterSpacing: 2.6 }}>
+          PEPTIDE PENS
         </text>
-        <rect x="574" y="56" width="1.5" height="58" opacity="0.35" />
+        <rect x="519" y="58" width="1.4" height="54" opacity="0.4" />
         <text
-          x="672"
-          y="90"
+          x="653"
+          y="88"
           textAnchor="middle"
-          style={{ fontFamily: 'var(--font-sans), sans-serif', fontSize: labelSize, fontWeight: 700, letterSpacing: 1.6 }}
+          style={{ fontFamily: 'var(--font-sans), sans-serif', fontSize: labelSize, fontWeight: 700, letterSpacing: 1.2 }}
           {...(estimated > LABEL_WIDTH ? { textLength: LABEL_WIDTH, lengthAdjust: 'spacingAndGlyphs' } : {})}
         >
           {label}
         </text>
-        <text x="672" y="112" textAnchor="middle" style={{ fontFamily: 'var(--font-sans), sans-serif', fontSize: 10.5, fontWeight: 600, letterSpacing: 3 }}>
-          PEPTIDE PROGRAMME
+        <text x="653" y="108" textAnchor="middle" style={{ fontFamily: 'var(--font-serif), Georgia, serif', fontStyle: 'italic', fontSize: 15 }}>
+          Peptide Pen
         </text>
       </g>
 
-      {/* Dose window (deliberately blank) */}
-      <rect x="796" y="45" width="82" height="80" rx="12" fill="none" stroke={colours.ink} strokeOpacity="0.7" strokeWidth="3" />
-      <rect x="803" y="52" width="68" height="66" rx="8" fill={`url(#${g('glass')})`} />
-      {[0, 1, 2, 3].map((i) => (
-        <rect key={i} x={814} y={63 + i * 13} width={i % 2 ? 14 : 26} height="2.5" rx="1.25" fill={colours.light} opacity="0.8" />
-      ))}
-      <rect x="806" y="55" width="7" height="60" rx="3.5" fill="#fff" opacity="0.1" />
+      {/* Silver dose window (deliberately blank) */}
+      <rect x="800" y="50" width="52" height="70" rx="9" fill={`url(#${g('silver')})`} />
+      <rect x="806" y="57" width="40" height="56" rx="6" fill="#fdfdfd" stroke="#9a9da2" strokeWidth="1.2" />
+      <rect x="809" y="60" width="6" height="50" rx="3" fill="#fff" opacity="0.9" />
 
-      {/* Dial cap with knurling */}
-      <rect x="899" y="27" width="10" height="116" fill={colours.light} opacity="0.55" />
-      <path d="M907 24 H950 A26 61 0 0 1 950 146 H907 Z" fill={`url(#${g('cap')})`} />
-      {Array.from({ length: 9 }, (_, i) => (
-        <rect key={i} x={912 + i * 5.2} y="28" width="2" height="114" fill="#000" opacity="0.22" />
-      ))}
-      <rect x="907" y="36" width="58" height="7" rx="3.5" fill="#fff" opacity="0.18" />
+      {/* Grey end cap */}
+      <rect x="858" y="30" width="8" height="110" fill={`url(#${g('bronze')})`} />
+      <path d="M866 26 H935 A28 59 0 0 1 935 144 H866 Z" fill={`url(#${g('cap')})`} />
+      <rect x="866" y="38" width="84" height="6" rx="3" fill="#fff" opacity="0.35" />
     </svg>
   );
 }
@@ -130,6 +139,7 @@ export function Pen({ colours, label, className, style, title }: { colours: PenC
 export function PenStage({
   colours,
   label,
+  botanical,
   angle = -58,
   fit = 1,
   className,
@@ -137,6 +147,7 @@ export function PenStage({
 }: {
   colours: PenColours;
   label: string;
+  botanical?: Botanical;
   angle?: number;
   /** 1 = as large as fits; smaller leaves breathing room. */
   fit?: number;
@@ -155,7 +166,7 @@ export function PenStage({
       className={`pen-stage${className ? ` ${className}` : ''}`}
       style={{ '--angle': `${angle}deg`, '--len': `min(${byHeight.toFixed(1)}cqh, ${byWidth.toFixed(1)}cqw)` } as CSSProperties}
     >
-      <Pen colours={colours} label={label} title={title} />
+      <Pen colours={colours} label={label} botanical={botanical} title={title} />
     </div>
   );
 }

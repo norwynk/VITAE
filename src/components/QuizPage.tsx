@@ -146,7 +146,7 @@ export function MatchReveal({ pen, onRestart }: { pen: BrandedPen; onRestart: ()
         <div className="container match__grid">
           <div className="match__stage">
             <span className="flip-card__glow" style={{ opacity: 1 }} />
-            <PenStage colours={brand.colours} label={brand.penLabel} angle={-55} fit={0.92} title={`PRICK ${t.name} pen`} />
+            <PenStage colours={brand.colours} label={brand.penLabel} botanical={brand.botanical} angle={-55} fit={0.92} title={`PRICK ${t.name} pen`} />
           </div>
           <div>
             <p className="eyebrow">Your match</p>

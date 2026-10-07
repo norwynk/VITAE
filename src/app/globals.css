@@ -575,10 +575,52 @@ fieldset.nested { background: var(--off-white); }
 .women__title .serif-i { text-transform: none; color: var(--pink); display: block; font-size: 0.42em; line-height: 1.15; margin-top: var(--space-2); }
 .women__body { font-size: var(--step-1); max-width: 34ch; margin-top: var(--space-4); }
 .women__side { display: grid; gap: var(--space-3); }
-.cofounders { display: flex; gap: var(--space-2); align-items: flex-end; margin: 0; }
-.cofounders__photo { width: 120px; height: auto; flex: 0 0 auto; display: block; }
-.cofounders__name { font-weight: 700; margin-bottom: var(--space-2); }
 .women__pens { display: grid; grid-template-columns: repeat(3, 1fr); height: 340px; }
 .women__pens .pen-stage { min-width: 0; }
 .site-footer__women { font-family: var(--font-serif); font-style: italic; font-size: var(--step-2); margin: var(--space-4) 0 0; color: var(--pink); }
 @media (max-width: 900px) { .women__grid { grid-template-columns: 1fr; gap: var(--space-4); } .women__pens { height: 260px; } }
+
+/* Bloom-style card front: pastel wash, lowercase serif name, pen centred, botanicals underneath. */
+.flip-card__front--bloom {
+  background: linear-gradient(180deg, var(--world-mist) 0%, var(--world-pastel) 100%);
+  background-size: cover; background-position: center bottom;
+  color: var(--world-print);
+}
+.flip-card__name--bloom {
+  font-family: var(--font-serif); text-transform: lowercase; font-weight: 400; letter-spacing: -0.01em;
+  font-size: clamp(2.6rem, 1.8rem + 2.4vw, 3.8rem); line-height: 0.9; margin: var(--space-1) 0 var(--space-1);
+}
+.flip-card__front--bloom .flip-card__hook { font-size: var(--step-0); margin-bottom: var(--space-2); }
+.flip-card__front--bloom .flip-card__outcome { margin: 0 auto; }
+.flip-card__front--bloom .flip-card__stage { min-height: 300px; z-index: 1; }
+.flip-card__front--bloom .flip-card__glow { background: radial-gradient(circle, rgb(255 255 255 / 0.75), transparent 65%); }
+.flip-card__spill { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 34%; z-index: 0; pointer-events: none; }
+.flip-card__front--bloom .flip-card__actions { z-index: 3; }
+.flip-card__front--bloom .flip-card__btn-light { color: var(--world-print); }
+.flip-card__front--bloom.has-photo .flip-card__stage { margin-bottom: 18%; }
+
+/* Co-founder quote: photo half and pastel quote half. */
+.founder-quote { display: grid; grid-template-columns: 1fr 1fr; min-height: 560px; }
+.founder-quote__photo { position: relative; background: #f4efea; display: flex; align-items: flex-end; justify-content: center; overflow: hidden; padding-top: var(--space-5); color: #2a2230; }
+.founder-quote__photo img { display: block; height: min(520px, 92%); width: auto; max-width: 70%; object-fit: contain; object-position: bottom; translate: 12% 0; }
+.founder-quote__hand { position: absolute; left: 8%; top: 18%; margin: 0; font-family: var(--font-hand); font-size: clamp(2.2rem, 1.6rem + 2vw, 3.4rem); line-height: 0.95; }
+.founder-quote__hand span { font-size: 0.72em; }
+.founder-quote__arrow { position: absolute; left: 12%; top: 38%; width: clamp(70px, 9vw, 120px); }
+.founder-quote__panel { position: relative; background: linear-gradient(160deg, #fde2ec 0%, #f6d9f2 55%, #fbe7d6 100%); display: grid; place-items: center; padding: var(--space-5) var(--space-4); overflow: hidden; }
+.founder-quote__decor, .founder-quote__spark { position: absolute; pointer-events: none; }
+.founder-quote__decor { width: clamp(56px, 7vw, 96px); }
+.founder-quote__decor--tl { left: 8%; top: 9%; }
+.founder-quote__decor--tr { right: 9%; top: 12%; width: clamp(44px, 5vw, 70px); }
+.founder-quote__decor--br { right: 8%; bottom: 9%; }
+.founder-quote__spark { width: 22px; }
+.founder-quote__spark--s1 { right: 18%; top: 34%; }
+.founder-quote__spark--s2 { left: 10%; top: 58%; }
+.founder-quote__spark--s3 { left: 28%; bottom: 10%; width: 16px; }
+.founder-quote__text { position: relative; margin: 0; max-width: 30ch; text-align: center; color: #2a2230; }
+.founder-quote__text p { font-family: var(--font-serif); font-size: clamp(1.5rem, 1.1rem + 1.4vw, 2.3rem); line-height: 1.2; margin: 0 0 var(--space-3); }
+.founder-quote__text footer { font-size: var(--step--1); font-weight: 600; letter-spacing: 0.02em; }
+@media (max-width: 800px) {
+  .founder-quote { grid-template-columns: 1fr; }
+  .founder-quote__photo { min-height: 440px; }
+  .founder-quote__photo img { height: 400px; }
+}

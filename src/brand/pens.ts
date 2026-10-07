@@ -22,7 +22,18 @@ export interface PenColours {
   ink: string;
   /** Solid button colour on `main` that keeps white text readable. */
   strong: string;
+  /** Soft watercolour wash for the pen wrap and card backgrounds. */
+  pastel: string;
+  /** Very pale end of the wash. */
+  mist: string;
+  /** Companion hue for botanicals painted on the wrap. */
+  accent: string;
+  /** Dark, tinted ink that reads on the pastel wrap. */
+  print: string;
 }
+
+/** Painted motif on the pen wrap and card (decoration only, never an ingredient). */
+export type Botanical = 'blossom' | 'citrus' | 'lavender' | 'leaf' | 'berry' | 'daisy';
 
 export interface PenBrand {
   slug: string;
@@ -38,6 +49,9 @@ export interface PenBrand {
   transformation: string;
   /** Customer-facing benefit statements. Empty means NEEDS VERIFICATION. */
   benefits: string[];
+  botanical: Botanical;
+  /** Card photograph (public path). Falls back to the painted card when absent. */
+  cardImage?: string;
 }
 
 /** "Quieter. Calmer. Less preoccupied." */
@@ -75,6 +89,24 @@ function luminance(hex: string): number {
 
 const INK_DARK = '#141414';
 
+/** Rotates a colour's hue by `deg`, keeping saturation and lightness. */
+function hueShift(hex: string, deg: number): string {
+  const [r, g, b] = rgb(hex).map((v) => v / 255);
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  const d = max - min;
+  if (d === 0) return hex;
+  const s = d / (1 - Math.abs(2 * l - 1));
+  let h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  h = (((h * 60 + deg) % 360) + 360) % 360;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  const [r1, g1, b1] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+  return toHex([(r1 + m) * 255, (g1 + m) * 255, (b1 + m) * 255]);
+}
+
 export function coloursFor(hero: string): PenColours {
   const contrastWhite = 1.05 / (luminance(hero) + 0.05);
   const contrastDark = (luminance(hero) + 0.05) / (luminance(INK_DARK) + 0.05);
@@ -87,12 +119,38 @@ export function coloursFor(hero: string): PenColours {
     tint: mix(hero, '#ffffff', 0.86),
     ink,
     strong: ink === '#ffffff' ? mix(hero, '#000000', 0.42) : INK_DARK,
+    pastel: mix(hero, '#ffffff', 0.55),
+    mist: mix(hero, '#ffffff', 0.82),
+    accent: hueShift(mix(hero, '#ffffff', 0.25), 38),
+    print: mix(hero, '#1a1420', 0.78),
   };
 }
 
 // ---------------------------------------------------------------------------
 // Range
 // ---------------------------------------------------------------------------
+
+/** Art direction only: which painted motif each pen wears. */
+const BOTANICALS: Record<string, Botanical> = {
+  'total-body-reset': 'citrus',
+  'craving-control': 'berry',
+  'body-sculpt': 'lavender',
+  'the-glow-up': 'blossom',
+  'skin-rewind': 'daisy',
+  'skin-rewind-reserve': 'lavender',
+  'holiday-tan': 'citrus',
+  'all-day-energy': 'citrus',
+  'deep-sleep-rebuild': 'lavender',
+  'rapid-recovery': 'leaf',
+  'age-defiance': 'blossom',
+  'hormone-reset': 'blossom',
+  'bedroom-confidence': 'berry',
+  'sharp-mind': 'leaf',
+  'gut-reset': 'daisy',
+};
+
+/** Card photographs, added as they're exported (public/cards/<slug>.jpg). */
+const CARD_IMAGES: Record<string, string> = {};
 
 export const PEN_BRANDS: Record<string, PenBrand> = Object.fromEntries(
   RANGE.products.map((p) => [
@@ -108,6 +166,8 @@ export const PEN_BRANDS: Record<string, PenBrand> = Object.fromEntries(
       transformation: p.transformation,
       // The sheet supplies no benefit statements yet; never write our own.
       benefits: [],
+      botanical: BOTANICALS[p.id] ?? 'leaf',
+      cardImage: CARD_IMAGES[p.id],
     } satisfies PenBrand,
   ]),
 );
@@ -125,6 +185,7 @@ export function penBrand(treatment: Pick<Treatment, 'slug' | 'name' | 'category'
       feeling: [],
       transformation: '',
       benefits: [],
+      botanical: 'leaf',
     }
   );
 }

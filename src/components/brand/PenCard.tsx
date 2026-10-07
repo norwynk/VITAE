@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import type { BrandedPen } from '@/hooks/useCatalogue';
 import { feelingLine } from '@/brand/pens';
+import { BotanicalSpill } from './Botanicals';
 import { NeedsVerification } from './NeedsVerification';
 import { PenStage } from './Pen';
 import { worldStyle } from './worldStyle';
@@ -30,17 +31,22 @@ export function PenCard({ pen, index = 0 }: { pen: BrandedPen; index?: number })
       aria-label={t.name}
     >
       <div className={`flip-card__inner${flipped ? ' is-flipped' : ''}`}>
-        <div className="flip-card__face flip-card__front" onClick={flipFromCard}>
-          <h3 className="flip-card__name">{t.name}</h3>
+        <div
+          className={`flip-card__face flip-card__front flip-card__front--bloom${brand.cardImage ? ' has-photo' : ''}`}
+          onClick={flipFromCard}
+          style={brand.cardImage ? { backgroundImage: `url(${brand.cardImage})` } : undefined}
+        >
+          <h3 className="flip-card__name flip-card__name--bloom">{t.name}</h3>
+          <p className="flip-card__hook">{brand.hook}</p>
+          <p className="flip-card__outcome">{brand.outcome}</p>
           <div className="flip-card__stage" aria-hidden="true">
             <span className="flip-card__glow" />
             <span className="flip-card__burst a" />
             <span className="flip-card__burst b" />
             <span className="flip-card__burst c" />
-            <PenStage colours={brand.colours} label={brand.penLabel} angle={index % 2 ? -62 : -54} fit={0.92} />
+            <PenStage colours={brand.colours} label={brand.penLabel} botanical={brand.botanical} angle={index % 2 ? -76 : -70} fit={0.94} />
           </div>
-          <p className="flip-card__hook">{brand.hook}</p>
-          <p className="flip-card__outcome">{brand.outcome}</p>
+          {!brand.cardImage && <BotanicalSpill kind={brand.botanical} colours={brand.colours} className="flip-card__spill" />}
           <div className="flip-card__actions">
             <button type="button" className="btn small flip-card__btn-strong" onClick={() => setFlipped(true)} aria-expanded={flipped}>
               What you get

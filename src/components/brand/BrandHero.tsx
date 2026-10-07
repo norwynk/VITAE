@@ -41,7 +41,7 @@ export function BrandHero() {
           <span className="hero__disc" />
           <span className="hero__disc two" />
           <span className="hero__disc three" />
-          <PenStage colours={hero.colours} label={hero.penLabel} angle={-48} fit={0.98} className="hero__pen pen-stage--float" title="PRICK The Glow Up pen in hot pink" />
+          <PenStage colours={hero.colours} label={hero.penLabel} botanical={hero.botanical} angle={-48} fit={0.98} className="hero__pen pen-stage--float" title="PRICK The Glow Up pen" />
           <p className="hand hero__note">this one&apos;s yours?</p>
         </div>
       </div>

@@ -22,7 +22,8 @@ test('home shows colour cards that flip to outcome, feeling and transformation',
   await expect(page.getByText('Designed for women.').first()).toBeVisible();
   await expect(page.getByRole('heading', { name: /Designed\s*for women\./ })).toBeVisible();
   await expect(page.getByRole('img', { name: 'Dr Kylee Montgomerie' })).toBeVisible();
-  await expect(page.getByText('Dr Kylee Montgomerie', { exact: true })).toBeVisible();
+  await expect(page.getByText('We started PRICK to help women grow into their best selves.', { exact: false })).toBeVisible();
+  await expect(page.getByText('– Dr Kylee Montgomerie, Co-Founder of PRICK')).toBeVisible();
   await expect(page.getByText('Co-founded by', { exact: false })).toHaveCount(0);
   for (const gone of ['Made by women', "Everyone's welcome", "founder's story", 'what you want to change']) {
     await expect(page.getByText(gone, { exact: false })).toHaveCount(0);
