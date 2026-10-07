@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { FOUNDER, founderReady } from '@/brand/founder';
+import { CO_FOUNDERS } from '@/brand/team';
 import { PEN_BRANDS } from '@/brand/pens';
 import { PenStage } from './Pen';
 import { PhotoSlot } from './PhotoSlot';
@@ -20,7 +20,7 @@ export function EditorialStatement({ top, bottom, children }: { top: string; bot
 }
 
 const STEPS = [
-  { title: 'Pick what you want to change.', body: 'Glow, energy, sleep or focus. Start with the feeling, not the formula.' },
+  { title: 'Pick what you want to transform.', body: 'Glow, energy, sleep or focus. Start with the feeling, not the formula.' },
   { title: 'Complete your health screening.', body: 'A private questionnaire about your health, history and goals.' },
   { title: 'Clinical review.', body: 'A clinician reads your screening and decides what is right for you, if anything.' },
   { title: 'Your personalised path begins.', body: 'If you are approved, your plan, reminders and check-ins live in your account.' },
@@ -227,47 +227,57 @@ export function FinalCta() {
   );
 }
 
-export function MadeByWomen() {
-  const founder = founderReady(FOUNDER) ? FOUNDER : null;
-  const trio = ['the-glow-up', 'hormone-reset', 'bedroom-confidence'].map((slug) => PEN_BRANDS[slug]);
+/**
+ * Category stance: PRICK is designed for women. A positioning choice about who
+ * the range is built around, not an identity or empowerment statement.
+ */
+export function DesignedForWomen() {
+  const trio = ['the-glow-up', 'hormone-reset', 'skin-rewind'].map((slug) => PEN_BRANDS[slug]);
+  const withPhoto = CO_FOUNDERS.find((f) => f.photo);
   return (
     <section className="women section">
       <div className="container women__grid">
         <div data-reveal>
-          <p className="eyebrow">Our stance</p>
+          <p className="eyebrow">Who it&apos;s for</p>
           <h2 className="display women__title">
-            Made by women.
+            Designed
             <br />
-            <span className="serif-i">For women.</span>
+            for women.
+            <span className="serif-i">Built around her goals, her body and her rhythm.</span>
           </h2>
           <p className="women__body">
-            PRICK is built by women who got tired of wellness that talks down to us or talks past us. Every pen, every
-            question in your screening and every word on this site starts with women in mind.
+            From the colours to the questions in your screening, PRICK is shaped around women: your cycle, pregnancy,
+            breastfeeding and life stage all count, so your clinician gets the full picture.
           </p>
-          <p className="women__welcome">Everyone&apos;s welcome. But we know who we&apos;re building for.</p>
+          {/* Slot for the founders' "why we exist" copy, to be supplied. Nothing renders until then. */}
         </div>
-        <div className="women__founder" data-reveal style={{ '--delay': '150ms' } as React.CSSProperties}>
+        <div className="women__side" data-reveal style={{ '--delay': '150ms' } as React.CSSProperties}>
           <div className="women__pens" aria-hidden="true">
             {trio.map((b, i) => (
               <PenStage key={b.slug} colours={b.colours} label={b.penLabel} angle={[-70, -90, -110][i]} fit={0.95} />
             ))}
           </div>
-          {founder ? (
-            <figure className="women__quote">
-              <blockquote className="serif-i">&ldquo;{founder.quote}&rdquo;</blockquote>
-              <figcaption>
-                <strong>{founder.name}</strong>
-                <br />
-                {founder.role}
-              </figcaption>
-            </figure>
-          ) : (
-            // PLACEHOLDER: founder name, role and quote to be supplied and approved by her.
-            <div className="women__quote women__quote--pending" data-placeholder="founder">
-              <p className="eyebrow">Founder</p>
-              <p className="muted" style={{ margin: 0 }}>Our founder&apos;s story is coming soon, in her own words.</p>
-            </div>
-          )}
+          <div className="cofounders">
+            {withPhoto?.photo && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="cofounders__photo" src={withPhoto.photo} alt={withPhoto.name} width={96} height={230} />
+            )}
+            <p className="cofounders__line">
+              Co-founded by{' '}
+              {CO_FOUNDERS.map((f, i) => {
+                // "Norwyn K, Director, and Dr Kylee Montgomerie": a title is set off by commas.
+                const title = f.role.replace(/^Co-founder( and )?/, '');
+                return (
+                  <span key={f.name}>
+                    {i > 0 && ' and '}
+                    <strong>{f.name}</strong>
+                    {title && `, ${title}${i < CO_FOUNDERS.length - 1 ? ',' : ''}`}
+                  </span>
+                );
+              })}
+              .{withPhoto?.bio && <span className="cofounders__bio"> {withPhoto.name} is {withPhoto.bio}</span>}
+            </p>
+          </div>
         </div>
       </div>
     </section>

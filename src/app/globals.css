@@ -572,14 +572,14 @@ fieldset.nested { background: var(--off-white); }
 .women { background: var(--blush); }
 .women__grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: var(--space-5); align-items: center; }
 .women__title { font-size: var(--step-5); line-height: 0.88; }
-.women__title .serif-i { text-transform: none; color: var(--pink); display: block; font-size: 0.7em; line-height: 1.1; }
+.women__title .serif-i { text-transform: none; color: var(--pink); display: block; font-size: 0.42em; line-height: 1.15; margin-top: var(--space-2); }
 .women__body { font-size: var(--step-1); max-width: 34ch; margin-top: var(--space-4); }
-.women__welcome { font-weight: 700; margin-top: var(--space-3); }
-.women__founder { display: grid; gap: var(--space-3); }
+.women__side { display: grid; gap: var(--space-3); }
+.cofounders { display: flex; gap: var(--space-2); align-items: flex-end; background: var(--off-white); border-radius: var(--radius-m); padding: var(--space-2) var(--space-3) 0; overflow: hidden; }
+.cofounders__photo { width: 96px; height: auto; flex: 0 0 auto; display: block; }
+.cofounders__line { margin: 0 0 var(--space-2); font-size: var(--step--1); line-height: 1.5; }
+.cofounders__bio { color: var(--ink-soft); }
 .women__pens { display: grid; grid-template-columns: repeat(3, 1fr); height: 340px; }
 .women__pens .pen-stage { min-width: 0; }
-.women__quote { margin: 0; background: var(--off-white); border-radius: var(--radius-m); padding: var(--space-4) var(--space-3); }
-.women__quote blockquote { margin: 0 0 var(--space-2); font-size: var(--step-2); line-height: 1.2; }
-.women__quote--pending { border: 1px dashed var(--line); }
 .site-footer__women { font-family: var(--font-serif); font-style: italic; font-size: var(--step-2); margin: var(--space-4) 0 0; color: var(--pink); }
 @media (max-width: 900px) { .women__grid { grid-template-columns: 1fr; gap: var(--space-4); } .women__pens { height: 260px; } }

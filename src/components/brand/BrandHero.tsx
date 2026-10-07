@@ -34,7 +34,7 @@ export function BrandHero() {
             <span>Made for real life</span>
           </div>
           <p className="hero__women" data-reveal style={{ '--delay': '640ms' } as React.CSSProperties}>
-            Made by women, for women.
+            Designed for women.
           </p>
         </div>
         <div className="hero__stage" ref={stage}>

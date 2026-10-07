@@ -143,10 +143,13 @@ export function PenStage({
   className?: string;
   title?: string;
 }) {
-  const rad = (Math.abs(angle) * Math.PI) / 180;
+  const rad = (angle * Math.PI) / 180;
   // Pen length that fits the box at this angle (pen is ~0.17 as thick as long).
-  const byHeight = (100 / (Math.sin(rad) + 0.17 * Math.cos(rad))) * fit;
-  const byWidth = (100 / (Math.cos(rad) + 0.17 * Math.sin(rad))) * fit;
+  // Absolute values keep angles past vertical (e.g. -110deg) sized correctly.
+  const sin = Math.abs(Math.sin(rad));
+  const cos = Math.abs(Math.cos(rad));
+  const byHeight = (100 / (sin + 0.17 * cos)) * fit;
+  const byWidth = (100 / (cos + 0.17 * sin)) * fit;
   return (
     <div
       className={`pen-stage${className ? ` ${className}` : ''}`}

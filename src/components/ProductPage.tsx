@@ -194,7 +194,7 @@ export function ProductPage({ slug }: { slug: string }) {
             <div>
               <p>
                 A private questionnaire about you, your health history, current medication and lifestyle, and what you want
-                to change. Your answers go to your clinician only, not to delivery or support staff.
+                to transform. Your answers go to your clinician only, not to delivery or support staff.
               </p>
               <Link href={startHref} className="link-arrow">Start your screening</Link>
             </div>

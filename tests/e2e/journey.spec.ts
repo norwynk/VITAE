@@ -19,9 +19,15 @@ test('home shows colour cards that flip to outcome, feeling and transformation',
     await expect(page.getByRole('heading', { name, exact: true }).first()).toBeVisible();
   }
   await expect(page.getByRole('link', { name: 'See all 15 pens' })).toBeVisible();
-  await expect(page.getByText('Made by women, for women.').first()).toBeVisible();
-  await expect(page.getByRole('heading', { name: /Made by women\.\s*For women\./ })).toBeVisible();
-  await expect(page.locator('[data-placeholder="founder"]')).toBeVisible();
+  await expect(page.getByText('Designed for women.').first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Designed\s*for women\./ })).toBeVisible();
+  await expect(page.getByText(/Co-founded by\s*Norwyn K, Director, and\s*Dr Kylee Montgomerie\./)).toBeVisible();
+  await expect(page.getByText('Dr Kylee Montgomerie is a South African doctor with over 30 years in corporate wellness.', { exact: false })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Dr Kylee Montgomerie' })).toBeVisible();
+  for (const gone of ['Made by women', "Everyone's welcome", "founder's story", 'what you want to change']) {
+    await expect(page.getByText(gone, { exact: false })).toHaveCount(0);
+  }
+  await expect(page.getByText('Pick what you want to transform.')).toBeVisible();
   const card = page.getByRole('article', { name: 'Craving Control' });
   await expect(card.getByText('Stop letting food take up so much space in your head.')).toBeVisible();
   const feeling = card.getByText('Quieter. Calmer. Less preoccupied.');
