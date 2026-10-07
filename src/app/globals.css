@@ -604,12 +604,12 @@ fieldset.nested { background: var(--off-white); }
 
 /* Co-founder quote: photo half and pastel quote half. */
 .founder-quote { display: grid; grid-template-columns: 1fr 1fr; min-height: clamp(560px, 52vw, 820px); }
-.founder-quote__photo { position: relative; background: #f4efea; display: flex; align-items: flex-end; justify-content: center; overflow: hidden; padding-top: var(--space-5); color: #2a2230; }
-/* Her whole photo (head to mid-thigh) stands on the bottom edge. */
-.founder-quote__photo img { display: block; height: min(520px, 92%); width: auto; max-width: 70%; object-fit: contain; object-position: bottom; translate: 12% 0; }
-.founder-quote__hand { position: absolute; z-index: 1; left: 8%; top: 18%; margin: 0; font-family: var(--font-hand); font-size: clamp(2.2rem, 1.6rem + 2vw, 3.4rem); line-height: 0.95; }
+.founder-quote__photo { position: relative; background: #f4efea; overflow: hidden; color: #2a2230; }
+/* Her whole photo (head to mid-thigh), scaled up evenly to fill the height, centred and standing on the bottom edge. */
+.founder-quote__photo img { position: absolute; bottom: 0; left: 50%; translate: -50% 0; display: block; height: 94%; width: auto; max-width: none; }
+.founder-quote__hand { position: absolute; z-index: 1; left: 6%; top: 14%; margin: 0; font-family: var(--font-hand); font-size: clamp(2.2rem, 1.6rem + 2vw, 3.4rem); line-height: 0.95; }
 .founder-quote__hand span { font-size: 0.72em; }
-.founder-quote__arrow { position: absolute; z-index: 1; left: 12%; top: 38%; width: clamp(70px, 9vw, 120px); }
+.founder-quote__arrow { position: absolute; z-index: 1; left: 9%; top: 30%; width: clamp(70px, 9vw, 120px); }
 .founder-quote__panel { position: relative; background: linear-gradient(160deg, #fde2ec 0%, #f6d9f2 55%, #fbe7d6 100%); display: grid; place-items: center; padding: var(--space-5) var(--space-4); overflow: hidden; }
 .founder-quote__decor, .founder-quote__spark { position: absolute; pointer-events: none; }
 .founder-quote__decor { width: clamp(56px, 7vw, 96px); }
@@ -625,6 +625,9 @@ fieldset.nested { background: var(--off-white); }
 .founder-quote__text footer { font-size: var(--step-0); font-weight: 600; letter-spacing: 0.02em; max-width: none; }
 @media (max-width: 800px) {
   .founder-quote { grid-template-columns: 1fr; }
-  .founder-quote__photo { min-height: 440px; }
-  .founder-quote__photo img { height: 400px; }
+  .founder-quote__photo { min-height: 560px; }
+  .founder-quote__photo img { left: 60%; height: 92%; }
+  .founder-quote__hand { left: 5%; top: 8%; }
+  .founder-quote__arrow { left: 8%; top: 22%; }
+  .founder-quote__decor--tr { top: 3%; }
 }
