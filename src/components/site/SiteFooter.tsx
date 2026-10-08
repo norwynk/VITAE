@@ -1,9 +1,11 @@
 import Link from 'next/link';
+import { Logo } from './Logo';
 
 export function SiteFooter() {
   return (
     <footer className="site-footer">
       <div className="container">
+        <Logo variant="light" className="site-footer__logo" />
         <div className="site-footer__big" aria-hidden="true">
           More good
           <br />

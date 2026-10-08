@@ -30,7 +30,7 @@ const result = await build({
 });
 let js = result.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
 // The preview is one self-contained page: inline images the site serves from /public.
-js = js.replace(/"(\/(?:team|cards)\/[\w.-]+\.(png|jpg))"/g, (match, file, ext) => {
+js = js.replace(/"(\/(?:team|cards|brand)\/[\w.-]+\.(png|jpg))"/g, (match, file, ext) => {
   const data = readFileSync(path.join(root, 'public', file)).toString('base64');
   return `"data:image/${ext === 'jpg' ? 'jpeg' : 'png'};base64,${data}"`;
 });

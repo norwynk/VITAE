@@ -158,8 +158,11 @@ button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 .site-nav__links a { text-decoration: none; font-weight: 600; font-size: var(--step--1); letter-spacing: 0.08em; text-transform: uppercase; }
 .site-nav__links a:hover { text-decoration: underline; text-underline-offset: 6px; }
 .site-nav__end { display: flex; justify-content: flex-end; gap: var(--space-2); align-items: center; }
-.logo { font-family: var(--font-display); font-size: 2.1rem; line-height: 1; letter-spacing: 0.02em; text-decoration: none; text-transform: uppercase; }
-.logo sup { font-family: var(--font-sans); font-size: 0.5rem; letter-spacing: 0.1em; vertical-align: top; margin-left: 2px; }
+.logo { display: inline-flex; line-height: 0; text-decoration: none; }
+.logo img { display: block; height: 34px; width: auto; }
+@media (max-width: 640px) { .logo img { height: 28px; } }
+.site-footer .site-footer__logo { opacity: 1; margin-bottom: var(--space-4); }
+.site-footer__logo img { height: 48px; }
 .nav-toggle { display: none; }
 .mobile-menu { display: none; }
 
