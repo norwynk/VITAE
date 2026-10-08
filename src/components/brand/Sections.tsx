@@ -4,7 +4,6 @@ import { CO_FOUNDERS } from '@/brand/team';
 import { PEN_BRANDS } from '@/brand/pens';
 import { Motif } from './Botanicals';
 import { PenStage } from './Pen';
-import { PhotoSlot } from './PhotoSlot';
 
 const FINALE = ['the-glow-up', 'total-body-reset', 'deep-sleep-rebuild', 'all-day-energy', 'sharp-mind', 'body-sculpt'].map((slug) => PEN_BRANDS[slug]);
 
@@ -38,9 +37,6 @@ export function HowItWorks() {
               <br />
               works.
             </h2>
-            <p className="serif-i" style={{ fontSize: 'var(--step-2)', maxWidth: '18ch', margin: 0 }}>
-              Fun to pick. Properly checked.
-            </p>
           </div>
           <ol className="steps__grid" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
             {STEPS.map((s, i) => (
@@ -57,36 +53,43 @@ export function HowItWorks() {
   );
 }
 
-const MOMENTS = [
-  { caption: 'Mornings', brief: 'Bathroom vanity at sunrise, pink pen beside a glass of water and gold earrings, hard window light.', pen: 'the-glow-up', tilt: 18 },
-  { caption: 'Training', brief: 'Gym bag on court-side bench, orange pen next to a sweaty water bottle, hard sun.', pen: 'total-body-reset', tilt: -14 },
-  { caption: 'Work', brief: 'Desk with laptop and chrome lamp, lime pen beside AirPods case, clean daylight.', pen: 'sharp-mind', tilt: 26 },
-  { caption: 'Travel', brief: 'Open carry-on with linen shirt and sunglasses, pink pen tucked in a pocket, poolside light.', pen: 'the-glow-up', tilt: -22 },
-  { caption: 'Sleep', brief: 'Bedside table at dusk, blue pen next to lavender and a book, cool evening light.', pen: 'deep-sleep-rebuild', tilt: 12 },
-];
+/** Decorative line-up for the "good days" band, fanned like a product shot. */
+const LINEUP = [
+  { slug: 'the-glow-up', angle: -96, lift: '6%' },
+  { slug: 'total-body-reset', angle: -90, lift: '0%' },
+  { slug: 'body-sculpt', angle: -80, lift: '-6%' },
+  { slug: 'all-day-energy', angle: -68, lift: '-2%' },
+].map((p) => ({ ...p, brand: PEN_BRANDS[p.slug] }));
 
+/**
+ * Pens fanned on a pastel band with the headline and quiz button beside them.
+ * Copy stays factual: clinician-decided, used privately at home.
+ */
 export function LifestylePanel() {
   return (
-    <section className="section">
-      <div className="container">
-        <div className="section-head" data-reveal>
-          <h2 className="display">
-            Good days look
-            <br />
-            different on
-            <br />
-            everyone.
-          </h2>
-          <p style={{ maxWidth: '32ch', margin: 0 }}>Small pen. Big plans. It fits in a bag, a pocket or the corner of your vanity.</p>
-        </div>
-        <div className="lifestyle__grid">
-          {MOMENTS.map((m, i) => (
-            <div key={m.caption} data-reveal style={{ '--delay': `${i * 80}ms` } as React.CSSProperties}>
-              <PhotoSlot brand={PEN_BRANDS[m.pen]} brief={m.brief} caption={m.caption} tilt={m.tilt} />
+    <section className="good-days">
+      <div className="container good-days__inner">
+        <div className="good-days__pens" aria-hidden="true">
+          {LINEUP.map((p) => (
+            <div key={p.slug} className="good-days__pen" style={{ '--lift': p.lift } as React.CSSProperties}>
+              <PenStage colours={p.brand.colours} label={p.brand.penLabel} botanical={p.brand.botanical} angle={p.angle} fit={0.98} />
             </div>
           ))}
         </div>
+        <div className="good-days__copy" data-reveal>
+          <h2 className="display">Good days look different on everyone.</h2>
+          <p>
+            Fifteen pens for fifteen different goals. Your clinician decides which one is right for you, and you use it
+            privately at home, on the plan they set.
+          </p>
+          <Link href="/find-your-prick" className="btn">
+            Find your Prick
+          </Link>
+        </div>
       </div>
+      <svg className="good-days__wave" viewBox="0 0 1440 80" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 80 V48 C240 8 480 0 720 28 C960 56 1200 64 1440 20 V80 Z" />
+      </svg>
     </section>
   );
 }

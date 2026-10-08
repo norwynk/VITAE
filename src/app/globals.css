@@ -280,25 +280,9 @@ button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 @media (max-width: 900px) { .steps__grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 560px) { .steps__grid { grid-template-columns: 1fr; } }
 
-.lifestyle__grid { display: grid; grid-template-columns: repeat(6, 1fr); grid-auto-rows: minmax(160px, 22vw); gap: var(--space-2); }
-.lifestyle__grid > * { min-height: 0; height: 100%; }
-.lifestyle__grid > :nth-child(1) { grid-column: span 4; grid-row: span 2; }
-.lifestyle__grid > :nth-child(2) { grid-column: span 2; grid-row: span 1; }
-.lifestyle__grid > :nth-child(3) { grid-column: span 2; grid-row: span 1; }
-.lifestyle__grid > :nth-child(4) { grid-column: span 3; }
-.lifestyle__grid > :nth-child(5) { grid-column: span 3; }
 @media (max-width: 760px) {
-  .lifestyle__grid { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; grid-auto-rows: unset; margin: 0 calc(var(--gutter) * -1); padding: 0 var(--gutter); }
-  .lifestyle__grid > * { flex: 0 0 78%; height: 460px; scroll-snap-align: center; }
 }
 
-.photo-slot { position: relative; overflow: hidden; border-radius: var(--radius-l); background: var(--slot-bg, var(--sand)); height: 100%; min-height: 240px; isolation: isolate; }
-.photo-slot__sun { position: absolute; width: 70%; aspect-ratio: 1; border-radius: 50%; background: var(--slot-sun, #fff); opacity: 0.85; top: -12%; right: -12%; }
-.photo-slot__shadow { position: absolute; inset: auto 0 0 0; height: 45%; background: linear-gradient(transparent, rgb(17 17 17 / 0.18)); }
-.photo-slot__pen { position: absolute; inset: 6% 5% 22%; width: auto; height: auto; }
-.photo-slot__caption { position: absolute; left: 1.2rem; bottom: 1.1rem; right: 1.2rem; color: #fff; z-index: 2; }
-.photo-slot__caption strong { font-family: var(--font-display); font-size: var(--step-2); text-transform: uppercase; display: block; line-height: 1; text-shadow: 0 2px 20px rgb(0 0 0 / 0.25); }
-.photo-slot__dev { position: absolute; top: 0.8rem; left: 0.8rem; z-index: 3; font-size: 0.68rem; max-width: 80%; background: rgb(255 255 255 / 0.85); color: var(--ink); padding: 0.3rem 0.5rem; border-radius: 6px; font-family: ui-monospace, monospace; }
 
 .trust { background: var(--black); color: #fff; }
 .trust h2 { font-size: var(--step-4); }
@@ -630,4 +614,21 @@ fieldset.nested { background: var(--off-white); }
   .founder-quote__hand { left: 5%; top: 8%; }
   .founder-quote__arrow { left: 8%; top: 22%; }
   .founder-quote__decor--tr { top: 3%; }
+}
+
+/* "Good days" band: pens fanned on pastel, copy and quiz button beside them, wave into the next section. */
+.good-days { position: relative; background: linear-gradient(170deg, #f3e9ff 0%, #ead9ff 55%, #fbe1ef 100%); padding: var(--space-4) 0 calc(var(--space-4) + 60px); overflow: hidden; }
+.good-days__inner { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: var(--space-4); align-items: center; }
+.good-days__pens { display: grid; grid-template-columns: repeat(4, 1fr); height: clamp(440px, 44vw, 680px); padding: 0 6%; }
+.good-days__pen { min-width: 0; margin: 0 -34%; translate: 0 var(--lift, 0); }
+.good-days__pen:nth-child(2) { z-index: 2; }
+.good-days__pen:nth-child(3) { z-index: 3; }
+.good-days__copy { text-align: center; justify-self: center; max-width: 30rem; }
+.good-days__copy h2 { font-size: clamp(2.6rem, 1.2rem + 3vw, 4.6rem); line-height: 0.92; margin: 0 auto var(--space-3); max-width: 12ch; text-wrap: balance; }
+.good-days__copy p { font-size: var(--step-0); margin: 0 auto var(--space-4); max-width: 34ch; }
+.good-days__wave { position: absolute; left: 0; right: 0; bottom: -1px; width: 100%; height: 70px; fill: var(--black); }
+@media (max-width: 860px) {
+  .good-days__inner { grid-template-columns: 1fr; }
+  .good-days__pens { height: 340px; max-width: 420px; width: 100%; justify-self: center; padding: 0 10%; }
+  .good-days__pen { margin: 0 -28%; }
 }

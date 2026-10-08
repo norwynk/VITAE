@@ -22,7 +22,7 @@ export const CO_FOUNDERS: CoFounder[] = [
     /** Completes "<name> is …". */
     bio: 'a South African doctor with over 30 years in corporate wellness.',
     photo: '/team/kylee-montgomerie.png',
-    handle: 'Kylee',
+    handle: 'Dr Kylee',
     quote:
       "We started PRICK to help women grow into their best selves. That's why we made a better-for-you peptide experience that women can trust.",
   },
