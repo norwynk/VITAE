@@ -25,6 +25,9 @@ test('home shows colour cards that flip to outcome, feeling and transformation',
   await expect(page.getByText('We started PRICK to help women grow into their best selves.', { exact: false })).toBeVisible();
   await expect(page.getByText('– Dr Kylee Montgomerie, Co-Founder of PRICK')).toBeVisible();
   await expect(page.locator('.founder-quote__hand')).toContainText('Dr Kylee,');
+  await expect(page.getByText('Built around your goals, your body and your rhythm.')).toBeVisible();
+  await expect(page.getByText('around her goals', { exact: false })).toHaveCount(0);
+  await expect(page.locator('#how-it-works').getByRole('link', { name: 'Start your assessment' })).toHaveAttribute('href', '/app');
   for (const gone of ['Fun to pick', 'fits in a bag', 'Small pen']) {
     await expect(page.getByText(gone, { exact: false })).toHaveCount(0);
   }

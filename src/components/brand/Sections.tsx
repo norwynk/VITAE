@@ -47,6 +47,11 @@ export function HowItWorks() {
               </li>
             ))}
           </ol>
+          <div className="steps__cta" data-reveal>
+            <Link href="/app" className="btn steps__btn">
+              Start your assessment
+            </Link>
+          </div>
         </div>
       </div>
     </section>
@@ -246,7 +251,7 @@ export function DesignedForWomen() {
             Designed
             <br />
             for women.
-            <span className="serif-i">Built around her goals, her body and her rhythm.</span>
+            <span className="serif-i">Built around your goals, your body and your rhythm.</span>
           </h2>
           <p className="women__body">
             From the colours to the questions in your screening, PRICK is shaped around women: your cycle, pregnancy,
@@ -257,7 +262,7 @@ export function DesignedForWomen() {
         <div className="women__side" data-reveal style={{ '--delay': '150ms' } as React.CSSProperties}>
           <div className="women__pens" aria-hidden="true">
             {trio.map((b, i) => (
-              <PenStage key={b.slug} colours={b.colours} label={b.penLabel} botanical={b.botanical} angle={[-70, -90, -110][i]} fit={0.95} />
+              <PenStage key={b.slug} colours={b.colours} label={b.penLabel} botanical={b.botanical} angle={[-84, -90, -96][i]} fit={1} />
             ))}
           </div>
         </div>

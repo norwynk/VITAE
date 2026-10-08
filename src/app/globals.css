@@ -559,10 +559,11 @@ fieldset.nested { background: var(--off-white); }
 .women__title .serif-i { text-transform: none; color: var(--pink); display: block; font-size: 0.42em; line-height: 1.15; margin-top: var(--space-2); }
 .women__body { font-size: var(--step-1); max-width: 34ch; margin-top: var(--space-4); }
 .women__side { display: grid; gap: var(--space-3); }
-.women__pens { display: grid; grid-template-columns: repeat(3, 1fr); height: 340px; }
-.women__pens .pen-stage { min-width: 0; }
+.women__pens { display: grid; grid-template-columns: repeat(3, 1fr); height: clamp(520px, 56vw, 860px); }
+.women__pens .pen-stage { min-width: 0; margin: 0 -30%; width: 160%; }
+.women__pens .pen-stage:nth-child(2) { z-index: 2; }
 .site-footer__women { font-family: var(--font-serif); font-style: italic; font-size: var(--step-2); margin: var(--space-4) 0 0; color: var(--pink); }
-@media (max-width: 900px) { .women__grid { grid-template-columns: 1fr; gap: var(--space-4); } .women__pens { height: 260px; } }
+@media (max-width: 900px) { .women__grid { grid-template-columns: 1fr; gap: var(--space-4); } .women__pens { height: 380px; max-width: 420px; width: 100%; justify-self: center; } }
 
 /* Bloom-style card front: pastel wash, lowercase serif name, pen centred, botanicals underneath. */
 .flip-card__front--bloom {
@@ -581,8 +582,8 @@ fieldset.nested { background: var(--off-white); }
 .flip-card__spill { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 34%; z-index: 0; pointer-events: none; }
 .flip-card__front--bloom .flip-card__actions { z-index: 3; }
 .flip-card__front--bloom .flip-card__btn-light { color: var(--world-print); }
-.flip-card__front--bloom.has-photo { background-color: var(--world-main); background-size: cover; background-position: center bottom; color: var(--world-ink); }
-.flip-card__front--bloom.has-photo .flip-card__name, .flip-card__front--bloom.has-photo .flip-card__hook, .flip-card__front--bloom.has-photo .flip-card__outcome { text-shadow: 0 1px 14px rgb(0 0 0 / 0.12); }
+.flip-card__front--bloom.has-photo { background-color: var(--world-main); background-size: cover; background-position: center bottom; color: #fff; }
+.flip-card__front--bloom.has-photo .flip-card__name, .flip-card__front--bloom.has-photo .flip-card__hook, .flip-card__front--bloom.has-photo .flip-card__outcome { text-shadow: 0 1px 2px rgb(0 0 0 / 0.28), 0 2px 18px rgb(0 0 0 / 0.22); }
 .flip-card__front--bloom.has-photo .flip-card__btn-light { color: var(--world-strong); }
 .flip-card__front--bloom.has-photo .flip-card__stage { margin-bottom: 14%; }
 
@@ -632,3 +633,6 @@ fieldset.nested { background: var(--off-white); }
   .good-days__pens { height: 340px; max-width: 420px; width: 100%; justify-self: center; padding: 0 10%; }
   .good-days__pen { margin: 0 -28%; }
 }
+
+.steps__cta { display: flex; justify-content: center; margin-top: var(--space-5); }
+.steps__btn { font-size: var(--step-1); padding: 1.1rem 2.6rem; }
