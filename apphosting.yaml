@@ -1,0 +1,24 @@
+# Firebase App Hosting: builds from GitHub `main` and redeploys on every push.
+# The site runs in demo mode (fictional products and accounts) until the live
+# Firebase backend is configured.
+runConfig:
+  minInstances: 0
+  # The demo store is a file on the server; one instance keeps it consistent.
+  maxInstances: 1
+  cpu: 1
+  memoryMiB: 512
+  concurrency: 80
+
+env:
+  - variable: DATA_MODE
+    value: demo
+    availability: [BUILD, RUNTIME]
+  - variable: NEXT_PUBLIC_DATA_MODE
+    value: demo
+    availability: [BUILD, RUNTIME]
+  - variable: ALLOW_PRODUCTION_DEMO
+    value: "true"
+    availability: [BUILD, RUNTIME]
+  - variable: DEMO_DATA_DIR
+    value: /tmp/prick-demo
+    availability: [BUILD, RUNTIME]
