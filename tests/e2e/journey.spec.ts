@@ -28,7 +28,7 @@ test('home shows colour cards that flip to outcome, feeling and transformation',
   await expect(page.getByText('Built around your goals, your body and your rhythm.')).toBeVisible();
   await expect(page.getByText('around her goals', { exact: false })).toHaveCount(0);
   await expect(page.locator('#how-it-works').getByRole('link', { name: 'Start your assessment' })).toHaveAttribute('href', '/app');
-  await expect(page.locator('.marquee').getByText('Up to 3 months in one pen').first()).toBeAttached();
+  await expect(page.locator('.marquee').getByText('Months of doses in one pen').first()).toBeAttached();
   for (const gone of ['Fun to pick', 'fits in a bag', 'Small pen', 'Clinician-checked']) {
     await expect(page.getByText(gone, { exact: false })).toHaveCount(0);
   }

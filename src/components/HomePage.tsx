@@ -11,7 +11,7 @@ export function HomePage() {
   return (
     <BrandPage revealKey={pens}>
       <BrandHero />
-      <Marquee items={['All in one pen', 'Quick to use', 'Up to 3 months in one pen', 'Simple. Easy. Done.', 'A clinician in your corner']} />
+      <Marquee items={['All in one pen', 'Quick to use', 'Months of doses in one pen', 'Simple. Easy. Done.', 'A clinician in your corner']} />
       <Range pens={pens} error={error} limit={6} />
       <EditorialStatement top="A little prick." bottom="A lot more you.">
         <p>Pretty pens. A clinician in your corner. Feel more like yourself.</p>
