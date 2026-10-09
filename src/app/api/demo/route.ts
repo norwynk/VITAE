@@ -33,9 +33,14 @@ function json(body: unknown) {
   return NextResponse.json(body, { headers: { 'Cache-Control': 'no-store' } });
 }
 
-function sameHost(origin: string, host: string | null): boolean {
+/**
+ * Behind a hosting proxy (Firebase App Hosting) `host` is the internal service
+ * address and the public one arrives in `x-forwarded-host`; accept either.
+ */
+function sameHost(origin: string, request: NextRequest): boolean {
+  const hosts = [request.headers.get('host'), request.headers.get('x-forwarded-host')?.split(',')[0]?.trim()].filter(Boolean);
   try {
-    return host !== null && new URL(origin).host === host;
+    return hosts.includes(new URL(origin).host);
   } catch {
     return false;
   }
@@ -45,7 +50,7 @@ export async function POST(request: NextRequest) {
   if (!demoAllowed()) return error(404, 'Demo mode is not available');
   // Same-origin only: reject cross-site form posts even though cookies are SameSite=strict.
   const origin = request.headers.get('origin');
-  if (origin && !sameHost(origin, request.headers.get('host'))) return error(403, 'Cross-origin request refused');
+  if (origin && !sameHost(origin, request)) return error(403, 'Cross-origin request refused');
 
   let body: { action?: string; role?: string; persona?: string; command?: unknown };
   try {
