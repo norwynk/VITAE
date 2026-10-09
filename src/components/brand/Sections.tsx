@@ -317,6 +317,9 @@ export function CoFounderQuote() {
           <p>{founder.quote}</p>
           <footer>– {founder.name}, Co-Founder of PRICK</footer>
         </blockquote>
+        <Link href="/about" className="btn founder-quote__btn">
+          About us
+        </Link>
       </div>
     </section>
   );

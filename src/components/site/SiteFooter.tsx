@@ -24,6 +24,7 @@ export function SiteFooter() {
             <ul>
               <li><Link href="/app">Account</Link></li>
               <li><Link href="/#how-it-works">How it works</Link></li>
+              <li><Link href="/about">About us</Link></li>
             </ul>
           </div>
           <div>

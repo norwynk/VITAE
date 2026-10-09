@@ -598,7 +598,7 @@ fieldset.nested { background: var(--off-white); }
 .founder-quote__hand { position: absolute; z-index: 1; left: 6%; top: 14%; margin: 0; font-family: var(--font-hand); font-size: clamp(2.2rem, 1.6rem + 2vw, 3.4rem); line-height: 0.95; }
 .founder-quote__hand span { font-size: 0.72em; }
 .founder-quote__arrow { position: absolute; z-index: 1; left: 9%; top: 30%; width: clamp(70px, 9vw, 120px); }
-.founder-quote__panel { position: relative; background: linear-gradient(160deg, #fde2ec 0%, #f6d9f2 55%, #fbe7d6 100%); display: grid; place-items: center; padding: var(--space-5) var(--space-4); overflow: hidden; }
+.founder-quote__panel { position: relative; background: linear-gradient(160deg, #fde2ec 0%, #f6d9f2 55%, #fbe7d6 100%); display: grid; place-items: center; align-content: center; padding: var(--space-5) var(--space-4); overflow: hidden; }
 .founder-quote__decor, .founder-quote__spark { position: absolute; pointer-events: none; }
 .founder-quote__decor { width: clamp(56px, 7vw, 96px); }
 .founder-quote__decor--tl { left: 6%; top: 5%; }
@@ -639,3 +639,18 @@ fieldset.nested { background: var(--off-white); }
 
 .steps__cta { display: flex; justify-content: center; margin-top: var(--space-5); }
 .steps__btn { font-size: var(--step-1); padding: 1.1rem 2.6rem; }
+
+/* About us */
+.about-hero { position: relative; height: min(72vh, 760px); min-height: 360px; overflow: hidden; background: #1f3d2c; }
+.about-hero img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; }
+.about { max-width: 44rem; padding-top: var(--space-5); padding-bottom: var(--section); }
+.about__title { font-size: var(--step-5); line-height: 0.9; margin: var(--space-2) 0 var(--space-4); }
+.about__body p { font-size: var(--step-0); line-height: 1.7; margin: 0 0 var(--space-3); text-wrap: pretty; }
+.about__body .about__lead { font-family: var(--font-serif); font-size: var(--step-2); line-height: 1.2; }
+.about__idea { margin: var(--space-4) 0; padding: 0; }
+.about__idea p { font-family: var(--font-serif); font-style: italic; font-size: var(--step-2); line-height: 1.2; color: var(--pink); margin: 0 0 0.3rem; }
+.about__idea .about__idea-main { font-family: var(--font-display); font-style: normal; text-transform: uppercase; color: var(--ink, #111); font-size: var(--step-3); line-height: 0.95; margin-bottom: var(--space-2); }
+.about__signoff { font-size: var(--step-4); line-height: 0.95; margin: var(--space-5) 0 var(--space-4); }
+.about__signoff .serif-i { text-transform: none; color: var(--pink); }
+.founder-quote__btn { margin-top: var(--space-3); position: relative; }
+@media (max-width: 640px) { .about-hero { height: 50vh; } .about-hero img { object-position: 45% 30%; } }

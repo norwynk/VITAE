@@ -25,6 +25,7 @@ test('home shows colour cards that flip to outcome, feeling and transformation',
   await expect(page.getByText('We started PRICK to help women grow into their best selves.', { exact: false })).toBeVisible();
   await expect(page.getByText('– Dr Kylee Montgomerie, Co-Founder of PRICK')).toBeVisible();
   await expect(page.locator('.founder-quote__hand')).toContainText('Dr Kylee,');
+  await expect(page.locator('.founder-quote').getByRole('link', { name: 'About us' })).toHaveAttribute('href', '/about');
   await expect(page.getByText('Built around your goals, your body and your rhythm.')).toBeVisible();
   await expect(page.getByText('around her goals', { exact: false })).toHaveCount(0);
   await expect(page.locator('#how-it-works').getByRole('link', { name: 'Start your assessment' })).toHaveAttribute('href', '/app');
@@ -252,4 +253,13 @@ test('established member dashboard and blocked checkout', async ({ page }) => {
   await expect(page.getByText(/Every day · valid until/)).toBeVisible();
   // Total Body Reset was made purchasable in the journey above, but Sam has no saved address yet.
   await expect(page.getByText('Save a delivery address before ordering.')).toBeVisible();
+});
+
+test('about page tells the founders story', async ({ page }) => {
+  await page.goto('/about');
+  await expect(page.getByRole('heading', { level: 1, name: 'Behind PRICK.' })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Dr Kylee Montgomerie and Norwyn K, co-founders of PRICK' })).toBeVisible();
+  await expect(page.getByText('Start with the person, not the peptide.')).toBeVisible();
+  await expect(page.getByText('Serious where it matters.')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Start your assessment' })).toHaveAttribute('href', '/app');
 });
