@@ -87,25 +87,45 @@ test('shop filters by category and the expanded view keeps the clinical gate', a
   await expect(page.getByRole('link', { name: 'Start screening' }).first()).toHaveAttribute('href', '/app?pen=deep-sleep-rebuild');
 });
 
-test('quiz match leads into screening for the matched pen', async ({ page }) => {
+test('quiz asks enough to match, and matches build "My pens"', async ({ page }) => {
   await page.goto('/find-your-prick');
   await page.getByRole('button', { name: "Let's go" }).click();
   await page.getByRole('button', { name: 'I want more energy, sleep or recovery' }).click();
-  await page.getByRole('button', { name: 'Switched on. Capable. Still going.' }).click();
-  await expect(page.getByRole('heading', { name: /Looks like you're an All-Day Energy\./i })).toBeVisible();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: /Still have something left/ }).click();
+  await page.getByRole('button', { name: 'Switched on' }).click();
+  await page.getByRole('button', { name: 'Still going' }).click();
+  await page.getByRole('button', { name: 'Show my match' }).click();
+  await expect(page.getByRole('heading', { name: /Your match:\s*All-Day Energy\./ })).toBeVisible();
+  await expect(page.getByText(/Looks like you're/)).toHaveCount(0);
+
   await page.getByRole('button', { name: 'Start over' }).click();
   await page.getByRole('button', { name: 'I want to love what I see' }).click();
-  await page.getByRole('button', { name: 'Radiant. Fresh. Confident.' }).click();
-  await expect(page.getByRole('heading', { name: /Looks like you're The Glow Up\./i })).toBeVisible();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Look as good as you want to feel.' }).click();
+  await page.getByRole('button', { name: 'Skip and show my match' }).click();
+  await expect(page.getByRole('heading', { name: /Your match:\s*The Glow Up\./ })).toBeVisible();
+  await expect(page.getByText('Also worth asking your clinician about')).toBeVisible();
+  await page.getByRole('button', { name: 'Add The Glow Up to my pens' }).click();
+
   await page.getByRole('button', { name: 'Start over' }).click();
   await page.getByRole('button', { name: 'I want more energy, sleep or recovery' }).click();
-  await page.getByRole('button', { name: 'Rested. Rebuilt. Clearer.' }).click();
-  await expect(page.getByRole('heading', { name: /Looks like you're a Deep Sleep Rebuild/i })).toBeVisible();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await page.getByRole('button', { name: 'Make your nights count again.' }).click();
+  await page.getByRole('button', { name: 'Rested' }).click();
+  await page.getByRole('button', { name: 'Show my match' }).click();
+  await expect(page.getByRole('heading', { name: /Your match:\s*Deep Sleep Rebuild\./ })).toBeVisible();
   await expect(page.getByText('This is a match, not a prescription.')).toBeVisible();
+  await page.getByRole('button', { name: 'Add Deep Sleep Rebuild to my pens' }).click();
+  // Adding a second pen keeps the first.
+  await expect(page.getByRole('link', { name: 'My pens (2)' }).first()).toBeAttached();
+
   await page.getByRole('link', { name: 'Start your screening' }).click();
   await page.getByRole('button', { name: 'New member' }).click();
-  await expect(page.getByText('Health screening · Deep Sleep Rebuild')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Begin screening' })).toBeVisible();
+  await expect(page.getByText('Health screening · The Glow Up, Deep Sleep Rebuild')).toBeVisible();
+  await page.getByRole('button', { name: 'Begin screening' }).click();
+  await expect(page.getByText('Step 1 of 5 · Your pens')).toBeVisible();
+  await expect(page.locator('.screening__pen')).toHaveCount(2);
 });
 
 test('full journey across roles', async ({ page }) => {
@@ -116,7 +136,11 @@ test('full journey across roles', async ({ page }) => {
   // Earlier tests may have left a demo session; this context starts clean.
   await page.getByRole('button', { name: 'New member' }).click();
   await page.getByRole('button', { name: 'Begin screening' }).click();
-  await expect(page.getByRole('heading', { name: 'Your health assessment' })).toBeVisible();
+  await expect(page.getByText('Step 1 of 5 · Your pens')).toBeVisible();
+  await page.getByRole('button', { name: 'Next: About you' }).click();
+  await expect(page.getByText('Choose at least one pen, or let your clinician suggest one.')).toBeVisible();
+  await page.getByLabel('Choose a pen').selectOption({ label: 'Total Body Reset' });
+  await page.getByRole('button', { name: 'Next: About you' }).click();
   await page.getByLabel('First name').fill('Alex');
   await page.getByLabel('Last name').fill('Demo');
   await page.getByLabel('Date of birth').fill('1990-01-15');
@@ -126,23 +150,27 @@ test('full journey across roles', async ({ page }) => {
   await page.getByLabel('City or town').fill('Cape Town');
   await page.getByLabel('Height (cm)').fill('175');
   await page.getByLabel('Weight (kg)').fill('82');
-  await page.getByLabel('Energy').check();
-  await page.getByLabel('Average sleep (hours)').fill('7');
+  await page.getByLabel('Energy', { exact: true }).check();
+  await page.getByRole('button', { name: 'Next: Your health' }).click();
   await page.getByLabel('I am planning a pregnancy in the next 12 months').check();
   await page.getByLabel('Menopause stage').selectOption('PRE');
+  await page.getByRole('button', { name: 'Next: Your lifestyle' }).click();
+  await page.getByLabel('Average sleep (hours)').fill('7');
+  await page.getByRole('button', { name: 'Next: Consent' }).click();
   await page.getByLabel(/privacy notice/).check();
   await page.getByLabel(/terms of use/).check();
   await page.getByLabel(/health information being processed/).check();
   await page.getByLabel(/clinician decides/).check();
-  await page.getByRole('button', { name: 'Submit assessment' }).click();
-  await expect(page.getByRole('heading', { name: /Hey, Alex\./ })).toBeVisible();
+  await page.getByRole('button', { name: 'Submit screening' }).click();
+  await expect(page.getByText('Hey, Alex.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your clinician is on it.' })).toBeVisible();
 
-  // --- Request, save address; nothing orderable yet -----------------------------
-  const metabolicCard = page.locator('li.card', { hasText: 'Total Body Reset' });
-  await metabolicCard.getByRole('button', { name: 'Request clinician review' }).click();
-  await expectToast(page, 'Request sent to your clinician');
-  await expect(metabolicCard.getByText('Request in review')).toBeVisible();
+  // --- The chosen pen went to the clinician; save address; nothing orderable yet --
+  const myPens = page.locator('section', { has: page.getByRole('heading', { name: 'My pens' }) });
+  await expect(myPens.getByText('Total Body Reset')).toBeVisible();
+  await expect(myPens.getByText('Waiting for your clinician')).toBeVisible();
 
+  await page.getByRole('tab', { name: 'Orders' }).click();
   await page.getByLabel('Recipient').fill('Alex Demo');
   await page.getByLabel('Street address').fill('1 Example Street');
   await page.getByLabel('Suburb').fill('Gardens');
@@ -186,10 +214,13 @@ test('full journey across roles', async ({ page }) => {
 
   // --- Member: adherence and simulated checkout ----------------------------------
   await switchRole(page, 'New member');
+  await expect(page.getByRole('heading', { name: "Today's dose." })).toBeVisible();
+  await page.getByRole('button', { name: 'Log it' }).click();
   await page.getByRole('button', { name: 'Taken' }).click();
   await expectToast(page, 'Dose recorded as taken');
   await expect(page.getByText(/Nothing to record/)).toBeVisible();
 
+  await page.getByRole('tab', { name: 'Orders' }).click();
   await expect(page.getByText('Demo mode: payment is simulated')).toBeVisible();
   await page.getByLabel('Quantity').fill('3');
   await page.getByRole('button', { name: 'Place simulated order' }).click();
@@ -204,6 +235,7 @@ test('full journey across roles', async ({ page }) => {
   await expect(orders.getByText('Simulated')).toBeVisible();
 
   // --- Member asks for support ---------------------------------------------------
+  await page.getByRole('tab', { name: 'Plan' }).click();
   await page.getByLabel('I need support from my clinician').check();
   await page.getByLabel('Notes').fill('Feeling nauseous after the dose');
   await page.getByRole('button', { name: 'Save check-in' }).click();
@@ -248,10 +280,12 @@ test('established member dashboard and blocked checkout', async ({ page }) => {
   await page.goto('/app');
   // Fresh browser context: no demo session yet, so the role picker is shown.
   await page.getByRole('button', { name: 'Established member' }).click();
-  await expect(page.getByRole('heading', { name: /Hey, Sam\./ })).toBeVisible();
-  await expect(page.getByText("Here's your prick.")).toBeVisible();
+  await expect(page.getByText('Hey, Sam.')).toBeVisible();
+  await expect(page.locator('section', { has: page.getByRole('heading', { name: 'My pens' }) }).getByText('Approved').first()).toBeVisible();
+  await page.getByRole('tab', { name: 'Plan' }).click();
   await expect(page.getByText(/Every day · valid until/)).toBeVisible();
   // Total Body Reset was made purchasable in the journey above, but Sam has no saved address yet.
+  await page.getByRole('tab', { name: 'Orders' }).click();
   await expect(page.getByText('Save a delivery address before ordering.')).toBeVisible();
 });
 

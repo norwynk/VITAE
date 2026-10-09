@@ -5,6 +5,7 @@ import type { BrandedPen } from '@/hooks/useCatalogue';
 import { feelingLine } from '@/brand/pens';
 import { BotanicalSpill } from './Botanicals';
 import { NeedsVerification } from './NeedsVerification';
+import { ShortlistButton } from './ShortlistButton';
 import { PenStage } from './Pen';
 import { worldStyle } from './worldStyle';
 
@@ -86,10 +87,11 @@ export function PenCard({ pen, index = 0 }: { pen: BrandedPen; index?: number })
           {/* Layers 1 and 2 describe a feeling; the facts live behind "View the pen". */}
           <p className="flip-card__boundary">A feeling, not a medical claim. The facts are on the next page.</p>
           <div className="flip-card__actions">
+            <ShortlistButton slug={t.slug} name={t.name} className="btn small flip-card__btn-strong" />
             <Link href={href} className="btn small flip-card__btn-light">
               View the pen
             </Link>
-            <button type="button" className="btn small flip-card__btn-strong" onClick={() => setFlipped(false)}>
+            <button type="button" className="btn small flip-card__btn-light" onClick={() => setFlipped(false)}>
               Flip back
             </button>
           </div>

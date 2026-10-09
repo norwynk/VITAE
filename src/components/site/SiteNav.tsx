@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { useShortlist } from '@/hooks/useShortlist';
 import { Logo } from './Logo';
 
 const LINKS = [
@@ -12,6 +13,7 @@ const LINKS = [
 export function SiteNav({ cta = true }: { cta?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const { slugs } = useShortlist();
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
     onScroll();
@@ -30,8 +32,8 @@ export function SiteNav({ cta = true }: { cta?: boolean }) {
         </nav>
         <Logo />
         <div className="site-nav__end">
-          <Link href="/app" className="link-arrow">
-            Account
+          <Link href="/app" className="link-arrow site-nav__pens">
+            {slugs.length ? `My pens (${slugs.length})` : 'Account'}
           </Link>
           {cta && (
             <Link href="/find-your-prick" className="btn small">
@@ -50,7 +52,7 @@ export function SiteNav({ cta = true }: { cta?: boolean }) {
           </Link>
         ))}
         <Link href="/app" onClick={() => setOpen(false)}>
-          Account
+          {slugs.length ? `My pens (${slugs.length})` : 'Account'}
         </Link>
       </nav>
     </header>

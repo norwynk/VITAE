@@ -12,7 +12,7 @@
     "start": "next start",
     "typecheck": "tsc --noEmit && tsc --noEmit -p functions",
     "lint": "eslint .",
-    "test": "vitest run tests/domain.test.ts tests/demo.test.ts tests/catalogue.test.ts",
+    "test": "vitest run tests/domain.test.ts tests/demo.test.ts tests/catalogue.test.ts tests/quiz.test.ts",
     "test:rules": "firebase emulators:exec --only firestore,storage --project demo-vitae \"vitest run tests/rules.test.ts\"",
     "test:firebase": "npm run functions:build && firebase emulators:exec --only auth,firestore,functions,storage --project demo-vitae \"tsx scripts/verify-firebase.ts\"",
     "test:e2e": "playwright test",

@@ -7,6 +7,7 @@ import { useCatalogue } from '@/hooks/useCatalogue';
 import { NeedsVerification } from './brand/NeedsVerification';
 import { PenStage } from './brand/Pen';
 import { PenCard } from './brand/PenCard';
+import { ShortlistButton } from './brand/ShortlistButton';
 import { worldStyle } from './brand/worldStyle';
 import { BrandPage } from './site/BrandPage';
 
@@ -94,7 +95,8 @@ export function ProductPage({ slug }: { slug: string }) {
               </div>
             </div>
             <div className="row" style={{ gap: 'var(--space-3)' }}>
-              <Link href={startHref} className="btn product-hero__cta">
+              <ShortlistButton slug={t.slug} name={t.name} className="btn product-hero__cta" />
+              <Link href={startHref} className="btn ghost">
                 Start screening
               </Link>
               <Link href="/find-your-prick" className="link-arrow">
