@@ -17,6 +17,9 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { themeColor: '#fbf6ee' };
 
+// Pages are cached by the hosting CDN; refresh them every minute so updates reach everyone quickly.
+export const revalidate = 60;
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en-ZA" suppressHydrationWarning className={`${display.variable} ${serif.variable} ${sans.variable} ${hand.variable}`}>
