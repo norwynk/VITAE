@@ -12,7 +12,9 @@ export function AboutPage() {
       </section>
       <article className="about container">
         <p className="eyebrow">About us</p>
-        <h1 className="display about__title">Behind PRICK.</h1>
+        <h1 className="display about__title">
+          Behind PR<span className="about__i">I</span>CK.
+        </h1>
         <div className="about__body">
           <p className="about__lead">
             PRICK started with a simple frustration: health had become far too complicated, far too clinical, and far too boring.
