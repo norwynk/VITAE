@@ -13,14 +13,14 @@ async function expectToast(page: Page, text: string | RegExp) {
 
 test('home shows colour cards that flip to outcome, feeling and transformation', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /Pick your\s*Prick\./i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Not all pricks\s*are created equal\./i })).toBeVisible();
   await expect(page.getByText("Pens shown are fictional demo products and can't be bought yet.")).toBeVisible();
   for (const name of ['Total Body Reset', 'Craving Control', 'Body Sculpt', 'The Glow Up', 'Skin Rewind', 'Skin Rewind Reserve']) {
     await expect(page.getByRole('heading', { name, exact: true }).first()).toBeVisible();
   }
-  await expect(page.getByRole('link', { name: 'See all 17 pens' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Meet all 17' })).toBeVisible();
   await expect(page.getByText('Designed for women.').first()).toBeVisible();
-  await expect(page.getByRole('heading', { name: /Designed\s*for women\./ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /A prick that\s*gets her\./ })).toBeVisible();
   await expect(page.getByRole('img', { name: 'Dr Kylee Montgomerie' })).toBeVisible();
   await expect(page.getByText('We started PRICK to help women grow into their best selves.', { exact: false })).toBeVisible();
   await expect(page.getByText('– Dr Kylee Montgomerie, Co-Founder of PRICK')).toBeVisible();
@@ -28,19 +28,20 @@ test('home shows colour cards that flip to outcome, feeling and transformation',
   await expect(page.locator('.founder-quote').getByRole('link', { name: 'About us' })).toHaveAttribute('href', '/about');
   await expect(page.getByText('Built around your goals, your body and your rhythm.')).toBeVisible();
   await expect(page.getByText('around her goals', { exact: false })).toHaveCount(0);
-  await expect(page.locator('#how-it-works').getByRole('link', { name: 'Start your assessment' })).toHaveAttribute('href', '/app');
+  await expect(page.locator('#how-it-works').getByRole('link', { name: 'Start your screening' })).toHaveAttribute('href', '/app');
   await expect(page.locator('.marquee').getByText('Months of doses in one pen').first()).toBeAttached();
   for (const gone of ['Fun to pick', 'fits in a bag', 'Small pen', 'Clinician-checked']) {
     await expect(page.getByText(gone, { exact: false })).toHaveCount(0);
   }
-  const goodDays = page.locator('section', { has: page.getByRole('heading', { name: 'Good days look different on everyone.' }) });
+  const goodDays = page.locator('section', { has: page.getByRole('heading', { name: 'This prick gets around.' }) });
   await expect(goodDays.getByText('you use it privately at home', { exact: false })).toBeVisible();
   await expect(goodDays.getByRole('link', { name: 'Find your Prick' })).toHaveAttribute('href', '/find-your-prick');
   await expect(page.getByText('Co-founded by', { exact: false })).toHaveCount(0);
   for (const gone of ['Made by women', "Everyone's welcome", "founder's story", 'what you want to change']) {
     await expect(page.getByText(gone, { exact: false })).toHaveCount(0);
   }
-  await expect(page.getByText('Pick what you want to transform.')).toBeVisible();
+  await expect(page.getByText('A clinician says yes. Or no.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: "Don't take pricks from strangers." })).toBeVisible();
   const card = page.getByRole('article', { name: 'Craving Control' });
   await expect(card.getByText('Stop letting food take up so much space in your head.')).toBeVisible();
   const feeling = card.getByText('Quieter. Calmer. Less preoccupied.');
@@ -72,7 +73,7 @@ test('shop filters by category and the expanded view keeps the clinical gate', a
   await expect(page.getByRole('article', { name: 'The Glow Up' })).toHaveCount(0);
   await page.getByRole('article', { name: 'Deep Sleep Rebuild' }).getByRole('link', { name: 'View the pen' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Deep Sleep Rebuild' })).toBeVisible();
-  for (const section of ["What's actually in it", 'Certificate of analysis', 'Screening', 'Safety', 'How the process works']) {
+  for (const section of ["What's actually in it", 'A prick with paperwork.', "Don't take pricks from strangers.", "We don't mess around with this part.", "Let's get to know each other first."]) {
     await expect(page.getByRole('heading', { name: section, exact: true })).toBeVisible();
   }
   await expect(page.getByText('CJC-1295 without DAC + Ipamorelin', { exact: true })).toBeVisible();
@@ -157,7 +158,7 @@ test('full journey across roles', async ({ page }) => {
   await page.getByLabel('Weight (kg)').fill('82');
   await page.getByLabel('Energy', { exact: true }).check();
   await page.getByRole('button', { name: 'Next: Your health' }).click();
-  await expectToast(page, /You can stop here and pick up later/);
+  await expectToast(page, /we’ll keep your place/);
   // Leaving part-way loses nothing.
   await page.reload();
   await page.getByRole('button', { name: 'Pick up where you left off' }).click();
@@ -175,9 +176,17 @@ test('full journey across roles', async ({ page }) => {
   await page.getByLabel('I have no allergies').check();
   await page.getByLabel('I am planning a pregnancy in the next 12 months').check();
   await page.getByLabel('Menopause stage').selectOption('PRE');
+  // Questions for the chosen weight pen; a family-history "Not sure" is flagged for the clinician.
+  await expect(page.getByRole('heading', { name: 'For your weight medicine' })).toBeVisible();
+  await page.locator('[data-question="glp1-thyroid"]').getByText('Not sure', { exact: true }).click();
+  await page.locator('[data-question="glp1-current"]').getByText('No', { exact: true }).click();
+  await page.getByLabel(/What weight would you like to reach/).fill('75');
   await page.getByRole('button', { name: 'Next: Your lifestyle' }).click();
   await page.getByLabel('Average sleep (hours)').fill('7');
   await page.getByRole('button', { name: 'Next: Last details' }).click();
+  // The moment before consent reads the answers honestly.
+  await expect(page.getByRole('heading', { name: /Thanks for being so open/ })).toBeVisible();
+  await expect(page.getByText('Your clinician reads every answer.')).toBeVisible();
   await page.getByLabel('Last name').fill('Demo');
   await page.getByLabel('ID number').fill('9001155000080');
   await page.getByLabel('Mobile number').fill('+27 82 000 0000');
@@ -185,7 +194,7 @@ test('full journey across roles', async ({ page }) => {
   await page.getByLabel(/terms of use/).check();
   await page.getByLabel(/health information being processed/).check();
   await page.getByLabel(/clinician decides/).check();
-  await page.getByRole('button', { name: 'Submit screening' }).click();
+  await page.getByRole('button', { name: 'Send it to my clinician' }).click();
   await expect(page.getByText('Hey, Alex.')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Your clinician is on it.' })).toBeVisible();
 
@@ -213,6 +222,9 @@ test('full journey across roles', async ({ page }) => {
   await switchRole(page, 'Clinician');
   await expect(page.getByRole('heading', { name: 'Clinician workspace' })).toBeVisible();
   await page.getByRole('button', { name: /Alex Demo/ }).click();
+  const penAnswers = page.locator('section', { has: page.getByRole('heading', { name: 'Pen-specific answers' }) });
+  await expect(penAnswers.getByText('Look at this')).toHaveCount(1);
+  await expect(penAnswers.getByText(/medullary thyroid cancer/)).toBeVisible();
   const review = page.getByRole('form', { name: /Review Total Body Reset/ });
   await review.getByLabel('Packs approved').fill('2');
   await review.getByLabel('Frequency').selectOption('DAILY');
@@ -257,6 +269,18 @@ test('full journey across roles', async ({ page }) => {
   const orders = page.locator('section', { has: page.getByRole('heading', { name: 'Your orders' }) });
   await expect(orders.getByText('Paid')).toBeVisible();
   await expect(orders.getByText('Simulated')).toBeVisible();
+
+  // --- On repeat after the first pen; stopping offers a pause first ---------------
+  const repeat = page.locator('section', { has: page.getByRole('heading', { name: 'On repeat' }) });
+  await repeat.getByRole('button', { name: 'Put on repeat' }).click();
+  await expectToast(page, 'Total Body Reset is on repeat');
+  await expect(repeat.getByText(/Your check-in opens on/)).toBeVisible();
+  await repeat.getByRole('button', { name: 'Stop repeat' }).click();
+  await expect(repeat.getByText('Would a pause help instead?')).toBeVisible();
+  await repeat.getByRole('button', { name: 'Pause instead' }).click();
+  await expectToast(page, 'Repeat paused');
+  await repeat.getByRole('button', { name: 'Resume' }).click();
+  await expectToast(page, 'Repeat resumed');
 
   // --- Member asks for support ---------------------------------------------------
   await page.getByRole('tab', { name: 'Plan' }).click();
@@ -319,5 +343,5 @@ test('about page tells the founders story', async ({ page }) => {
   await expect(page.getByRole('img', { name: 'Dr Kylee Montgomerie and Norwyn K, co-founders of PRICK' })).toBeVisible();
   await expect(page.getByText('Start with the person, not the peptide.')).toBeVisible();
   await expect(page.getByText('Serious where it matters.')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Start your assessment' })).toHaveAttribute('href', '/app');
+  await expect(page.getByRole('link', { name: 'Start your screening' })).toHaveAttribute('href', '/app');
 });

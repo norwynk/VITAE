@@ -64,12 +64,12 @@ export function QuizPage() {
             <section className="quiz-step" key="intro">
               <p className="eyebrow">Find your prick</p>
               <h1 className="display quiz__title">
-                Let&apos;s find
+                Have you met
                 <br />
-                your <span style={{ color: 'var(--pink)' }}>prick.</span>
+                your <span style={{ color: 'var(--pink)' }}>prick?</span>
               </h1>
               <p className="serif-i" style={{ fontSize: 'var(--step-2)', lineHeight: 1.15, margin: 'var(--space-3) 0 var(--space-4)' }}>
-                A few quick questions about what you want. Your clinician handles the health side.
+                A few quick questions about what you are after. No health questions yet: that part is for your clinician.
               </p>
               <button type="button" onClick={() => setStep({ kind: 'goals' })}>
                 Let&apos;s go
@@ -81,9 +81,9 @@ export function QuizPage() {
             <section className="quiz-step" key="goals" aria-labelledby="q-goals">
               <p className="eyebrow">{questionLabel(1)} · pick up to {MAX_GOALS}</p>
               <h1 id="q-goals" className="display quiz__title">
-                What brings
+                What are
                 <br />
-                you here?
+                you after?
               </h1>
               <div className="quiz__choices">
                 {CATEGORIES.map((c) => {

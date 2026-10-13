@@ -4,9 +4,12 @@ import { penBrand } from '@/brand/pens';
 import type { ScreeningDraft, Treatment } from '@/domain/model';
 import { MAX_SHORTLIST, useShortlist } from '@/hooks/useShortlist';
 import { worldStyle } from '../brand/worldStyle';
-import { MENOPAUSE_STAGES, SA_PROVINCES } from '@/domain/model';
+import { MENOPAUSE_STAGES, SA_PROVINCES, ageOn, localDate } from '@/domain/model';
+import { groupsFor, isFlagged } from '@/domain/penQuestions';
 import { Notice, formValues } from '../ui';
 import { useWorkspace } from '../workspace-context';
+import { FitMoment } from './FitMoment';
+import { PenQuestionFields, readPenAnswers } from './PenQuestionFields';
 import { COMMON_ALLERGIES, COMMON_CONDITIONS, COMMON_MEDICATIONS } from './screeningOptions';
 import { TagPicker } from './TagPicker';
 
@@ -57,6 +60,25 @@ export function OnboardingForm() {
   const available = Object.values(workspace.store.treatments).filter((t) => t.active && t.public);
   const chosen = shortlist.slugs.map((slug) => available.find((t) => t.slug === slug)).filter((t): t is Treatment => Boolean(t));
   const addable = available.filter((t) => !shortlist.has(t.slug));
+  const penGroups = groupsFor(chosen);
+
+  /** What the "good fit" moment needs from the answers so far. */
+  const fitFrom = (values: Record<string, string | boolean>) => {
+    const flagged = penGroups.some((g) =>
+      g.questions.some((q) => {
+        const answer =
+          q.kind === 'multi'
+            ? (q.options ?? []).filter((_, i) => values[`pen:${q.id}:${i}`] === true).join(', ')
+            : String(values[`pen:${q.id}`] ?? '');
+        return isFlagged(q, answer);
+      }),
+    );
+    const dob = typeof values.dateOfBirth === 'string' ? values.dateOfBirth : '';
+    const tooYoung = Boolean(dob) && ageOn(dob, localDate(new Date())) < 18;
+    return { needsLook: flagged || values.pregnant === true || values.breastfeeding === true, tooYoung };
+  };
+  // Worked out on arrival at the last step (or from the draft when resuming there).
+  const [fit, setFit] = useState(() => (step === STEPS.length - 1 ? fitFrom(saved) : null));
 
   // Pens live in this browser; bring back the draft's pens on another device.
   const restoredPens = useRef(false);
@@ -99,6 +121,7 @@ export function OnboardingForm() {
     return true;
   };
   const go = (n: number) => {
+    setFit(n === STEPS.length - 1 && formRef.current ? fitFrom(draftAnswers(formRef.current)) : null);
     setStep(n);
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -111,6 +134,8 @@ export function OnboardingForm() {
       if (!el.name || DRAFT_SKIP.has(el.name)) continue;
       if (el instanceof HTMLInputElement && el.type === 'checkbox') {
         if (el.checked) answers[el.name] = true;
+      } else if (el instanceof HTMLInputElement && el.type === 'radio') {
+        if (el.checked) answers[el.name] = el.value;
       } else if (el.value.trim()) {
         answers[el.name] = el.value.trim().slice(0, 2000);
       }
@@ -124,7 +149,7 @@ export function OnboardingForm() {
     if (!stepIsValid(step)) return;
     const form = formRef.current;
     if (form) {
-      void run({ type: 'screeningDraft', step: step + 1, answers: draftAnswers(form) }, 'Saved. You can stop here and pick up later.');
+      void run({ type: 'screeningDraft', step: step + 1, answers: draftAnswers(form) }, 'Saved. Leave whenever you like, we’ll keep your place.');
     }
     go(step + 1);
   };
@@ -180,6 +205,7 @@ export function OnboardingForm() {
               diet: v.diet,
             },
             testingInterest: v.checked('testingInterest'),
+            penAnswers: readPenAnswers(form, penGroups),
             consents: {
               privacy: v.checked('consentPrivacy'),
               terms: v.checked('consentTerms'),
@@ -331,7 +357,8 @@ export function OnboardingForm() {
         </fieldset>
       </div>
 
-      <div data-step="2" hidden={step !== 2}>
+      <div data-step="2" hidden={step !== 2} className="stack">
+        <PenQuestionFields groups={penGroups} text={text} ticked={ticked} />
         <fieldset>
           <legend>Health history</legend>
           <p className="muted small" style={{ marginTop: 0 }}>
@@ -446,7 +473,8 @@ export function OnboardingForm() {
         </fieldset>
       </div>
 
-      <div data-step="4" hidden={step !== 4}>
+      <div data-step="4" hidden={step !== 4} className="stack">
+        {fit && <FitMoment pens={chosen} {...fit} />}
         <fieldset>
           <legend>Your details</legend>
           <p className="muted small" style={{ marginTop: 0 }}>
@@ -516,8 +544,8 @@ export function OnboardingForm() {
             Next: {STEPS[step + 1]}
           </button>
         ) : (
-          <button type="submit" disabled={busy}>
-            Submit screening
+          <button type="submit" disabled={busy || fit?.tooYoung}>
+            Send it to my clinician
           </button>
         )}
       </div>

@@ -7,15 +7,15 @@ export function SiteFooter() {
       <div className="container">
         <Logo variant="light" className="site-footer__logo" />
         <div className="site-footer__big" aria-hidden="true">
-          More good
+          A prick with
           <br />
-          days.
+          standards.
         </div>
         <div className="site-footer__grid">
           <div>
             <p className="eyebrow">Shop</p>
             <ul>
-              <li><Link href="/shop">All pens</Link></li>
+              <li><Link href="/shop">Meet the pricks</Link></li>
               <li><Link href="/find-your-prick">Find your prick</Link></li>
             </ul>
           </div>

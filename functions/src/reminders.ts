@@ -10,9 +10,11 @@ import {
   type NotificationRecord,
   type Regimen,
   type Reminder,
+  type RepeatDelivery,
   NEUTRAL_SENDER_LABEL,
   localDate,
   reminderDecision,
+  renewalNotice,
 } from '../../src/domain/model';
 
 const ALREADY_EXISTS = 6;
@@ -20,6 +22,9 @@ const ALREADY_EXISTS = 6;
 export const REMINDER_TITLE = NEUTRAL_SENDER_LABEL;
 /** Generic lock-screen text: never names the treatment or dose. */
 export const REMINDER_BODY = 'You have a scheduled reminder. Open the app for details.';
+/** Never names the treatment. */
+export const RENEWAL_TITLE = 'Time for a quick check-in';
+export const RENEWAL_BODY = 'Answer a few questions so your next delivery can be sent.';
 
 export interface SweepResult {
   checked: number;
@@ -83,6 +88,30 @@ export async function runReminderSweep(
         data: { kind: 'REMINDER', notificationId: decision.notificationId },
       });
       result.pushed += 1;
+    }
+  }
+
+  // On repeat: one in-app notice when a renewal check-in window opens.
+  const repeats = await db.collection('repeatDeliveries').where('status', '==', 'ACTIVE').limit(2000).get();
+  for (const snap of repeats.docs) {
+    result.checked += 1;
+    const repeat = { ...snap.data(), id: snap.id } as RepeatDelivery;
+    const decision = renewalNotice(repeat, today);
+    if (!decision.send) continue;
+    const notification: NotificationRecord = {
+      id: decision.notificationId,
+      memberId: repeat.memberId,
+      kind: 'REMINDER',
+      title: RENEWAL_TITLE,
+      body: RENEWAL_BODY,
+      read: false,
+      createdAt: now.toISOString(),
+    };
+    try {
+      await db.doc(`notifications/${decision.notificationId}`).create(notification);
+      result.created += 1;
+    } catch (e) {
+      if ((e as { code?: number }).code !== ALREADY_EXISTS) throw e;
     }
   }
   return result;

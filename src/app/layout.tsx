@@ -10,8 +10,8 @@ const sans = DM_Sans({ subsets: ['latin'], variable: '--font-sans-loaded', displ
 const hand = Caveat({ subsets: ['latin'], variable: '--font-hand-loaded', display: 'swap' });
 
 export const metadata: Metadata = {
-  title: { default: `${SERVICE_NAME}: more good days`, template: `%s · ${SERVICE_NAME}` },
-  description: 'Peptide pens for more of what you want from your days. Clinician-guided and personalised.',
+  title: { default: `${SERVICE_NAME}: not all pricks are created equal`, template: `%s · ${SERVICE_NAME}` },
+  description: 'Peptide pens designed for women, with a clinician behind every one. Screening first, always.',
   robots: { index: false, follow: false },
 };
 

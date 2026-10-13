@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { feelingLine } from '@/brand/pens';
-import { formatRand } from '@/domain/model';
+import { RENEWAL_LEAD_DAYS, formatRand } from '@/domain/model';
 import { useCatalogue } from '@/hooks/useCatalogue';
 import { NeedsVerification } from './brand/NeedsVerification';
 import { PenStage } from './brand/Pen';
@@ -43,9 +43,9 @@ export function ProductPage({ slug }: { slug: string }) {
     return (
       <BrandPage>
         <section className="page-hero container">
-          <h1 className="display">Not found.</h1>
-          <p className="serif-i page-hero__sub">That pen isn&apos;t in the range.</p>
-          <Link href="/shop" className="btn">See all pens</Link>
+          <h1 className="display">This prick got away.</h1>
+          <p className="serif-i page-hero__sub">That pen isn&apos;t in the range, or it never was.</p>
+          <Link href="/shop" className="btn">Meet the pricks</Link>
         </section>
       </BrandPage>
     );
@@ -84,14 +84,13 @@ export function ProductPage({ slug }: { slug: string }) {
                 </span>
                 <span className="badge">Available after approval</span>
               </div>
-              {/* No recurring delivery in the backend yet. */}
-              <div className="purchase-option" role="listitem" data-unavailable="true">
+              <div className="purchase-option" role="listitem">
                 <span>
                   <strong>On repeat</strong>
                   <br />
-                  <span className="small muted">Automatic repeat delivery</span>
+                  <span className="small muted">A quick check-in before you run out, then your next pen ships</span>
                 </span>
-                <span className="badge">Coming soon</span>
+                <span className="badge">After your first pen</span>
               </div>
             </div>
             <div className="row" style={{ gap: 'var(--space-3)' }}>
@@ -181,7 +180,10 @@ export function ProductPage({ slug }: { slug: string }) {
 
           {/* Certificate of analysis: the only verification document shown to customers. */}
           <section className="info-block" data-reveal>
-            <h2 className="display">Certificate of analysis</h2>
+            <div>
+              <span className="layer-label">Certificate of analysis</span>
+              <h2 className="display">A prick with paperwork.</h2>
+            </div>
             <div>
               {t.certificateOfAnalysisUrl ? (
                 <a href={t.certificateOfAnalysisUrl} className="link-arrow" target="_blank" rel="noopener noreferrer">
@@ -196,18 +198,24 @@ export function ProductPage({ slug }: { slug: string }) {
           </section>
 
           <section className="info-block" data-reveal>
-            <h2 className="display">Screening</h2>
+            <div>
+              <span className="layer-label">Screening</span>
+              <h2 className="display">Don&apos;t take pricks from strangers.</h2>
+            </div>
             <div>
               <p>
-                A private questionnaire about you, your health history, current medication and lifestyle, and what you want
-                to transform. Your answers go to your clinician only, not to delivery or support staff.
+                A private questionnaire about you, your health history, current medication and lifestyle, and what you are
+                hoping for. Your answers go to your clinician only, not to delivery or support staff.
               </p>
               <Link href={startHref} className="link-arrow">Start your screening</Link>
             </div>
           </section>
 
           <section className="info-block" data-reveal>
-            <h2 className="display">Safety</h2>
+            <div>
+              <span className="layer-label">Safety</span>
+              <h2 className="display">We don&apos;t mess around with this part.</h2>
+            </div>
             <p>
               Your clinician sets your plan; you can&apos;t change the dose yourself. If something feels off, flag it in a
               check-in or message and it goes straight to your clinician. In an emergency call 10177.
@@ -215,7 +223,10 @@ export function ProductPage({ slug }: { slug: string }) {
           </section>
 
           <section className="info-block" data-reveal>
-            <h2 className="display">How the process works</h2>
+            <div>
+              <span className="layer-label">How it works</span>
+              <h2 className="display">Let&apos;s get to know each other first.</h2>
+            </div>
             <ol className="checklist" style={{ margin: 0 }}>
               <li>Complete your private health screening.</li>
               <li>Ask for a clinical review of {t.name}.</li>
@@ -225,7 +236,10 @@ export function ProductPage({ slug }: { slug: string }) {
           </section>
 
           <section className="info-block" data-reveal>
-            <h2 className="display">FAQs</h2>
+            <div>
+              <span className="layer-label">FAQs</span>
+              <h2 className="display">Go on, ask.</h2>
+            </div>
             <div className="faq">
               <details>
                 <summary>Can I order it straight away?</summary>
@@ -241,7 +255,11 @@ export function ProductPage({ slug }: { slug: string }) {
               </details>
               <details>
                 <summary>Is there a subscription?</summary>
-                <div>Not yet. Automatic repeat delivery is coming. For now you reorder from your account while your approval lasts.</div>
+                <div>
+                  There&apos;s On repeat. After your first pen, switch it on and we&apos;ll check in about {RENEWAL_LEAD_DAYS} days before you
+                  run out. Answer, and your next pen ships from the packs your clinician approved. If anything feels off, your clinician
+                  looks first. Pause, skip or stop any time.
+                </div>
               </details>
             </div>
           </section>
@@ -252,7 +270,7 @@ export function ProductPage({ slug }: { slug: string }) {
             <div className="container">
               <div className="section-head" data-reveal>
                 <h2 className="display">
-                  More in
+                  Its friends in
                   <br />
                   {brand.category}
                 </h2>

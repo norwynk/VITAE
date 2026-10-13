@@ -14,24 +14,24 @@ export function BrandHero() {
       <div className="container hero__grid">
         <div>
           <h1 className="display hero__title is-in">
-            <span className="split-line"><span>Pick your</span></span>
-            <span className="split-line pop"><span style={{ '--delay': '140ms' } as React.CSSProperties}>Prick.</span></span>
+            <span className="split-line"><span>Not all pricks</span></span>
+            <span className="split-line pop"><span style={{ '--delay': '140ms' } as React.CSSProperties}>are created equal.</span></span>
           </h1>
           <p className="serif-i hero__sub" data-reveal style={{ '--delay': '300ms' } as React.CSSProperties}>
-            Peptide pens for more of what you want from your days.
+            Peptide pens with a clinician behind every single one.
           </p>
           <div className="hero__ctas" data-reveal style={{ '--delay': '420ms' } as React.CSSProperties}>
             <Link href="/find-your-prick" className="btn">
               Find your prick
             </Link>
             <Link href="/shop" className="link-arrow">
-              Explore the pens
+              Meet the pricks
             </Link>
           </div>
           <div className="hero__trust" data-reveal style={{ '--delay': '540ms' } as React.CSSProperties}>
-            <span>Clinician-guided</span>
-            <span>Personalised</span>
-            <span>Made for real life</span>
+            <span>Screened first</span>
+            <span>Clinician-reviewed</span>
+            <span>Personal, never generic</span>
           </div>
           <p className="hero__women" data-reveal style={{ '--delay': '640ms' } as React.CSSProperties}>
             Designed for women.

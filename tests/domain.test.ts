@@ -725,3 +725,139 @@ describe('audit and persistence', () => {
     expectError(() => run(onboarded(), member, { type: 'deleteEverything' } as never), 'INVALID');
   });
 });
+
+describe('pen-specific screening answers', () => {
+  const answers = (penAnswers: { questionId: string; answer: string }[]) => onboardCommand({ penAnswers });
+
+  it('stores the server wording and flags answers for the clinician', () => {
+    const { store, resultId } = run(
+      createFixtureStore(NOW),
+      member,
+      answers([
+        { questionId: 'glp1-thyroid', answer: 'Not sure' },
+        { questionId: 'glp1-current', answer: 'No' },
+        { questionId: 'weight-goal', answer: '70' },
+        { questionId: 'glp1-current-detail', answer: '' },
+      ]),
+    );
+    const intake = store.healthAssessments[resultId!];
+    expect(intake.penAnswers).toEqual([
+      { questionId: 'glp1-thyroid', question: expect.stringContaining('medullary thyroid cancer'), answer: 'Not sure', flagged: true },
+      { questionId: 'glp1-current', question: expect.any(String), answer: 'No', flagged: false },
+      { questionId: 'weight-goal', question: expect.any(String), answer: '70', flagged: false },
+    ]);
+    expect(visible(store, clinician).healthAssessments[resultId!].penAnswers).toHaveLength(3);
+    for (const actor of [ops, fulfilment, admin, corporate]) expect(visible(store, actor).healthAssessments[resultId!]).toBeUndefined();
+  });
+
+  it('rejects unknown questions, answers outside the options and duplicates', () => {
+    expectError(() => run(createFixtureStore(NOW), member, answers([{ questionId: 'made-up', answer: 'Yes' }])), 'INVALID', /Unknown/);
+    expectError(() => run(createFixtureStore(NOW), member, answers([{ questionId: 'glp1-thyroid', answer: 'Maybe' }])), 'INVALID');
+    expectError(() => run(createFixtureStore(NOW), member, answers([{ questionId: 'weight-goal', answer: '5' }])), 'INVALID');
+    expectError(() => run(createFixtureStore(NOW), member, answers([{ questionId: 'skin-concerns', answer: 'Dullness, Wrinkles' }])), 'INVALID');
+    expectError(
+      () =>
+        run(
+          createFixtureStore(NOW),
+          member,
+          answers([
+            { questionId: 'glp1-current', answer: 'No' },
+            { questionId: 'glp1-current', answer: 'No' },
+          ]),
+        ),
+      'INVALID',
+      /once/,
+    );
+  });
+});
+
+describe('On repeat', () => {
+  const RENEWAL_DAY = new Date('2026-10-24T08:30:00Z'); // 18 days in: 10 before a 28-day pen runs out
+  const fine = { mood: 4, energy: 4, sideEffects: false, needSupport: false, notes: '' };
+
+  /** Approved for two packs, orderable, address saved, first pen ordered today. */
+  function firstPenOrdered() {
+    const a = approved();
+    let store = makePurchasable(a.store);
+    store = run(store, member, { type: 'deliveryAddress', address }).store;
+    store = run(store, member, { type: 'checkout', treatmentId: 'trt-total-body-reset', quantity: 1 }).store;
+    return { store, approvalId: a.approvalId };
+  }
+  const start = (store: Store) => run(store, member, { type: 'repeat', action: 'start', treatmentId: 'trt-total-body-reset' });
+  const ordersFor = (store: Store) => Object.values(store.orders).filter((o) => o.memberId === NEW).length;
+
+  it('starts only after a first order, once per pen, with the check-in ten days before the pen runs out', () => {
+    const a = approved();
+    expectError(() => start(makePurchasable(a.store)), 'PRECONDITION', /first pen/);
+    const { store } = firstPenOrdered();
+    const res = start(store);
+    expect(res.store.repeatDeliveries[res.resultId!]).toMatchObject({
+      status: 'ACTIVE',
+      intervalDays: 28,
+      nextShipDate: addDays(TODAY, 28),
+      checkInOpensOn: addDays(TODAY, 18),
+      renewals: 0,
+    });
+    expectError(() => start(res.store), 'CONFLICT', /already on repeat/);
+  });
+
+  it('ships one approved pack after a clear renewal check-in, and books a review after the last pack', () => {
+    const { store } = firstPenOrdered();
+    const started = start(store);
+    const renew = { type: 'repeat', action: 'renew', repeatId: started.resultId!, ...fine } as const;
+    expectError(() => run(started.store, member, renew), 'PRECONDITION', /opens on/);
+    const done = run(started.store, member, renew, 'demo', RENEWAL_DAY);
+    const repeat = done.store.repeatDeliveries[started.resultId!];
+    expect(ordersFor(done.store)).toBe(2);
+    expect(Object.values(done.store.healthAssessments).some((h) => h.repeatId === repeat.id && h.kind === 'CHECKIN')).toBe(true);
+    // That was the second of two approved packs.
+    expect(repeat).toMatchObject({ status: 'ENDED', endedReason: 'LAST_PACK', renewals: 1, nextShipDate: addDays(TODAY, 56) });
+    expect(Object.values(done.store.followUps).find((f) => f.memberId === NEW && /Last approved pack/.test(f.reason))).toBeDefined();
+  });
+
+  it('holds a flagged renewal until the clinician completes its follow-up', () => {
+    const { store } = firstPenOrdered();
+    const started = start(store);
+    const rid = started.resultId!;
+    const held = run(started.store, member, { type: 'repeat', action: 'renew', repeatId: rid, ...fine, sideEffects: true }, 'demo', RENEWAL_DAY).store;
+    const followUpId = held.repeatDeliveries[rid].holdFollowUpId!;
+    expect(held.followUps[followUpId]).toMatchObject({ status: 'SCHEDULED', reason: expect.stringContaining('on hold') });
+    expect(ordersFor(held)).toBe(1);
+    expectError(() => run(held, member, { type: 'repeat', action: 'renew', repeatId: rid, ...fine }, 'demo', RENEWAL_DAY), 'PRECONDITION', /reviewing/);
+    const cleared = run(
+      held,
+      clinician,
+      { type: 'followup', action: 'complete', memberId: NEW, followUpId, outcome: 'Mild, expected. Carry on.' },
+      'demo',
+      RENEWAL_DAY,
+    ).store;
+    expect(cleared.repeatDeliveries[rid].holdFollowUpId).toBeUndefined();
+    const shipped = run(cleared, member, { type: 'repeat', action: 'renew', repeatId: rid, ...fine }, 'demo', RENEWAL_DAY).store;
+    expect(ordersFor(shipped)).toBe(2);
+  });
+
+  it('pauses, resumes, skips and cancels', () => {
+    const { store } = firstPenOrdered();
+    const started = start(store);
+    const rid = started.resultId!;
+    const act = (s: Store, action: 'pause' | 'resume' | 'skip') => run(s, member, { type: 'repeat', action, repeatId: rid }).store;
+    const skipped = act(started.store, 'skip');
+    expect(skipped.repeatDeliveries[rid]).toMatchObject({ nextShipDate: addDays(TODAY, 56), checkInOpensOn: addDays(TODAY, 46) });
+    const paused = act(skipped, 'pause');
+    expectError(() => run(paused, member, { type: 'repeat', action: 'renew', repeatId: rid, ...fine }, 'demo', RENEWAL_DAY), 'PRECONDITION', /not active/);
+    expect(act(paused, 'resume').repeatDeliveries[rid].status).toBe('ACTIVE');
+    const cancelled = run(paused, member, { type: 'repeat', action: 'cancel', repeatId: rid, reason: 'Taking a break' }).store;
+    expect(cancelled.repeatDeliveries[rid]).toMatchObject({ status: 'CANCELLED', cancelReason: 'Taking a break' });
+    expectError(() => run(cancelled, member, { type: 'repeat', action: 'cancel', repeatId: rid, reason: 'Again' }), 'CONFLICT');
+  });
+
+  it('belongs to the member and is visible to their clinician, not operations', () => {
+    const { store } = firstPenOrdered();
+    const started = start(store);
+    const rid = started.resultId!;
+    expectError(() => run(started.store, established, { type: 'repeat', action: 'pause', repeatId: rid }), 'NOT_FOUND');
+    expectError(() => run(started.store, clinician, { type: 'repeat', action: 'pause', repeatId: rid }), 'FORBIDDEN');
+    expect(visible(started.store, clinician).repeatDeliveries[rid]).toBeDefined();
+    expect(visible(started.store, ops).repeatDeliveries[rid]).toBeUndefined();
+  });
+});

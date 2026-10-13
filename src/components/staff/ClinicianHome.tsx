@@ -59,6 +59,7 @@ function MemberChart({ memberId }: { memberId: string }) {
   const lifestyle = store.lifestyleProfiles[memberId];
   const goals = Object.values(store.memberGoals).filter((g) => g.memberId === memberId);
   const intake = Object.values(store.healthAssessments).find((a) => a.memberId === memberId && a.kind === 'INTAKE');
+  const repeats = Object.values(store.repeatDeliveries).filter((r) => r.memberId === memberId && (r.status === 'ACTIVE' || r.status === 'PAUSED'));
   const checkins = Object.values(store.healthAssessments)
     .filter((a) => a.memberId === memberId && a.kind === 'CHECKIN')
     .sort((a, b) => b.completedAt.localeCompare(a.completedAt));
@@ -88,6 +89,21 @@ function MemberChart({ memberId }: { memberId: string }) {
             </ul>
           )}
         </Card>
+        {intake?.penAnswers?.length ? (
+          <Card title="Pen-specific answers">
+            <ul className="plain small stack" style={{ gap: '0.5rem' }}>
+              {[...intake.penAnswers]
+                .sort((a, b) => Number(b.flagged) - Number(a.flagged))
+                .map((a) => (
+                  <li key={a.questionId}>
+                    {a.flagged && <Badge tone="alert">Look at this</Badge>} {a.question}
+                    <br />
+                    <strong>{a.answer}</strong>
+                  </li>
+                ))}
+            </ul>
+          </Card>
+        ) : null}
         <Card title="Health history">
           {history ? (
             <ul className="plain small">
@@ -114,6 +130,13 @@ function MemberChart({ memberId }: { memberId: string }) {
                   {lifestyle.smoking ? 'smokes' : 'non-smoker'}, {lifestyle.alcoholUnitsPerWeek} units/week
                 </li>
               )}
+              {repeats.map((r) => (
+                <li key={r.id}>
+                  On repeat: {store.treatments[r.treatmentId]?.name} · {humanise(r.status)}
+                  {r.status === 'ACTIVE' && ` · next pen ${r.nextShipDate}`}
+                  {r.holdFollowUpId && <> · <Badge tone="alert">Held for your follow-up</Badge></>}
+                </li>
+              ))}
             </ul>
           ) : (
             <Empty>No history yet.</Empty>

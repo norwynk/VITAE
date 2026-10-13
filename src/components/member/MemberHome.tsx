@@ -29,6 +29,7 @@ import { worldStyle } from '../brand/worldStyle';
 import { Badge, Card, Empty, Notice, fmtDateTime, formValues, humanise } from '../ui';
 import { useWorkspace } from '../workspace-context';
 import { OnboardingForm } from './OnboardingForm';
+import { OnRepeat, renewalsDue } from './OnRepeat';
 
 const TABS = ['Overview', 'Plan', 'Orders', 'Messages', 'My health'] as const;
 type Tab = (typeof TABS)[number];
@@ -64,6 +65,7 @@ export function MemberHome() {
         ))}
       </div>
       <div role="tabpanel" id="panel-Overview" aria-labelledby="tab-Overview" hidden={tab !== 'Overview'} className="stack">
+        <RenewalDue onGo={() => setTab('Orders')} />
         <MyPens />
         <Notifications />
       </div>
@@ -75,6 +77,7 @@ export function MemberHome() {
         </div>
       </div>
       <div role="tabpanel" id="panel-Orders" aria-labelledby="tab-Orders" hidden={tab !== 'Orders'} className="stack">
+        <OnRepeat />
         <div className="grid">
           <Ordering />
           <DeliveryAddress />
@@ -92,6 +95,27 @@ export function MemberHome() {
   );
 }
 
+/** Points at an open renewal check-in from the overview. */
+function RenewalDue({ onGo }: { onGo: () => void }) {
+  const { workspace } = useWorkspace();
+  const due = renewalsDue(
+    Object.values(workspace.store.repeatDeliveries).filter((r) => r.memberId === workspace.actor.uid),
+    today(),
+  );
+  if (!due.length) return null;
+  const names = due.map((r) => workspace.store.treatments[r.treatmentId]?.name ?? 'your pen').join(' and ');
+  return (
+    <Notice tone="info">
+      <span className="row" style={{ justifyContent: 'space-between' }}>
+        <span>Time for a quick check-in so your next {names} can ship.</span>
+        <button type="button" className="small" onClick={onGo}>
+          Check in
+        </button>
+      </span>
+    </Notice>
+  );
+}
+
 function ScreeningIntro({ onBegin }: { onBegin: () => void }) {
   const { workspace } = useWorkspace();
   const { slugs } = useShortlist();
@@ -103,8 +127,8 @@ function ScreeningIntro({ onBegin }: { onBegin: () => void }) {
     <section className="screening-intro" style={brand ? worldStyle(brand.colours) : ({ '--accent': 'var(--pink)' } as React.CSSProperties)}>
       <p className="eyebrow">Health screening{names.length ? ` · ${names.join(', ')}` : ''}</p>
       <h1 className="display">
-        The fun part is picking it.
-        <span className="serif-i">The important part is making sure it&apos;s right for you.</span>
+        Let&apos;s get to know each other first.
+        <span className="serif-i">The fun part is picking it. The important part is making sure it&apos;s right for you.</span>
       </h1>
       <ol className="screening-intro__path">
         <li>
@@ -197,7 +221,7 @@ function NextStep({ onGo }: { onGo: (tab: Tab) => void }) {
     title = 'Your clinician has replied.';
     body = 'See their decision on each pen below.';
   } else {
-    title = 'Screening done. Now pick a pen.';
+    title = 'Screening done. Now pick your prick.';
     body = 'Choose up to three pens for your clinician to review, or take the quiz.';
     action = { label: 'Find your prick', href: '/find-your-prick' };
   }

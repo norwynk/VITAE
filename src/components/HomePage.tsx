@@ -14,10 +14,22 @@ export function HomePage() {
   return (
     <BrandPage revealKey={pens}>
       <BrandHero />
-      <Marquee items={['All in one pen', 'Quick to use', 'Months of doses in one pen', 'Simple. Easy. Done.', 'A clinician in your corner']} />
-      <Range pens={pens} error={error} limit={6} featured={HOME_PENS} />
+      <Marquee items={['A prick with standards', 'Months of doses in one pen', 'Screened before anything else', 'A clinician in your corner', 'Pretty enough to leave out']} />
+      <Range
+        pens={pens}
+        error={error}
+        limit={6}
+        featured={HOME_PENS}
+        title={
+          <>
+            Meet the
+            <br />
+            pricks.
+          </>
+        }
+      />
       <EditorialStatement top="A little prick." bottom="A lot more you.">
-        <p>Pretty pens. A clinician in your corner. Feel more like yourself.</p>
+        <p>Pretty enough to show off. Serious enough to need a clinician&apos;s yes.</p>
       </EditorialStatement>
       <DesignedForWomen />
       <CoFounderQuote />

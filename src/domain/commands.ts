@@ -16,10 +16,13 @@ import {
   type MessageThread,
   type NotificationRecord,
   type OrderStatus,
+  type PenAnswer,
+  type RepeatDelivery,
   type Role,
   type Store,
   type Treatment,
   CONSENT_VERSION,
+  RENEWAL_LEAD_DAYS,
   MEASUREMENT_UNITS,
   MENOPAUSE_STAGES,
   OPERATIONS_TOPICS,
@@ -38,6 +41,7 @@ import {
   isValidDate,
   localDate,
 } from './model';
+import { invalidAnswer, isFlagged, penQuestion } from './penQuestions';
 
 // ---------------------------------------------------------------------------
 // Errors and context
@@ -162,7 +166,27 @@ const onboardSchema = z.object({
   }),
   testingInterest: z.boolean(),
   consents: consentFlags,
+  /** Pen-specific answers: ids and answers only; the server supplies wording and flags. */
+  penAnswers: z
+    .array(z.object({ questionId: z.string().trim().min(1).max(60), answer: text(500) }))
+    .max(40)
+    .default([]),
 });
+
+const checkinFields = {
+  mood: z.number().int().min(1).max(5),
+  energy: z.number().int().min(1).max(5),
+  sideEffects: z.boolean(),
+  needSupport: z.boolean(),
+  notes: text(2000),
+};
+
+const repeatSchema = z.discriminatedUnion('action', [
+  z.object({ type: z.literal('repeat'), action: z.literal('start'), treatmentId: id }),
+  z.object({ type: z.literal('repeat'), action: z.enum(['pause', 'resume', 'skip']), repeatId: id }),
+  z.object({ type: z.literal('repeat'), action: z.literal('cancel'), repeatId: id, reason: requiredText(300) }),
+  z.object({ type: z.literal('repeat'), action: z.literal('renew'), repeatId: id, ...checkinFields }),
+]);
 
 /** Field names a draft may never hold: identity numbers are only sent on submit. */
 const DRAFT_FORBIDDEN_FIELDS = new Set(['idNumber']);
@@ -302,11 +326,7 @@ export const commandSchema = z.discriminatedUnion('type', [
   }),
   z.object({
     type: z.literal('checkin'),
-    mood: z.number().int().min(1).max(5),
-    energy: z.number().int().min(1).max(5),
-    sideEffects: z.boolean(),
-    needSupport: z.boolean(),
-    notes: text(2000),
+    ...checkinFields,
   }),
   z.discriminatedUnion('action', [
     z.object({
@@ -349,6 +369,7 @@ export const commandSchema = z.discriminatedUnion('type', [
   }),
   z.object({ type: z.literal('readNotification'), notificationId: id }),
   screeningDraftSchema,
+  repeatSchema,
 ]);
 
 export type Command = z.infer<typeof commandSchema>;
@@ -390,6 +411,7 @@ const COMMAND_ROLES: Record<CommandType, readonly Role[]> = {
   orderStatus: ['OPERATIONS', 'FULFILMENT'],
   readNotification: ['MEMBER'],
   screeningDraft: ['MEMBER'],
+  repeat: ['MEMBER'],
 };
 
 export function allowedRoles(type: CommandType): readonly Role[] {
@@ -616,6 +638,146 @@ function postMessage(store: Store, ctx: CommandContext, actor: Actor, thread: Me
   return mid;
 }
 
+/**
+ * Places an order after the same checks for every path (manual checkout and
+ * On repeat renewals): purchase gates, approval quantity, stock and address.
+ * Returns the order id; pushes every touched record onto `targets`.
+ */
+function placeOrder(
+  store: Store,
+  ctx: CommandContext,
+  memberId: string,
+  treatment: Treatment,
+  quantity: number,
+  addressOverride: Address | undefined,
+  today: string,
+  targets: string[],
+): string {
+  const at = ctx.now.toISOString();
+  const member = requireOnboarded(store, memberId);
+  const blocks = purchaseBlocks(store, memberId, treatment, quantity, today);
+  if (blocks.length) fail('PRECONDITION', PURCHASE_BLOCK_MESSAGES[blocks[0]]);
+  const address: Address | undefined = addressOverride ?? member.deliveryAddress;
+  if (!address) fail('INVALID', 'A delivery address is required');
+
+  const stock = store.inventory[treatment.inventorySku];
+  stock.reserved += quantity;
+  stock.updatedAt = at;
+  let approvalId: string | undefined;
+  if (treatment.requiresPrescription || treatment.requiresClinicianApproval) {
+    const approval = currentApproval(store, memberId, treatment.id, today)!;
+    approval.remainingQuantity -= quantity;
+    approvalId = approval.id;
+    targets.push(approval.id);
+  }
+  const simulated = ctx.mode === 'demo';
+  const status: OrderStatus = simulated ? 'PAID' : 'PAYMENT_PENDING';
+  const total = treatment.priceCents * quantity;
+  const orderId = ctx.newId('ord');
+  store.orders[orderId] = {
+    id: orderId,
+    memberId,
+    treatmentId: treatment.id,
+    approvalId,
+    status,
+    quantity,
+    totalCents: total,
+    currency: 'ZAR',
+    deliveryAddress: address,
+    simulated,
+    statusHistory: [{ status, at, by: memberId }],
+    createdAt: at,
+    updatedAt: at,
+  };
+  const itemId = ctx.newId('itm');
+  store.orderItems[itemId] = {
+    id: itemId,
+    orderId,
+    memberId,
+    treatmentId: treatment.id,
+    sku: treatment.inventorySku,
+    quantity,
+    unitPriceCents: treatment.priceCents,
+  };
+  const paymentId = ctx.newId('pay');
+  store.payments[paymentId] = {
+    id: paymentId,
+    orderId,
+    memberId,
+    provider: simulated ? 'DEMO_SIMULATION' : 'NONE',
+    status: simulated ? 'SIMULATED_PAID' : 'AWAITING_PROVIDER',
+    amountCents: total,
+    currency: 'ZAR',
+    createdAt: at,
+    updatedAt: at,
+  };
+  targets.push(orderId, itemId, paymentId, stock.id);
+  targets.push(
+    notify(
+      store,
+      ctx,
+      memberId,
+      'ORDER',
+      simulated ? 'Demo order created (no payment taken)' : 'Order created: payment not yet available',
+      simulated
+        ? 'This is a simulated demo order. No money was charged.'
+        : 'Online payment is not connected yet, so this order is waiting for payment.',
+    ),
+  );
+  touchProfile(store, memberId, at);
+  return orderId;
+}
+
+/** Records a health check-in; asking for support opens a clinical thread. */
+function recordCheckIn(
+  store: Store,
+  ctx: CommandContext,
+  actor: Actor,
+  answers: { mood: number; energy: number; sideEffects: boolean; needSupport: boolean; notes: string },
+  repeatId: string | undefined,
+  targets: string[],
+): string {
+  const at = ctx.now.toISOString();
+  const cid = ctx.newId('chk');
+  store.healthAssessments[cid] = {
+    id: cid,
+    memberId: actor.uid,
+    kind: 'CHECKIN',
+    status: 'COMPLETE',
+    checkin: {
+      mood: answers.mood,
+      energy: answers.energy,
+      sideEffects: answers.sideEffects,
+      needSupport: answers.needSupport,
+      notes: answers.notes,
+    },
+    ...(repeatId ? { repeatId } : {}),
+    completedAt: at,
+  };
+  targets.push(cid);
+  if (answers.needSupport) {
+    const thread = openThread(store, ctx, actor.uid, 'SIDE_EFFECT_CONCERN', 'Support requested from check-in');
+    const body = answers.notes || 'I asked for support in my health check-in.';
+    targets.push(thread.id, postMessage(store, ctx, actor, thread, body));
+  }
+  touchProfile(store, actor.uid, at);
+  return cid;
+}
+
+/** Last date the latest order of this treatment would run out, if it was ever ordered. */
+function lastSupplyEnds(store: Store, memberId: string, treatment: Treatment): string | undefined {
+  const last = Object.values(store.orders)
+    .filter((o) => o.memberId === memberId && o.treatmentId === treatment.id && o.status !== 'CANCELLED')
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+  return last ? addDays(localDate(new Date(last.createdAt)), treatment.supplyDays * last.quantity) : undefined;
+}
+
+function requireRepeat(store: Store, memberId: string, repeatId: string): RepeatDelivery {
+  const repeat = store.repeatDeliveries[repeatId];
+  if (!repeat || repeat.memberId !== memberId) fail('NOT_FOUND', 'Repeat delivery not found');
+  return repeat;
+}
+
 function cloneStore(store: Store): Store {
   return structuredClone(store);
 }
@@ -669,6 +831,17 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
 
       const goalId = ctx.newId('goal');
       store.memberGoals[goalId] = { id: goalId, memberId: member.id, goals: goals.goals, motivation: goals.motivation, createdAt: at };
+      const penAnswers: PenAnswer[] = [];
+      const seen = new Set<string>();
+      for (const { questionId, answer } of command.penAnswers) {
+        const q = penQuestion(questionId);
+        if (!q) fail('INVALID', 'Unknown screening question');
+        if (seen.has(questionId)) fail('INVALID', 'Each screening question can be answered once');
+        seen.add(questionId);
+        const problem = invalidAnswer(q, answer);
+        if (problem) fail('INVALID', problem);
+        if (answer) penAnswers.push({ questionId, question: q.question, answer, flagged: isFlagged(q, answer) });
+      }
       const assessmentId = ctx.newId('asmt');
       store.healthAssessments[assessmentId] = {
         id: assessmentId,
@@ -676,6 +849,7 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
         kind: 'INTAKE',
         status: 'COMPLETE',
         testingInterest: command.testingInterest,
+        ...(penAnswers.length ? { penAnswers } : {}),
         completedAt: at,
       };
       // Keep the combined flag consistent with the detailed answers.
@@ -949,80 +1123,9 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
     }
 
     case 'checkout': {
-      const member = requireOnboarded(store, actor.uid);
       const treatment = store.treatments[command.treatmentId];
       if (!treatment) fail('NOT_FOUND', 'Treatment not found');
-      const blocks = purchaseBlocks(store, actor.uid, treatment, command.quantity, today);
-      if (blocks.length) fail('PRECONDITION', PURCHASE_BLOCK_MESSAGES[blocks[0]]);
-      const address: Address | undefined = command.address ?? member.deliveryAddress;
-      if (!address) fail('INVALID', 'A delivery address is required');
-
-      const stock = store.inventory[treatment.inventorySku];
-      stock.reserved += command.quantity;
-      stock.updatedAt = at;
-      let approvalId: string | undefined;
-      if (treatment.requiresPrescription || treatment.requiresClinicianApproval) {
-        const approval = currentApproval(store, actor.uid, treatment.id, today)!;
-        approval.remainingQuantity -= command.quantity;
-        approvalId = approval.id;
-        targets.push(approval.id);
-      }
-      const simulated = ctx.mode === 'demo';
-      const status: OrderStatus = simulated ? 'PAID' : 'PAYMENT_PENDING';
-      const total = treatment.priceCents * command.quantity;
-      const orderId = ctx.newId('ord');
-      store.orders[orderId] = {
-        id: orderId,
-        memberId: actor.uid,
-        treatmentId: treatment.id,
-        approvalId,
-        status,
-        quantity: command.quantity,
-        totalCents: total,
-        currency: 'ZAR',
-        deliveryAddress: address,
-        simulated,
-        statusHistory: [{ status, at, by: actor.uid }],
-        createdAt: at,
-        updatedAt: at,
-      };
-      const itemId = ctx.newId('itm');
-      store.orderItems[itemId] = {
-        id: itemId,
-        orderId,
-        memberId: actor.uid,
-        treatmentId: treatment.id,
-        sku: treatment.inventorySku,
-        quantity: command.quantity,
-        unitPriceCents: treatment.priceCents,
-      };
-      const paymentId = ctx.newId('pay');
-      store.payments[paymentId] = {
-        id: paymentId,
-        orderId,
-        memberId: actor.uid,
-        provider: simulated ? 'DEMO_SIMULATION' : 'NONE',
-        status: simulated ? 'SIMULATED_PAID' : 'AWAITING_PROVIDER',
-        amountCents: total,
-        currency: 'ZAR',
-        createdAt: at,
-        updatedAt: at,
-      };
-      targets.push(orderId, itemId, paymentId, stock.id);
-      targets.push(
-        notify(
-          store,
-          ctx,
-          actor.uid,
-          'ORDER',
-          simulated ? 'Demo order created (no payment taken)' : 'Order created: payment not yet available',
-          simulated
-            ? 'This is a simulated demo order. No money was charged.'
-            : 'Online payment is not connected yet, so this order is waiting for payment.',
-        ),
-      );
-      touchProfile(store, actor.uid, at);
-      resultId = orderId;
+      resultId = placeOrder(store, ctx, actor.uid, treatment, command.quantity, command.address, today, targets);
       break;
     }
 
@@ -1087,29 +1190,7 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
 
     case 'checkin': {
       requireOnboarded(store, actor.uid);
-      const cid = ctx.newId('chk');
-      store.healthAssessments[cid] = {
-        id: cid,
-        memberId: actor.uid,
-        kind: 'CHECKIN',
-        status: 'COMPLETE',
-        checkin: {
-          mood: command.mood,
-          energy: command.energy,
-          sideEffects: command.sideEffects,
-          needSupport: command.needSupport,
-          notes: command.notes,
-        },
-        completedAt: at,
-      };
-      targets.push(cid);
-      if (command.needSupport) {
-        const thread = openThread(store, ctx, actor.uid, 'SIDE_EFFECT_CONCERN', 'Support requested from check-in');
-        const body = command.notes || 'I asked for support in my health check-in.';
-        targets.push(thread.id, postMessage(store, ctx, actor, thread, body));
-      }
-      touchProfile(store, actor.uid, at);
-      resultId = cid;
+      resultId = recordCheckIn(store, ctx, actor, command, undefined, targets);
       break;
     }
 
@@ -1145,6 +1226,16 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
         followUp.completedAt = at;
         followUp.outcome = command.outcome;
         targets.push(followUp.id);
+        // A renewal held for this follow-up can go ahead again.
+        for (const repeat of Object.values(store.repeatDeliveries)) {
+          if (repeat.holdFollowUpId !== followUp.id) continue;
+          delete repeat.holdFollowUpId;
+          repeat.updatedAt = at;
+          targets.push(repeat.id);
+          targets.push(
+            notify(store, ctx, repeat.memberId, 'DECISION', 'Your clinician has reviewed your check-in', 'Open your plan to send your next pen.'),
+          );
+        }
         resultId = followUp.id;
       }
       break;
@@ -1314,6 +1405,123 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
       const label = labels[command.status];
       if (label) targets.push(notify(store, ctx, order.memberId, 'ORDER', label, 'Open your orders for details.'));
       resultId = order.id;
+      break;
+    }
+
+    case 'repeat': {
+      requireOnboarded(store, actor.uid);
+      if (command.action === 'start') {
+        const treatment = store.treatments[command.treatmentId];
+        if (!treatment) fail('NOT_FOUND', 'Treatment not found');
+        const approval = currentApproval(store, actor.uid, treatment.id, today);
+        if (!approval) fail('PRECONDITION', PURCHASE_BLOCK_MESSAGES.APPROVAL_REQUIRED);
+        if (approval.remainingQuantity < 1) fail('PRECONDITION', 'You have no approved packs left. Your clinician will review your plan.');
+        const existing = Object.values(store.repeatDeliveries).some(
+          (r) => r.memberId === actor.uid && r.treatmentId === treatment.id && (r.status === 'ACTIVE' || r.status === 'PAUSED'),
+        );
+        if (existing) fail('CONFLICT', `${treatment.name} is already on repeat`);
+        const runsOut = lastSupplyEnds(store, actor.uid, treatment);
+        if (!runsOut) fail('PRECONDITION', 'Order your first pen, then put it on repeat');
+        const nextShipDate = runsOut < today ? addDays(today, RENEWAL_LEAD_DAYS) : runsOut;
+        const rid = ctx.newId('rpt');
+        store.repeatDeliveries[rid] = {
+          id: rid,
+          memberId: actor.uid,
+          treatmentId: treatment.id,
+          approvalId: approval.id,
+          status: 'ACTIVE',
+          intervalDays: treatment.supplyDays,
+          nextShipDate,
+          checkInOpensOn: addDays(nextShipDate, -RENEWAL_LEAD_DAYS),
+          renewals: 0,
+          createdAt: at,
+          updatedAt: at,
+        };
+        targets.push(rid);
+        resultId = rid;
+        break;
+      }
+
+      const repeat = requireRepeat(store, actor.uid, command.repeatId);
+      const treatment = store.treatments[repeat.treatmentId];
+      targets.push(repeat.id);
+      resultId = repeat.id;
+      repeat.updatedAt = at;
+      switch (command.action) {
+        case 'pause':
+          if (repeat.status !== 'ACTIVE') fail('CONFLICT', 'Only an active repeat can be paused');
+          repeat.status = 'PAUSED';
+          break;
+        case 'resume':
+          if (repeat.status !== 'PAUSED') fail('CONFLICT', 'Only a paused repeat can be resumed');
+          repeat.status = 'ACTIVE';
+          // A window that passed while paused reopens now, never in the past.
+          if (repeat.checkInOpensOn < today) {
+            repeat.nextShipDate = addDays(today, RENEWAL_LEAD_DAYS);
+            repeat.checkInOpensOn = today;
+          }
+          break;
+        case 'skip':
+          if (repeat.status !== 'ACTIVE') fail('CONFLICT', 'Only an active repeat can skip a delivery');
+          repeat.nextShipDate = addDays(repeat.nextShipDate, repeat.intervalDays);
+          repeat.checkInOpensOn = addDays(repeat.nextShipDate, -RENEWAL_LEAD_DAYS);
+          break;
+        case 'cancel':
+          if (repeat.status === 'CANCELLED' || repeat.status === 'ENDED') fail('CONFLICT', 'This repeat has already stopped');
+          repeat.status = 'CANCELLED';
+          repeat.cancelReason = command.reason;
+          break;
+        case 'renew': {
+          if (repeat.status !== 'ACTIVE') fail('PRECONDITION', 'This repeat is not active');
+          if (repeat.holdFollowUpId) fail('PRECONDITION', 'Your clinician is reviewing your last check-in first');
+          if (today < repeat.checkInOpensOn) fail('PRECONDITION', `Your renewal check-in opens on ${repeat.checkInOpensOn}`);
+          const { mood, energy, sideEffects, needSupport, notes } = command;
+          recordCheckIn(store, ctx, actor, { mood, energy, sideEffects, needSupport, notes }, repeat.id, targets);
+          if (sideEffects || needSupport) {
+            // Nothing ships until the clinician has looked at this check-in.
+            const fid = ctx.newId('fu');
+            store.followUps[fid] = {
+              id: fid,
+              memberId: actor.uid,
+              approvalId: repeat.approvalId,
+              dueDate: today,
+              reason: `Renewal check-in for ${treatment.name} flagged ${sideEffects ? 'side effects' : 'a support request'}. Next pen is on hold.`,
+              status: 'SCHEDULED',
+              createdBy: actor.uid,
+              createdAt: at,
+            };
+            repeat.holdFollowUpId = fid;
+            targets.push(fid);
+            break;
+          }
+          placeOrder(store, ctx, actor.uid, treatment, 1, undefined, today, targets);
+          repeat.renewals += 1;
+          repeat.nextShipDate = addDays(repeat.nextShipDate < today ? today : repeat.nextShipDate, repeat.intervalDays);
+          repeat.checkInOpensOn = addDays(repeat.nextShipDate, -RENEWAL_LEAD_DAYS);
+          const approval = store.approvedTreatments[repeat.approvalId];
+          if (approval && approval.remainingQuantity < 1) {
+            // Last approved pack: the clinician reviews the plan before it runs out.
+            repeat.status = 'ENDED';
+            repeat.endedReason = 'LAST_PACK';
+            const fid = ctx.newId('fu');
+            store.followUps[fid] = {
+              id: fid,
+              memberId: actor.uid,
+              approvalId: repeat.approvalId,
+              dueDate: repeat.checkInOpensOn,
+              reason: `Last approved pack of ${treatment.name} has shipped. Review the plan before it runs out.`,
+              status: 'SCHEDULED',
+              createdBy: actor.uid,
+              createdAt: at,
+            };
+            targets.push(fid);
+            targets.push(
+              notify(store, ctx, actor.uid, 'GENERAL', 'That was your last approved pack', 'Your clinician will review your plan before this pen runs out.'),
+            );
+          }
+          break;
+        }
+      }
       break;
     }
 
