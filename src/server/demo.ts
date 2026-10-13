@@ -101,12 +101,28 @@ function exclusive<T>(fn: () => Promise<T>): Promise<T> {
 async function readStore(): Promise<Store> {
   try {
     const parsed = JSON.parse(await readFile(STORE_FILE, 'utf8')) as Partial<Store>;
-    return { ...emptyStore(), ...parsed };
+    return withNewPens({ ...emptyStore(), ...parsed });
   } catch {
     const seeded = createFixtureStore(new Date());
     await writeStore(seeded);
     return seeded;
   }
+}
+
+/**
+ * Pens added to the range after this demo store was saved join it, with their
+ * stock, so a release shows them without resetting anyone's demo data.
+ * Existing records are never touched.
+ */
+export function withNewPens(store: Store): Store {
+  const fresh = createFixtureStore(new Date());
+  for (const t of Object.values(fresh.treatments)) {
+    if (store.treatments[t.id]) continue;
+    store.treatments[t.id] = t;
+    const stock = fresh.inventory[t.inventorySku];
+    if (stock && !store.inventory[stock.id]) store.inventory[stock.id] = stock;
+  }
+  return store;
 }
 
 async function writeStore(store: Store): Promise<void> {

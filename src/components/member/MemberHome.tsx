@@ -95,6 +95,7 @@ export function MemberHome() {
 function ScreeningIntro({ onBegin }: { onBegin: () => void }) {
   const { workspace } = useWorkspace();
   const { slugs } = useShortlist();
+  const resuming = workspace.store.screeningDrafts?.[workspace.actor.uid]?.status === 'IN_PROGRESS';
   const names = slugs.map((slug) => Object.values(workspace.store.treatments).find((t) => t.slug === slug)?.name).filter(Boolean);
   const first = Object.values(workspace.store.treatments).find((t) => t.slug === slugs[0]);
   const brand = first ? penBrand(first) : null;
@@ -123,11 +124,11 @@ function ScreeningIntro({ onBegin }: { onBegin: () => void }) {
         <span>Private</span>
         <span>Adults 18+</span>
         <span>Reviewed by a clinician</span>
-        <span>You can stop any time</span>
+        <span>Saved as you go</span>
       </div>
       <div>
         <button type="button" onClick={onBegin}>
-          Begin screening
+          {resuming ? 'Pick up where you left off' : 'Begin screening'}
         </button>
       </div>
     </section>

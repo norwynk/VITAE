@@ -4,9 +4,26 @@ import type { ReactNode } from 'react';
 import type { BrandedPen } from '@/hooks/useCatalogue';
 import { PenCard } from './PenCard';
 
-/** The collection as video-style colour cards on a pink field. */
-export function Range({ pens, error, title, limit }: { pens: BrandedPen[] | null; error: string | null; title?: ReactNode; limit?: number }) {
-  const shown = limit ? pens?.slice(0, limit) : pens;
+/**
+ * The collection as video-style colour cards on a pink field. `featured` picks
+ * which pens lead (in that order) before `limit` trims the list.
+ */
+export function Range({
+  pens,
+  error,
+  title,
+  limit,
+  featured,
+}: {
+  pens: BrandedPen[] | null;
+  error: string | null;
+  title?: ReactNode;
+  limit?: number;
+  featured?: string[];
+}) {
+  const rank = (slug: string) => (featured?.includes(slug) ? featured.indexOf(slug) : Infinity);
+  const ordered = featured && pens ? [...pens].sort((a, b) => rank(a.treatment.slug) - rank(b.treatment.slug)) : pens;
+  const shown = limit ? ordered?.slice(0, limit) : ordered;
   return (
     <section className="range range--pink section">
       <div className="container">

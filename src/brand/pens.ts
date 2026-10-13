@@ -135,6 +135,8 @@ const BOTANICALS: Record<string, Botanical> = {
   'total-body-reset': 'citrus',
   'craving-control': 'berry',
   'body-sculpt': 'lavender',
+  'slow-and-steady': 'daisy',
+  momentum: 'blossom',
   'the-glow-up': 'blossom',
   'skin-rewind': 'daisy',
   'skin-rewind-reserve': 'lavender',

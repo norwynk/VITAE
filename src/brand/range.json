@@ -75,6 +75,54 @@
       "clinical_content_status": "Mechanism and approved U.S. indication supported. Consumer positioning requires strict review."
     },
     {
+      "id": "slow-and-steady",
+      "name": "Slow & Steady",
+      "category": "Weight & Body",
+      "hero_colour": "#6F8DFF",
+      "active_ingredient": "Semaglutide",
+      "brand_name": "Ozempic®",
+      "supplier_strength": null,
+      "front_hook": "Slow and steady, finally on your side.",
+      "one_line_outcome": "A gentle, gradual start on the weight goals you've been carrying around.",
+      "feeling": [
+        "Steadier",
+        "Lighter",
+        "Patient with myself"
+      ],
+      "transformation": "From starting over every Monday to a pace you can actually keep.",
+      "product_class": "GLP-1 receptor agonist.",
+      "mechanism_summary": "Semaglutide acts like the GLP-1 hormone, on pathways involved in appetite, digestion and blood sugar regulation.",
+      "evidence_status": "Large randomized clinical-trial evidence base for semaglutide. Ozempic's approved indication is type 2 diabetes; weight-loss use is off-label.",
+      "customer_description": "This is Ozempic®: a once-a-week injection made to help adults with type 2 diabetes manage their blood sugar, and often prescribed off-label for weight loss. If your clinician prescribes it, you’ll start on a low dose and build up gently, with adjustments to help with common side effects.",
+      "regulatory_note": "Branded prescription medicine (Ozempic is a Novo Nordisk trademark). Approved for type 2 diabetes, not weight loss. South African registration, use of the trade name, off-label promotion and medicine advertising rules must be checked before any public marketing or supply.",
+      "product_detail_copy": "Lead with a gentle, sustainable pace. The detail view names the branded medicine, its type 2 diabetes indication and its off-label weight-loss use, behind clinician-led screening.",
+      "clinical_content_status": "Ingredient and class established. Customer description supplied by PRICK. Pen strength, local registration and label need verification."
+    },
+    {
+      "id": "momentum",
+      "name": "Momentum",
+      "category": "Weight & Body",
+      "hero_colour": "#FF9EB5",
+      "active_ingredient": "Tirzepatide",
+      "brand_name": "Mounjaro®",
+      "supplier_strength": null,
+      "front_hook": "One week at a time, it all adds up.",
+      "one_line_outcome": "A weekly rhythm that keeps you moving towards the body you want.",
+      "feeling": [
+        "Motivated",
+        "Unstuck",
+        "In charge"
+      ],
+      "transformation": "From stop-start progress to feeling like every week counts.",
+      "product_class": "Dual GIP/GLP-1 receptor agonist.",
+      "mechanism_summary": "Tirzepatide activates GIP and GLP-1 receptors, pathways involved in appetite, digestion and blood sugar regulation.",
+      "evidence_status": "Large randomized clinical-trial evidence base for tirzepatide. Mounjaro's approved indication is type 2 diabetes; weight-loss use is off-label.",
+      "customer_description": "This is Mounjaro®: a once-a-week injection that acts on two appetite hormones, GIP and GLP-1. It’s approved to help adults with type 2 diabetes manage their blood sugar, and often prescribed off-label for weight loss. If it’s right for you, your clinician starts low, steps you up slowly and helps you through any side effects.",
+      "regulatory_note": "Branded prescription medicine (Mounjaro is an Eli Lilly trademark). Same active ingredient as Craving Control. Approved for type 2 diabetes, not weight loss. South African registration, use of the trade name, off-label promotion and medicine advertising rules must be checked before any public marketing or supply.",
+      "product_detail_copy": "Lead with weekly momentum. The detail view names the branded medicine, its type 2 diabetes indication and its off-label weight-loss use, behind clinician-led screening.",
+      "clinical_content_status": "Ingredient and class established. Customer description supplied by PRICK. Pen strength, local registration and label need verification."
+    },
+    {
       "id": "the-glow-up",
       "name": "The Glow Up",
       "category": "Appearance & Skin",

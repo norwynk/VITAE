@@ -62,6 +62,7 @@ export function productTruthFromSheet(p: SheetProduct): ProductTruth {
   const undisclosed = compositionUndisclosed(p);
   return {
     activeIngredient: undisclosed ? undefined : p.active_ingredient,
+    ...('brand_name' in p ? { brandName: p.brand_name } : {}),
     supplierName: undisclosed ? p.active_ingredient : undefined,
     supplierStrength: p.supplier_strength ?? undefined,
     productClass: p.product_class,
@@ -92,7 +93,8 @@ export function createFixtureStore(now: Date = new Date()): Store {
         slug: p.id,
         name: p.name,
         summary: p.one_line_outcome,
-        clinicalDescription: '',
+        // Customer-facing description, only where the sheet supplies one.
+        clinicalDescription: 'customer_description' in p ? p.customer_description : '',
         category: p.category,
         outcomes: [],
         productTruth: productTruthFromSheet(p),

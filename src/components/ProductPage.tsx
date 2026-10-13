@@ -144,35 +144,39 @@ export function ProductPage({ slug }: { slug: string }) {
               <span className="layer-label">Product truth</span>
               <h2 className="display">What&apos;s actually in it</h2>
             </div>
-            <dl className="truth-list">
-              <Truth label="Active ingredient">
-                {truth.activeIngredient ? (
-                  truth.activeIngredient
-                ) : (
-                  <NeedsVerification
-                    what="activeIngredient"
-                    note={
-                      truth.supplierName
-                        ? `The supplier calls this "${truth.supplierName}" but has not disclosed the individual actives or ratios.`
-                        : undefined
-                    }
-                  />
-                )}
-              </Truth>
-              <Truth label="Strength supplied">
-                {truth.supplierStrength ? (
-                  <>
-                    {truth.supplierStrength} <span className="muted">(as listed by the supplier)</span>
-                    <br />
-                    <span className="small muted">A higher number on a pen does not mean it works better.</span>
-                  </>
-                ) : (
-                  <NeedsVerification what="supplierStrength" />
-                )}
-              </Truth>
-              <Truth label="Type of molecule">{truth.productClass || <NeedsVerification what="productClass" />}</Truth>
-              <Truth label="What it does in the body">{truth.mechanism || <NeedsVerification what="mechanism" />}</Truth>
-            </dl>
+            <div>
+              {t.clinicalDescription && <p className="truth-about">{t.clinicalDescription}</p>}
+              <dl className="truth-list">
+                {truth.brandName && <Truth label="Brand name">{truth.brandName}</Truth>}
+                <Truth label="Active ingredient">
+                  {truth.activeIngredient ? (
+                    truth.activeIngredient
+                  ) : (
+                    <NeedsVerification
+                      what="activeIngredient"
+                      note={
+                        truth.supplierName
+                          ? `The supplier calls this "${truth.supplierName}" but has not disclosed the individual actives or ratios.`
+                          : undefined
+                      }
+                    />
+                  )}
+                </Truth>
+                <Truth label="Strength supplied">
+                  {truth.supplierStrength ? (
+                    <>
+                      {truth.supplierStrength} <span className="muted">(as listed by the supplier)</span>
+                      <br />
+                      <span className="small muted">A higher number on a pen does not mean it works better.</span>
+                    </>
+                  ) : (
+                    <NeedsVerification what="supplierStrength" />
+                  )}
+                </Truth>
+                <Truth label="Type of molecule">{truth.productClass || <NeedsVerification what="productClass" />}</Truth>
+                <Truth label="What it does in the body">{truth.mechanism || <NeedsVerification what="mechanism" />}</Truth>
+              </dl>
+            </div>
           </section>
 
           {/* Certificate of analysis: the only verification document shown to customers. */}

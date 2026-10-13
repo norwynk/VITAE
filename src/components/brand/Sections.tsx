@@ -84,7 +84,7 @@ export function LifestylePanel() {
         <div className="good-days__copy" data-reveal>
           <h2 className="display">Good days look different on everyone.</h2>
           <p>
-            Fifteen pens for fifteen different goals. Your clinician decides which one is right for you, and you use it
+            Seventeen pens for all kinds of goals. Your clinician decides which one is right for you, and you use it
             privately at home, on the plan they set.
           </p>
           <Link href="/find-your-prick" className="btn">
