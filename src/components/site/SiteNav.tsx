@@ -5,7 +5,7 @@ import { useShortlist } from '@/hooks/useShortlist';
 import { Logo } from './Logo';
 
 const LINKS = [
-  { href: '/shop', label: 'The pens' },
+  { href: '/shop', label: 'The pricks' },
   { href: '/find-your-prick', label: 'Find yours' },
   { href: '/#how-it-works', label: 'How it works' },
 ];

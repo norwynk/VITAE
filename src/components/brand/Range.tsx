@@ -39,7 +39,7 @@ export function Range({
           </h2>
           {pens && (
             <Link href="/shop" className="link-arrow">
-              See all {pens.length} pens
+              Meet all {pens.length}
             </Link>
           )}
         </div>

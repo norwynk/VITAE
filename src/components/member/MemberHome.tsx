@@ -127,8 +127,8 @@ function ScreeningIntro({ onBegin }: { onBegin: () => void }) {
     <section className="screening-intro" style={brand ? worldStyle(brand.colours) : ({ '--accent': 'var(--pink)' } as React.CSSProperties)}>
       <p className="eyebrow">Health screening{names.length ? ` · ${names.join(', ')}` : ''}</p>
       <h1 className="display">
-        The fun part is picking it.
-        <span className="serif-i">The important part is making sure it&apos;s right for you.</span>
+        Let&apos;s get to know each other first.
+        <span className="serif-i">The fun part is picking it. The important part is making sure it&apos;s right for you.</span>
       </h1>
       <ol className="screening-intro__path">
         <li>
@@ -221,7 +221,7 @@ function NextStep({ onGo }: { onGo: (tab: Tab) => void }) {
     title = 'Your clinician has replied.';
     body = 'See their decision on each pen below.';
   } else {
-    title = 'Screening done. Now pick a pen.';
+    title = 'Screening done. Now pick your prick.';
     body = 'Choose up to three pens for your clinician to review, or take the quiz.';
     action = { label: 'Find your prick', href: '/find-your-prick' };
   }

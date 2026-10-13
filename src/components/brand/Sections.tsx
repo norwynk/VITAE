@@ -20,10 +20,10 @@ export function EditorialStatement({ top, bottom, children }: { top: string; bot
 }
 
 const STEPS = [
-  { title: 'Pick what you want to transform.', body: 'Glow, energy, sleep or focus. Start with the feeling, not the formula.' },
-  { title: 'Complete your health screening.', body: 'A private questionnaire about your health, history and goals.' },
-  { title: 'Clinical review.', body: 'A clinician reads your screening and decides what is right for you, if anything.' },
-  { title: 'Your personalised path begins.', body: 'If you are approved, your plan, reminders and check-ins live in your account.' },
+  { title: 'Pick your prick.', body: 'Glow, energy, sleep or focus. Start with the feeling, not the formula.' },
+  { title: 'Tell us everything.', body: 'A private health screening about you, your history and your goals. Only your clinician sees it.' },
+  { title: 'A clinician says yes. Or no.', body: 'They read every answer and decide what is right for you, if anything. No yes, no pen.' },
+  { title: 'Then the fun starts.', body: 'If you are approved, your plan, reminders and check-ins live in your account.' },
 ];
 
 export function HowItWorks() {
@@ -32,10 +32,11 @@ export function HowItWorks() {
       <div className="container">
         <div className="steps section" style={{ paddingInline: 'var(--gutter)' }}>
           <div className="section-head" data-reveal>
+            <p className="eyebrow">How it works</p>
             <h2 className="display">
-              How it
+              Let&apos;s get to know
               <br />
-              works.
+              each other first.
             </h2>
           </div>
           <ol className="steps__grid" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
@@ -49,7 +50,7 @@ export function HowItWorks() {
           </ol>
           <div className="steps__cta" data-reveal>
             <Link href="/app" className="btn steps__btn">
-              Start your assessment
+              Start your screening
             </Link>
           </div>
         </div>
@@ -82,10 +83,10 @@ export function LifestylePanel() {
           ))}
         </div>
         <div className="good-days__copy" data-reveal>
-          <h2 className="display">Good days look different on everyone.</h2>
+          <h2 className="display">This prick gets around.</h2>
           <p>
-            Seventeen pens for all kinds of goals. Your clinician decides which one is right for you, and you use it
-            privately at home, on the plan they set.
+            Seventeen pens for weight, skin, sleep, energy, hormones and more. Your clinician decides which one is right
+            for you, and you use it privately at home, on the plan they set.
           </p>
           <Link href="/find-your-prick" className="btn">
             Find your Prick
@@ -104,12 +105,12 @@ export function LifestylePanel() {
  * and "quality-controlled supply" here only once they are verified and agreed.
  */
 const TRUST = [
-  { title: 'Health screening first', body: 'Nothing is offered until you have completed a private health screening.', colour: 'var(--pink)' },
-  { title: 'A clinician reviews every request', body: 'A clinician assigned to you reads your screening and makes the call.', colour: 'var(--orange)' },
-  { title: 'Plans set for you', body: 'If approved, your clinician sets the plan. It is personal, not a one-size pack.', colour: 'var(--blue)' },
-  { title: 'Check-ins and follow-ups', body: 'Reminders, check-ins and booked follow-ups. Flag a concern and it goes straight to your clinician.', colour: 'var(--lime)' },
-  { title: 'Private by design', body: 'Your health details are seen by your clinician, not by delivery or support staff.', colour: 'var(--sky)' },
-  { title: 'No approval, no order', body: 'You cannot order a pen that a clinician has not approved for you.', colour: 'var(--blush)' },
+  { title: "Don't take pricks from strangers.", body: 'Every request starts with a private health screening. Nothing is offered before that.', colour: 'var(--pink)' },
+  { title: 'A prick with standards.', body: 'A clinician assigned to you reads every answer and makes the call.', colour: 'var(--orange)' },
+  { title: 'Made to measure.', body: 'If approved, your clinician sets your plan. It is personal, not a one-size pack.', colour: 'var(--blue)' },
+  { title: "We don't ghost.", body: 'Reminders, check-ins and booked follow-ups. Flag a concern and it goes straight to your clinician.', colour: 'var(--lime)' },
+  { title: 'What happens here stays here.', body: 'Your health details are seen by your clinician, not by delivery or support staff.', colour: 'var(--sky)' },
+  { title: 'No yes, no pen.', body: 'You cannot order a pen that a clinician has not approved for you.', colour: 'var(--blush)' },
 ];
 
 export function ClinicalTrustPanel() {
@@ -117,9 +118,11 @@ export function ClinicalTrustPanel() {
     <section className="trust section">
       <div className="container">
         <h2 className="display" data-reveal>
-          Fun on the outside.
+          We don&apos;t mess around
           <br />
-          <span className="serif-i">Serious where it matters.</span>
+          with this part.
+          <br />
+          <span className="serif-i">Fun on the outside. Serious where it matters.</span>
         </h2>
         <div className="trust__grid">
           {TRUST.map((t, i) => (
@@ -154,9 +157,9 @@ export function Reviews() {
       <div className="container">
         <div className="section-head" data-reveal>
           <h2 className="display">
-            Real people.
+            Good pricks get
             <br />
-            More good days.
+            people talking.
           </h2>
           <p className="hand" style={{ margin: 0 }}>coming soon, honestly</p>
         </div>
@@ -187,12 +190,12 @@ export function SubscriptionPanel() {
             </div>
             <div data-reveal style={{ '--delay': '150ms', '--accent': 'var(--pink)' } as React.CSSProperties}>
               <h2 className="display">
-                Your prick.
+                This isn&apos;t a
                 <br />
-                On repeat.
+                one-time thing.
               </h2>
               <p className="serif-i" style={{ fontSize: 'var(--step-2)', lineHeight: 1.1 }}>
-                Less like a refill. More like a membership.
+                Your prick, on repeat. Less like a refill, more like a membership.
               </p>
               <ul className="checklist">
                 <li>Dose reminders at a time that suits you</li>
@@ -248,10 +251,10 @@ export function DesignedForWomen() {
         <div data-reveal>
           <p className="eyebrow">Who it&apos;s for</p>
           <h2 className="display women__title">
-            Designed
+            A prick that
             <br />
-            for women.
-            <span className="serif-i">Built around your goals, your body and your rhythm.</span>
+            gets her.
+            <span className="serif-i">Designed for women. Built around your goals, your body and your rhythm.</span>
           </h2>
           <p className="women__body">
             From the colours to the questions in your screening, PRICK is shaped around women: your cycle, pregnancy,

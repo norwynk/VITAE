@@ -13,11 +13,11 @@ export function ShopPage() {
     <BrandPage revealKey={`${pens?.length}-${category}`}>
       <section className="page-hero container">
         <h1 className="display">
-          <span className="split-line is-in"><span>Pick your</span></span>
-          <span className="split-line is-in"><span style={{ color: 'var(--pink)', '--delay': '120ms' } as React.CSSProperties}>prick.</span></span>
+          <span className="split-line is-in"><span>Meet the</span></span>
+          <span className="split-line is-in"><span style={{ color: 'var(--pink)', '--delay': '120ms' } as React.CSSProperties}>pricks.</span></span>
         </h1>
         <p className="serif-i page-hero__sub" data-reveal>
-          Different goals. Different colours. Same idea: more good days.
+          Different goals. Different colours. Same standards: screening first, clinician always.
         </p>
       </section>
       <section className="range range--pink" style={{ padding: 'var(--space-5) 0 var(--section)' }}>

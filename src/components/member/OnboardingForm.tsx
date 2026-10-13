@@ -149,7 +149,7 @@ export function OnboardingForm() {
     if (!stepIsValid(step)) return;
     const form = formRef.current;
     if (form) {
-      void run({ type: 'screeningDraft', step: step + 1, answers: draftAnswers(form) }, 'Saved. You can stop here and pick up later.');
+      void run({ type: 'screeningDraft', step: step + 1, answers: draftAnswers(form) }, 'Saved. Leave whenever you like, we’ll keep your place.');
     }
     go(step + 1);
   };
@@ -545,7 +545,7 @@ export function OnboardingForm() {
           </button>
         ) : (
           <button type="submit" disabled={busy || fit?.tooYoung}>
-            Submit screening
+            Send it to my clinician
           </button>
         )}
       </div>

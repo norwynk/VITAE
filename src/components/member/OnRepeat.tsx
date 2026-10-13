@@ -39,7 +39,7 @@ export function OnRepeat() {
   return (
     <Card title="On repeat">
       <p className="small" style={{ marginTop: 0 }}>
-        Your next pen arrives before you run out. About {RENEWAL_LEAD_DAYS} days before, we ask how you&apos;re getting on. Answer,
+        This isn&apos;t a one-time thing. Your next pen arrives before you run out. About {RENEWAL_LEAD_DAYS} days before, we ask how you&apos;re getting on. Answer,
         and it&apos;s on its way from the packs your clinician approved. Pause, skip or stop any time.
       </p>
       {!live.length && !startable.length && !stopped.length && (
