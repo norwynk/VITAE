@@ -175,9 +175,17 @@ test('full journey across roles', async ({ page }) => {
   await page.getByLabel('I have no allergies').check();
   await page.getByLabel('I am planning a pregnancy in the next 12 months').check();
   await page.getByLabel('Menopause stage').selectOption('PRE');
+  // Questions for the chosen weight pen; a family-history "Not sure" is flagged for the clinician.
+  await expect(page.getByRole('heading', { name: 'For your weight medicine' })).toBeVisible();
+  await page.locator('[data-question="glp1-thyroid"]').getByText('Not sure', { exact: true }).click();
+  await page.locator('[data-question="glp1-current"]').getByText('No', { exact: true }).click();
+  await page.getByLabel(/What weight would you like to reach/).fill('75');
   await page.getByRole('button', { name: 'Next: Your lifestyle' }).click();
   await page.getByLabel('Average sleep (hours)').fill('7');
   await page.getByRole('button', { name: 'Next: Last details' }).click();
+  // The moment before consent reads the answers honestly.
+  await expect(page.getByRole('heading', { name: /Thanks for being so open/ })).toBeVisible();
+  await expect(page.getByText('Your clinician reads every answer.')).toBeVisible();
   await page.getByLabel('Last name').fill('Demo');
   await page.getByLabel('ID number').fill('9001155000080');
   await page.getByLabel('Mobile number').fill('+27 82 000 0000');
@@ -213,6 +221,9 @@ test('full journey across roles', async ({ page }) => {
   await switchRole(page, 'Clinician');
   await expect(page.getByRole('heading', { name: 'Clinician workspace' })).toBeVisible();
   await page.getByRole('button', { name: /Alex Demo/ }).click();
+  const penAnswers = page.locator('section', { has: page.getByRole('heading', { name: 'Pen-specific answers' }) });
+  await expect(penAnswers.getByText('Look at this')).toHaveCount(1);
+  await expect(penAnswers.getByText(/medullary thyroid cancer/)).toBeVisible();
   const review = page.getByRole('form', { name: /Review Total Body Reset/ });
   await review.getByLabel('Packs approved').fill('2');
   await review.getByLabel('Frequency').selectOption('DAILY');
@@ -257,6 +268,18 @@ test('full journey across roles', async ({ page }) => {
   const orders = page.locator('section', { has: page.getByRole('heading', { name: 'Your orders' }) });
   await expect(orders.getByText('Paid')).toBeVisible();
   await expect(orders.getByText('Simulated')).toBeVisible();
+
+  // --- On repeat after the first pen; stopping offers a pause first ---------------
+  const repeat = page.locator('section', { has: page.getByRole('heading', { name: 'On repeat' }) });
+  await repeat.getByRole('button', { name: 'Put on repeat' }).click();
+  await expectToast(page, 'Total Body Reset is on repeat');
+  await expect(repeat.getByText(/Your check-in opens on/)).toBeVisible();
+  await repeat.getByRole('button', { name: 'Stop repeat' }).click();
+  await expect(repeat.getByText('Would a pause help instead?')).toBeVisible();
+  await repeat.getByRole('button', { name: 'Pause instead' }).click();
+  await expectToast(page, 'Repeat paused');
+  await repeat.getByRole('button', { name: 'Resume' }).click();
+  await expectToast(page, 'Repeat resumed');
 
   // --- Member asks for support ---------------------------------------------------
   await page.getByRole('tab', { name: 'Plan' }).click();

@@ -199,9 +199,9 @@ export function SubscriptionPanel() {
                 <li>Check-ins whenever something feels off</li>
                 <li>Follow-ups booked by your clinician</li>
                 <li>Your plan, orders and messages in one place</li>
+                <li>On repeat: a quick check-in before you run out, then your next pen ships</li>
               </ul>
-              {/* Recurring delivery is not supported by the backend yet. */}
-              <p className="small muted">Automatic repeat delivery is coming soon. For now, you reorder in a tap once you&apos;re approved.</p>
+              <p className="small muted">Switch on repeat after your first pen. Pause, skip or stop any time.</p>
             </div>
           </div>
         </div>

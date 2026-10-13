@@ -65,6 +65,7 @@ export const COLLECTIONS = [
   'operationalProfiles',
   'inventory',
   'screeningDrafts',
+  'repeatDeliveries',
 ] as const;
 export type CollectionName = (typeof COLLECTIONS)[number];
 
@@ -99,6 +100,7 @@ export const MEMBER_COLLECTIONS = [
   'consents',
   'operationalProfiles',
   'screeningDrafts',
+  'repeatDeliveries',
 ] as const satisfies readonly CollectionName[];
 export type MemberCollectionName = (typeof MEMBER_COLLECTIONS)[number];
 
@@ -185,7 +187,19 @@ export interface HealthAssessment {
   status: 'COMPLETE' | 'INCOMPLETE';
   testingInterest?: boolean;
   checkin?: { mood: number; energy: number; sideEffects: boolean; needSupport: boolean; notes: string };
+  /** Pen-specific screening answers, with the exact wording asked and any safety flag. */
+  penAnswers?: PenAnswer[];
+  /** Set when this check-in was the renewal check-in for an On repeat plan. */
+  repeatId?: string;
   completedAt: string;
+}
+
+export interface PenAnswer {
+  questionId: string;
+  question: string;
+  answer: string;
+  /** Points the clinician at this answer. Never decides eligibility. */
+  flagged: boolean;
 }
 
 export interface MedicalHistory {
@@ -513,6 +527,37 @@ export interface OrderItem {
   unitPriceCents: number;
 }
 
+/** Renewal check-ins open this many days before the current pen runs out. */
+export const RENEWAL_LEAD_DAYS = 10;
+
+/**
+ * "On repeat": the next pen ships after a short renewal check-in, using the
+ * member's approved packs. Flagged check-ins hold the renewal until the
+ * clinician completes the follow-up it created; the last approved pack books
+ * a clinician review. No payment provider is connected, so renewal orders
+ * follow the same payment path as any other order.
+ */
+export interface RepeatDelivery {
+  id: string;
+  memberId: string;
+  treatmentId: string;
+  approvalId: string;
+  status: 'ACTIVE' | 'PAUSED' | 'CANCELLED' | 'ENDED';
+  /** Days one pen lasts: the treatment's supply days. */
+  intervalDays: number;
+  /** Local date the current pen runs out and the next should arrive. */
+  nextShipDate: string;
+  /** Local date the renewal check-in opens. */
+  checkInOpensOn: string;
+  /** Set while a flagged check-in waits for this clinician follow-up. */
+  holdFollowUpId?: string;
+  renewals: number;
+  cancelReason?: string;
+  endedReason?: 'LAST_PACK' | 'APPROVAL_ENDED';
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Payment {
   id: string;
   orderId: string;
@@ -713,6 +758,7 @@ export interface CollectionTypes {
   operationalProfiles: OperationalProfile;
   inventory: InventoryRecord;
   screeningDrafts: ScreeningDraft;
+  repeatDeliveries: RepeatDelivery;
 }
 
 export type Store = { [K in CollectionName]: Record<string, CollectionTypes[K]> };
@@ -890,6 +936,15 @@ export function reminderDecision(input: {
   // Deterministic id: one reminder per due date, plus one per elapsed snooze.
   const notificationId = `rem_${reminder.id}_${today}${snoozes.length ? `_s${snoozes.length}` : ''}`;
   return { send: true, dueDate: today, notificationId };
+}
+
+/**
+ * Whether the sweep should tell a member their renewal check-in is open.
+ * Deterministic id: one notice per renewal window.
+ */
+export function renewalNotice(repeat: RepeatDelivery, today: string): { send: false } | { send: true; notificationId: string } {
+  if (repeat.status !== 'ACTIVE' || repeat.holdFollowUpId || today < repeat.checkInOpensOn) return { send: false };
+  return { send: true, notificationId: `renew_${repeat.id}_${repeat.checkInOpensOn}` };
 }
 
 // ---------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { feelingLine } from '@/brand/pens';
-import { formatRand } from '@/domain/model';
+import { RENEWAL_LEAD_DAYS, formatRand } from '@/domain/model';
 import { useCatalogue } from '@/hooks/useCatalogue';
 import { NeedsVerification } from './brand/NeedsVerification';
 import { PenStage } from './brand/Pen';
@@ -84,14 +84,13 @@ export function ProductPage({ slug }: { slug: string }) {
                 </span>
                 <span className="badge">Available after approval</span>
               </div>
-              {/* No recurring delivery in the backend yet. */}
-              <div className="purchase-option" role="listitem" data-unavailable="true">
+              <div className="purchase-option" role="listitem">
                 <span>
                   <strong>On repeat</strong>
                   <br />
-                  <span className="small muted">Automatic repeat delivery</span>
+                  <span className="small muted">A quick check-in before you run out, then your next pen ships</span>
                 </span>
-                <span className="badge">Coming soon</span>
+                <span className="badge">After your first pen</span>
               </div>
             </div>
             <div className="row" style={{ gap: 'var(--space-3)' }}>
@@ -241,7 +240,11 @@ export function ProductPage({ slug }: { slug: string }) {
               </details>
               <details>
                 <summary>Is there a subscription?</summary>
-                <div>Not yet. Automatic repeat delivery is coming. For now you reorder from your account while your approval lasts.</div>
+                <div>
+                  There&apos;s On repeat. After your first pen, switch it on and we&apos;ll check in about {RENEWAL_LEAD_DAYS} days before you
+                  run out. Answer, and your next pen ships from the packs your clinician approved. If anything feels off, your clinician
+                  looks first. Pause, skip or stop any time.
+                </div>
               </details>
             </div>
           </section>
