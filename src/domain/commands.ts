@@ -28,6 +28,7 @@ import {
   REGULATORY_STATUSES,
   REQUIRED_CONSENTS,
   SA_PROVINCES,
+  SCREENING_DRAFT_MAX_ANSWERS,
   THREAD_TOPICS,
   activeAssignedMemberIds,
   addDays,
@@ -163,6 +164,18 @@ const onboardSchema = z.object({
   consents: consentFlags,
 });
 
+/** Field names a draft may never hold: identity numbers are only sent on submit. */
+const DRAFT_FORBIDDEN_FIELDS = new Set(['idNumber']);
+
+const screeningDraftSchema = z.object({
+  type: z.literal('screeningDraft'),
+  step: z.number().int().min(0).max(10),
+  answers: z
+    .record(z.string().regex(/^[A-Za-z][\w:. -]{0,79}$/), z.union([z.string().max(2000), z.boolean()]))
+    .refine((a) => Object.keys(a).length <= SCREENING_DRAFT_MAX_ANSWERS, 'Too many answers')
+    .refine((a) => !Object.keys(a).some((k) => DRAFT_FORBIDDEN_FIELDS.has(k)), 'Identity numbers are not saved in drafts'),
+});
+
 const approvalSchema = z.object({
   quantity: z.number().int().min(1).max(12),
   dose: z.number().positive().max(10_000),
@@ -226,6 +239,7 @@ const treatmentEditable = z.object({
   productTruth: z
     .object({
       activeIngredient: text(200),
+      brandName: text(120),
       supplierName: text(120),
       supplierStrength: text(80),
       productClass: text(300),
@@ -334,6 +348,7 @@ export const commandSchema = z.discriminatedUnion('type', [
     courierReference: text(80).optional(),
   }),
   z.object({ type: z.literal('readNotification'), notificationId: id }),
+  screeningDraftSchema,
 ]);
 
 export type Command = z.infer<typeof commandSchema>;
@@ -374,6 +389,7 @@ const COMMAND_ROLES: Record<CommandType, readonly Role[]> = {
   withdrawConsent: ['MEMBER'],
   orderStatus: ['OPERATIONS', 'FULFILMENT'],
   readNotification: ['MEMBER'],
+  screeningDraft: ['MEMBER'],
 };
 
 export function allowedRoles(type: CommandType): readonly Role[] {
@@ -699,6 +715,10 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
         lastActivityAt: at,
       };
       targets.push(goalId, assessmentId, weightId);
+      if (store.screeningDrafts[member.id]) {
+        store.screeningDrafts[member.id] = { ...store.screeningDrafts[member.id], status: 'SUBMITTED', answers: {}, updatedAt: at };
+        targets.push(member.id);
+      }
       resultId = assessmentId;
       break;
     }
@@ -1294,6 +1314,22 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
       const label = labels[command.status];
       if (label) targets.push(notify(store, ctx, order.memberId, 'ORDER', label, 'Open your orders for details.'));
       resultId = order.id;
+      break;
+    }
+
+    case 'screeningDraft': {
+      const member = requireMember(store, actor.uid);
+      if (member.onboardedAt) fail('CONFLICT', 'Your screening is already submitted');
+      store.screeningDrafts[member.id] = {
+        id: member.id,
+        memberId: member.id,
+        status: 'IN_PROGRESS',
+        step: command.step,
+        answers: command.answers,
+        updatedAt: at,
+      };
+      targets.push(member.id);
+      resultId = member.id;
       break;
     }
 

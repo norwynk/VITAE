@@ -56,3 +56,17 @@ describe('demo store', () => {
     expect(Object.values(reset.store.measurements).some((m) => m.kind === 'SLEEP')).toBe(false);
   });
 });
+
+describe('demo store upgrades', () => {
+  it('adds pens released after the store was saved, without touching existing records', async () => {
+    const { createFixtureStore } = await import('../src/domain/fixtures');
+    const saved = createFixtureStore(new Date('2026-10-01T08:00:00Z'));
+    delete saved.treatments['trt-slow-and-steady'];
+    delete saved.inventory['PRK-SLOW-AND-STEADY'];
+    saved.treatments['trt-total-body-reset'].name = 'Edited in this demo';
+    const upgraded = demo.withNewPens(saved);
+    expect(upgraded.treatments['trt-slow-and-steady']?.name).toBe('Slow & Steady');
+    expect(upgraded.inventory['PRK-SLOW-AND-STEADY']).toMatchObject({ treatmentId: 'trt-slow-and-steady' });
+    expect(upgraded.treatments['trt-total-body-reset'].name).toBe('Edited in this demo');
+  });
+});

@@ -17,7 +17,7 @@ const treatment = (id: string) => store.treatments[`trt-${id}`];
 
 describe('range', () => {
   it('has every product from the character sheet, in the catalogue and the brand layer', () => {
-    expect(RANGE.products).toHaveLength(15);
+    expect(RANGE.products).toHaveLength(17);
     for (const p of RANGE.products) {
       expect(treatment(p.id)?.name).toBe(p.name);
       expect(PEN_BRANDS[p.id]).toBeDefined();
@@ -99,5 +99,32 @@ describe('Layers 1 and 2', () => {
 
   it('have no benefit statements until they are supplied', () => {
     for (const b of Object.values(PEN_BRANDS)) expect(b.benefits).toEqual([]);
+  });
+});
+
+describe('branded weight pens', () => {
+  const BRANDED = [
+    ['slow-and-steady', 'Semaglutide', 'Ozempic®'],
+    ['momentum', 'Tirzepatide', 'Mounjaro®'],
+  ] as const;
+
+  it('sit in Weight & Body with their own colour, and name the brand only in the product truth', () => {
+    const colours = new Set(Object.values(PEN_BRANDS).map((b) => b.colours.main));
+    expect(colours.size).toBe(Object.keys(PEN_BRANDS).length);
+    for (const [id, ingredient, brand] of BRANDED) {
+      const t = treatment(id);
+      expect(t).toMatchObject({ category: 'Weight & Body' });
+      expect(t.productTruth).toMatchObject({ activeIngredient: ingredient, brandName: brand });
+      expect(t.clinicalDescription).toContain(`This is ${brand}`);
+      expect(t.clinicalDescription).toMatch(/off-label for weight loss/);
+      expect(t.clinicalDescription).not.toMatch(/FDA/);
+      expect(missingTruth(t)).toContain('productTruth.supplierStrength');
+      // Pen label and card copy carry PRICK names, never the trade name.
+      const b = PEN_BRANDS[id];
+      const front = [t.name, b.penLabel, b.hook, b.outcome, feelingLine(b), b.transformation].join(' ');
+      expect(front).not.toMatch(/ozempic|mounjaro/i);
+    }
+    expect(treatment('total-body-reset').clinicalDescription).toBe('');
+    expect(treatment('total-body-reset').productTruth?.brandName).toBeUndefined();
   });
 });

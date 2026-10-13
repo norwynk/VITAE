@@ -1,35 +1,72 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { penBrand } from '@/brand/pens';
-import type { Treatment } from '@/domain/model';
+import type { ScreeningDraft, Treatment } from '@/domain/model';
 import { MAX_SHORTLIST, useShortlist } from '@/hooks/useShortlist';
 import { worldStyle } from '../brand/worldStyle';
 import { MENOPAUSE_STAGES, SA_PROVINCES } from '@/domain/model';
 import { Notice, formValues } from '../ui';
 import { useWorkspace } from '../workspace-context';
+import { COMMON_ALLERGIES, COMMON_CONDITIONS, COMMON_MEDICATIONS } from './screeningOptions';
+import { TagPicker } from './TagPicker';
 
 const GOALS = ['Weight management', 'Energy', 'Sleep', 'Recovery', 'Metabolic health', 'General wellbeing'];
 
-const STEPS = ['Your pens', 'About you', 'Your health', 'Your lifestyle', 'Consent'] as const;
+/**
+ * Identity, surname and phone come last, just before consent: people answer the
+ * questions about themselves first and share official details once they're in.
+ */
+const STEPS = ['Your pens', 'About you', 'Your health', 'Your lifestyle', 'Last details'] as const;
+
+/** Health answers that must be filled in or explicitly marked "none". */
+const HEALTH_LISTS = [
+  ['conditions', 'Tell us about any health conditions, or tick that you have none.'],
+  ['medications', 'Tell us about any medicines you take, or tick that you take none.'],
+  ['allergies', 'Tell us about any allergies, or tick that you have none.'],
+] as const;
+
+/** Never saved in a draft; the member re-enters it when submitting. */
+const DRAFT_SKIP = new Set(['idNumber']);
 
 /**
  * Guided screening, one topic per screen. Every field stays in the form (only
  * hidden between steps) so the whole assessment submits as one record; then
- * each chosen pen becomes its own request for the clinician.
+ * each chosen pen becomes its own request for the clinician. Answers are saved
+ * to the member's account as a draft each time they move forward, so leaving
+ * part-way loses nothing.
  */
 export function OnboardingForm() {
   const { run, busy, workspace } = useWorkspace();
   const shortlist = useShortlist();
-  const [idType, setIdType] = useState<'SA_ID' | 'PASSPORT'>('SA_ID');
+  // Read once: later refreshes after each save must not reset the form.
+  const [draft] = useState<ScreeningDraft | undefined>(() => {
+    const d = workspace.store.screeningDrafts?.[workspace.actor.uid];
+    return d?.status === 'IN_PROGRESS' ? d : undefined;
+  });
+  const saved = draft?.answers ?? {};
+  const text = (name: string) => (typeof saved[name] === 'string' ? (saved[name] as string) : undefined);
+  const ticked = (name: string) => saved[name] === true;
+
+  const [idType, setIdType] = useState<'SA_ID' | 'PASSPORT'>(text('idType') === 'PASSPORT' ? 'PASSPORT' : 'SA_ID');
   const [problem, setProblem] = useState<string | null>(null);
-  const [step, setStep] = useState(0);
-  const [letClinicianSuggest, setLetClinicianSuggest] = useState(false);
+  const [step, setStep] = useState(() => Math.min(Math.max(draft?.step ?? 0, 0), STEPS.length - 1));
+  const [letClinicianSuggest, setLetClinicianSuggest] = useState(ticked('letClinicianSuggest'));
   const formRef = useRef<HTMLFormElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
 
   const available = Object.values(workspace.store.treatments).filter((t) => t.active && t.public);
   const chosen = shortlist.slugs.map((slug) => available.find((t) => t.slug === slug)).filter((t): t is Treatment => Boolean(t));
   const addable = available.filter((t) => !shortlist.has(t.slug));
+
+  // Pens live in this browser; bring back the draft's pens on another device.
+  const restoredPens = useRef(false);
+  useEffect(() => {
+    if (restoredPens.current) return;
+    restoredPens.current = true;
+    if (shortlist.slugs.length) return;
+    for (const slug of (text('pens') ?? '').split(',').filter(Boolean)) shortlist.add(slug);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /** Checks only the current step's fields before moving on. */
   const stepIsValid = (n: number): boolean => {
@@ -42,6 +79,14 @@ export function OnboardingForm() {
     if (n === 1 && !GOALS.some((g) => (form.elements.namedItem(`goal:${g}`) as HTMLInputElement | null)?.checked)) {
       setProblem('Choose at least one goal.');
       return false;
+    }
+    if (n === 2) {
+      for (const [name, message] of HEALTH_LISTS) {
+        if (!(form.elements.namedItem(name) as HTMLInputElement | null)?.value) {
+          setProblem(message);
+          return false;
+        }
+      }
     }
     const fields = form.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(`[data-step="${n}"] :is(input, select, textarea)`);
     for (const field of fields) {
@@ -56,6 +101,32 @@ export function OnboardingForm() {
   const go = (n: number) => {
     setStep(n);
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  /** Everything answered so far, except identity numbers. */
+  const draftAnswers = (form: HTMLFormElement): Record<string, string | boolean> => {
+    const answers: Record<string, string | boolean> = { idType };
+    for (const el of Array.from(form.elements)) {
+      if (!(el instanceof HTMLInputElement || el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement)) continue;
+      if (!el.name || DRAFT_SKIP.has(el.name)) continue;
+      if (el instanceof HTMLInputElement && el.type === 'checkbox') {
+        if (el.checked) answers[el.name] = true;
+      } else if (el.value.trim()) {
+        answers[el.name] = el.value.trim().slice(0, 2000);
+      }
+    }
+    if (chosen.length) answers.pens = chosen.map((t) => t.slug).join(',');
+    if (letClinicianSuggest) answers.letClinicianSuggest = true;
+    return answers;
+  };
+
+  const next = () => {
+    if (!stepIsValid(step)) return;
+    const form = formRef.current;
+    if (form) {
+      void run({ type: 'screeningDraft', step: step + 1, answers: draftAnswers(form) }, 'Saved. You can stop here and pick up later.');
+    }
+    go(step + 1);
   };
 
   return (
@@ -140,9 +211,15 @@ export function OnboardingForm() {
             </li>
           ))}
         </ol>
+        {draft && (
+          <Notice tone="ok">
+            Welcome back. We kept your answers{draft.step > 0 ? ', so you can carry on from here' : ''}. For your security, your ID
+            number is never saved part-way.
+          </Notice>
+        )}
         <p className="muted small" style={{ margin: 0 }}>
           This service is for adults aged 18 and over. Your answers go to your assigned clinician and are never shown to
-          operations or delivery staff.
+          operations or delivery staff. We save as you go.
         </p>
       </div>
 
@@ -206,34 +283,15 @@ export function OnboardingForm() {
           <div className="form-grid">
             <label>
               First name
-              <input name="firstName" required autoComplete="given-name" />
-            </label>
-            <label>
-              Last name
-              <input name="lastName" required autoComplete="family-name" />
+              <input name="firstName" required autoComplete="given-name" defaultValue={text('firstName')} />
             </label>
             <label>
               Date of birth
-              <input name="dateOfBirth" type="date" required />
-            </label>
-            <label>
-              Identity document
-              <select value={idType} onChange={(e) => setIdType(e.target.value as 'SA_ID' | 'PASSPORT')}>
-                <option value="SA_ID">South African ID</option>
-                <option value="PASSPORT">Passport</option>
-              </select>
-            </label>
-            <label>
-              {idType === 'SA_ID' ? 'ID number' : 'Passport number'}
-              <input name="idNumber" required inputMode={idType === 'SA_ID' ? 'numeric' : 'text'} />
-            </label>
-            <label>
-              Mobile number
-              <input name="phone" type="tel" required autoComplete="tel" placeholder="+27 82 000 0000" />
+              <input name="dateOfBirth" type="date" required defaultValue={text('dateOfBirth')} />
             </label>
             <label>
               Province
-              <select name="province" required defaultValue="">
+              <select name="province" required defaultValue={text('province') ?? ''}>
                 <option value="" disabled>
                   Choose…
                 </option>
@@ -244,15 +302,15 @@ export function OnboardingForm() {
             </label>
             <label>
               City or town
-              <input name="city" required />
+              <input name="city" required defaultValue={text('city')} />
             </label>
             <label>
               Height (cm)
-              <input name="heightCm" type="number" min={100} max={250} required />
+              <input name="heightCm" type="number" min={100} max={250} required defaultValue={text('heightCm')} />
             </label>
             <label>
               Weight (kg)
-              <input name="weightKg" type="number" min={30} max={350} step="0.1" required />
+              <input name="weightKg" type="number" min={30} max={350} step="0.1" required defaultValue={text('weightKg')} />
             </label>
           </div>
         </fieldset>
@@ -262,55 +320,68 @@ export function OnboardingForm() {
           <div className="form-grid">
             {GOALS.map((g) => (
               <label key={g} className="check">
-                <input type="checkbox" name={`goal:${g}`} /> {g}
+                <input type="checkbox" name={`goal:${g}`} defaultChecked={ticked(`goal:${g}`)} /> {g}
               </label>
             ))}
           </div>
           <label>
             What motivates you?
-            <textarea name="motivation" maxLength={1000} />
+            <textarea name="motivation" maxLength={1000} defaultValue={text('motivation')} />
           </label>
         </fieldset>
-
       </div>
 
       <div data-step="2" hidden={step !== 2}>
         <fieldset>
           <legend>Health history</legend>
-          <label>
-            Conditions (comma separated)
-            <input name="conditions" />
-          </label>
-          <label>
-            Current medications
-            <textarea name="medications" />
-          </label>
-          <label>
-            Allergies
-            <input name="allergies" />
-          </label>
+          <p className="muted small" style={{ marginTop: 0 }}>
+            Tap what applies, add anything else in your own words, or tick none. Only your clinician sees this.
+          </p>
+          <TagPicker
+            name="conditions"
+            label="Health conditions"
+            suggestions={COMMON_CONDITIONS}
+            noneLabel="I have no health conditions"
+            initial={text('conditions')}
+          />
+          <TagPicker
+            name="medications"
+            label="Medicines you take"
+            hint="Include the pill, HRT, supplements and anything prescribed."
+            suggestions={COMMON_MEDICATIONS}
+            noneLabel="I don't take any medicines"
+            initial={text('medications')}
+          />
+          <TagPicker
+            name="allergies"
+            label="Allergies"
+            suggestions={COMMON_ALLERGIES}
+            noneLabel="I have no allergies"
+            initial={text('allergies')}
+          />
           <fieldset className="nested">
             <legend>Your body, your cycle</legend>
             <p className="muted small" style={{ margin: 0 }}>
               These matter for your safety with several pens. Only your clinician sees them.
             </p>
             <label className="check">
-              <input type="checkbox" name="pregnant" /> I am pregnant or may be pregnant
+              <input type="checkbox" name="pregnant" defaultChecked={ticked('pregnant')} /> I am pregnant or may be pregnant
             </label>
             <label className="check">
-              <input type="checkbox" name="breastfeeding" /> I am breastfeeding
+              <input type="checkbox" name="breastfeeding" defaultChecked={ticked('breastfeeding')} /> I am breastfeeding
             </label>
             <label className="check">
-              <input type="checkbox" name="planningPregnancy" /> I am planning a pregnancy in the next 12 months
+              <input type="checkbox" name="planningPregnancy" defaultChecked={ticked('planningPregnancy')} /> I am planning a
+              pregnancy in the next 12 months
             </label>
             <div className="form-grid">
               <label>
                 Contraception (if any)
-                <input name="contraception" placeholder="e.g. pill, IUD, none" />
+                <input name="contraception" placeholder="e.g. pill, IUD, none" defaultValue={text('contraception')} />
               </label>
               <label>
                 Menopause stage
-                <select name="menopauseStage" defaultValue="PREFER_NOT_TO_SAY">
+                <select name="menopauseStage" defaultValue={text('menopauseStage') ?? 'PREFER_NOT_TO_SAY'}>
                   <option value="PRE">Before menopause</option>
                   <option value="PERI">Perimenopause</option>
                   <option value="POST">After menopause</option>
@@ -321,14 +392,14 @@ export function OnboardingForm() {
             </div>
           </fieldset>
           <label className="check">
-            <input type="checkbox" name="previousPeptideUse" /> I have used peptide or injectable treatments before
+            <input type="checkbox" name="previousPeptideUse" defaultChecked={ticked('previousPeptideUse')} /> I have used peptide
+            or injectable treatments before
           </label>
           <label>
             Anything else your clinician should know
-            <textarea name="healthNotes" />
+            <textarea name="healthNotes" defaultValue={text('healthNotes')} />
           </label>
         </fieldset>
-
       </div>
 
       <div data-step="3" hidden={step !== 3}>
@@ -337,7 +408,7 @@ export function OnboardingForm() {
           <div className="form-grid">
             <label>
               Activity level
-              <select name="activityLevel" defaultValue="LIGHT">
+              <select name="activityLevel" defaultValue={text('activityLevel') ?? 'LIGHT'}>
                 <option value="SEDENTARY">Mostly sitting</option>
                 <option value="LIGHT">Light</option>
                 <option value="MODERATE">Moderate</option>
@@ -346,19 +417,19 @@ export function OnboardingForm() {
             </label>
             <label>
               Average sleep (hours)
-              <input name="sleepHours" type="number" min={0} max={24} step="0.5" required />
+              <input name="sleepHours" type="number" min={0} max={24} step="0.5" required defaultValue={text('sleepHours')} />
             </label>
             <label>
               Alcohol units per week
-              <input name="alcohol" type="number" min={0} max={200} defaultValue={0} />
+              <input name="alcohol" type="number" min={0} max={200} defaultValue={text('alcohol') ?? 0} />
             </label>
             <label>
               Diet
-              <input name="diet" placeholder="e.g. mixed, vegetarian" />
+              <input name="diet" placeholder="e.g. mixed, vegetarian" defaultValue={text('diet')} />
             </label>
           </div>
           <label className="check">
-            <input type="checkbox" name="smoking" /> I smoke or vape
+            <input type="checkbox" name="smoking" defaultChecked={ticked('smoking')} /> I smoke or vape
           </label>
         </fieldset>
 
@@ -369,13 +440,42 @@ export function OnboardingForm() {
             home kit or a designated location.
           </p>
           <label className="check">
-            <input type="checkbox" name="testingInterest" /> I am open to testing if my clinician recommends it
+            <input type="checkbox" name="testingInterest" defaultChecked={ticked('testingInterest')} /> I am open to testing if
+            my clinician recommends it
           </label>
         </fieldset>
-
       </div>
 
       <div data-step="4" hidden={step !== 4}>
+        <fieldset>
+          <legend>Your details</legend>
+          <p className="muted small" style={{ marginTop: 0 }}>
+            Your clinician needs these to prescribe safely and lawfully. Your ID number is checked, never shown to delivery
+            or support staff, and never saved until you submit.
+          </p>
+          <div className="form-grid">
+            <label>
+              Last name
+              <input name="lastName" required autoComplete="family-name" defaultValue={text('lastName')} />
+            </label>
+            <label>
+              Identity document
+              <select value={idType} onChange={(e) => setIdType(e.target.value as 'SA_ID' | 'PASSPORT')}>
+                <option value="SA_ID">South African ID</option>
+                <option value="PASSPORT">Passport</option>
+              </select>
+            </label>
+            <label>
+              {idType === 'SA_ID' ? 'ID number' : 'Passport number'}
+              <input name="idNumber" required inputMode={idType === 'SA_ID' ? 'numeric' : 'text'} autoComplete="off" />
+            </label>
+            <label>
+              Mobile number
+              <input name="phone" type="tel" required autoComplete="tel" placeholder="+27 82 000 0000" defaultValue={text('phone')} />
+            </label>
+          </div>
+        </fieldset>
+
         <fieldset>
           <legend>Consent</legend>
           <Notice tone="warn">
@@ -402,7 +502,6 @@ export function OnboardingForm() {
             <input type="checkbox" name="consentMarketing" /> Send me news and offers (optional)
           </label>
         </fieldset>
-
       </div>
 
       {problem && <Notice tone="error">{problem}</Notice>}
@@ -413,7 +512,7 @@ export function OnboardingForm() {
           </button>
         )}
         {step < STEPS.length - 1 ? (
-          <button type="button" onClick={() => stepIsValid(step) && go(step + 1)}>
+          <button type="button" onClick={next}>
             Next: {STEPS[step + 1]}
           </button>
         ) : (

@@ -232,6 +232,35 @@ describe('onboarding', () => {
   });
 });
 
+describe('screening drafts', () => {
+  const draft = (answers: Record<string, string | boolean> = { firstName: 'Alex', conditions: 'None', 'goal:Energy': true }) =>
+    ({ type: 'screeningDraft', step: 2, answers }) as const;
+
+  it('saves progress for the member only, never for staff', () => {
+    const { store } = run(createFixtureStore(NOW), member, draft());
+    expect(store.screeningDrafts[NEW]).toMatchObject({ memberId: NEW, status: 'IN_PROGRESS', step: 2, answers: { firstName: 'Alex' } });
+    expect(visible(store, member).screeningDrafts[NEW]).toBeDefined();
+    for (const actor of [clinician, ops, fulfilment, admin, corporate]) expect(visible(store, actor).screeningDrafts[NEW]).toBeUndefined();
+    const again = run(store, member, draft({ firstName: 'Alexandra' })).store;
+    expect(again.screeningDrafts[NEW].answers).toEqual({ firstName: 'Alexandra' });
+  });
+
+  it('refuses identity numbers, oversized drafts and staff', () => {
+    expectError(() => run(createFixtureStore(NOW), member, draft({ idNumber: '9001155000080' })), 'INVALID', /Identity/);
+    const many = Object.fromEntries(Array.from({ length: 121 }, (_, i) => [`field${i}`, 'x']));
+    expectError(() => run(createFixtureStore(NOW), member, draft(many)), 'INVALID');
+    expectError(() => run(createFixtureStore(NOW), clinician, draft()), 'FORBIDDEN');
+  });
+
+  it('is cleared on submit and closed once onboarded', () => {
+    const saved = run(createFixtureStore(NOW), member, draft()).store;
+    const { store } = run(saved, member, onboardCommand());
+    expect(store.screeningDrafts[NEW]).toMatchObject({ status: 'SUBMITTED', answers: {} });
+    expect(() => diffStores(saved, store)).not.toThrow();
+    expectError(() => run(store, member, draft()), 'CONFLICT');
+  });
+});
+
 describe('requests and review', () => {
   it('blocks requests before onboarding, for hidden pathways and duplicates', () => {
     expectError(() => run(createFixtureStore(NOW), member, { type: 'request', treatmentId: 'trt-total-body-reset' }), 'PRECONDITION');

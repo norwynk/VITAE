@@ -18,7 +18,7 @@ test('home shows colour cards that flip to outcome, feeling and transformation',
   for (const name of ['Total Body Reset', 'Craving Control', 'Body Sculpt', 'The Glow Up', 'Skin Rewind', 'Skin Rewind Reserve']) {
     await expect(page.getByRole('heading', { name, exact: true }).first()).toBeVisible();
   }
-  await expect(page.getByRole('link', { name: 'See all 15 pens' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'See all 17 pens' })).toBeVisible();
   await expect(page.getByText('Designed for women.').first()).toBeVisible();
   await expect(page.getByRole('heading', { name: /Designed\s*for women\./ })).toBeVisible();
   await expect(page.getByRole('img', { name: 'Dr Kylee Montgomerie' })).toBeVisible();
@@ -58,7 +58,15 @@ test('home shows colour cards that flip to outcome, feeling and transformation',
 
 test('shop filters by category and the expanded view keeps the clinical gate', async ({ page }) => {
   await page.goto('/shop');
-  await expect(page.getByRole('button', { name: 'All (15)' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'All (17)' })).toBeVisible();
+  await page.getByRole('button', { name: 'Weight & Body' }).click();
+  for (const name of ['Total Body Reset', 'Slow & Steady', 'Momentum']) await expect(page.getByRole('article', { name })).toBeVisible();
+  await page.getByRole('article', { name: 'Slow & Steady' }).getByRole('link', { name: 'View the pen' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Slow & Steady' })).toBeVisible();
+  await expect(page.getByText(/This is Ozempic®: a once-a-week injection/)).toBeVisible();
+  await expect(page.getByText('Ozempic®', { exact: true })).toBeVisible();
+  await expect(page.getByText('Semaglutide', { exact: true })).toBeVisible();
+  await page.goto('/shop');
   await page.getByRole('button', { name: 'Energy, Sleep & Recovery' }).click();
   await expect(page.getByRole('article', { name: 'Deep Sleep Rebuild' })).toBeVisible();
   await expect(page.getByRole('article', { name: 'The Glow Up' })).toHaveCount(0);
@@ -142,21 +150,37 @@ test('full journey across roles', async ({ page }) => {
   await page.getByLabel('Choose a pen').selectOption({ label: 'Total Body Reset' });
   await page.getByRole('button', { name: 'Next: About you' }).click();
   await page.getByLabel('First name').fill('Alex');
-  await page.getByLabel('Last name').fill('Demo');
   await page.getByLabel('Date of birth').fill('1990-01-15');
-  await page.getByLabel('ID number').fill('9001155000080');
-  await page.getByLabel('Mobile number').fill('+27 82 000 0000');
   await page.getByLabel('Province').selectOption('Western Cape');
   await page.getByLabel('City or town').fill('Cape Town');
   await page.getByLabel('Height (cm)').fill('175');
   await page.getByLabel('Weight (kg)').fill('82');
   await page.getByLabel('Energy', { exact: true }).check();
   await page.getByRole('button', { name: 'Next: Your health' }).click();
+  await expectToast(page, /You can stop here and pick up later/);
+  // Leaving part-way loses nothing.
+  await page.reload();
+  await page.getByRole('button', { name: 'Pick up where you left off' }).click();
+  await expect(page.getByText('Step 3 of 5 · Your health')).toBeVisible();
+  await expect(page.getByText(/Welcome back\. We kept your answers/)).toBeVisible();
+  await page.getByRole('button', { name: 'Back' }).click();
+  await expect(page.getByLabel('First name')).toHaveValue('Alex');
+  await expect(page.getByLabel('Energy', { exact: true })).toBeChecked();
+  await page.getByRole('button', { name: 'Next: Your health' }).click();
+  // Health lists need an answer, even if that answer is "none".
+  await page.getByRole('button', { name: 'Next: Your lifestyle' }).click();
+  await expect(page.getByText(/any health conditions, or tick that you have none/)).toBeVisible();
+  await page.getByRole('button', { name: 'Migraines', exact: true }).click();
+  await page.getByLabel("I don't take any medicines").check();
+  await page.getByLabel('I have no allergies').check();
   await page.getByLabel('I am planning a pregnancy in the next 12 months').check();
   await page.getByLabel('Menopause stage').selectOption('PRE');
   await page.getByRole('button', { name: 'Next: Your lifestyle' }).click();
   await page.getByLabel('Average sleep (hours)').fill('7');
-  await page.getByRole('button', { name: 'Next: Consent' }).click();
+  await page.getByRole('button', { name: 'Next: Last details' }).click();
+  await page.getByLabel('Last name').fill('Demo');
+  await page.getByLabel('ID number').fill('9001155000080');
+  await page.getByLabel('Mobile number').fill('+27 82 000 0000');
   await page.getByLabel(/privacy notice/).check();
   await page.getByLabel(/terms of use/).check();
   await page.getByLabel(/health information being processed/).check();

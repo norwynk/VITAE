@@ -64,6 +64,7 @@ export const COLLECTIONS = [
   'analyticsEvents',
   'operationalProfiles',
   'inventory',
+  'screeningDrafts',
 ] as const;
 export type CollectionName = (typeof COLLECTIONS)[number];
 
@@ -97,6 +98,7 @@ export const MEMBER_COLLECTIONS = [
   'notifications',
   'consents',
   'operationalProfiles',
+  'screeningDrafts',
 ] as const satisfies readonly CollectionName[];
 export type MemberCollectionName = (typeof MEMBER_COLLECTIONS)[number];
 
@@ -359,6 +361,8 @@ export const PENDING_REQUEST_STATUSES: readonly RequestStatus[] = ['OPEN', 'IN_R
  */
 export interface ProductTruth {
   activeIngredient?: string;
+  /** The branded medicine this pen is, e.g. "Ozempic®". Layer 3 only, never on the card. */
+  brandName?: string;
   supplierName?: string;
   /** Exactly as the supplier lists it. Not a measure of effectiveness. */
   supplierStrength?: string;
@@ -637,6 +641,25 @@ export interface CorporateAccount {
   enrolledMembers: number;
 }
 
+/** Most answers a saved screening draft may hold. */
+export const SCREENING_DRAFT_MAX_ANSWERS = 120;
+
+/**
+ * Unfinished screening answers, saved as the member moves between steps so
+ * they can leave and pick up where they stopped. Keyed by member id and seen
+ * only by that member: clinicians review the submitted intake, never a draft.
+ * Identity numbers are never saved here. Submitting clears the answers and
+ * marks the draft SUBMITTED, because domain commands never delete records.
+ */
+export interface ScreeningDraft {
+  id: string;
+  memberId: string;
+  status: 'IN_PROGRESS' | 'SUBMITTED';
+  step: number;
+  answers: Record<string, string | boolean>;
+  updatedAt: string;
+}
+
 export interface AnalyticsEvent {
   id: string;
   name: string;
@@ -689,6 +712,7 @@ export interface CollectionTypes {
   analyticsEvents: AnalyticsEvent;
   operationalProfiles: OperationalProfile;
   inventory: InventoryRecord;
+  screeningDrafts: ScreeningDraft;
 }
 
 export type Store = { [K in CollectionName]: Record<string, CollectionTypes[K]> };
@@ -927,7 +951,7 @@ export function visible(store: Store, actor: Actor): Store {
       const assigned = activeAssignedMemberIds(store, actor.uid);
       const mine = (r: { memberId: string }) => assigned.has(r.memberId);
       for (const c of MEMBER_COLLECTIONS) {
-        if (c === 'operationalProfiles') continue;
+        if (c === 'operationalProfiles' || c === 'screeningDrafts') continue;
         (out as Record<string, unknown>)[c] = filterRecords(store, c, mine as never);
       }
       out.providerAssignments = filterRecords(store, 'providerAssignments', (a) => a.clinicianId === actor.uid);
