@@ -14,7 +14,7 @@ export function HomePage() {
   return (
     <BrandPage revealKey={pens}>
       <BrandHero />
-      <Marquee items={['A prick with standards', 'Months of doses in one pen', 'Screened before anything else', 'A clinician in your corner', 'Pretty enough to leave out']} />
+      <Marquee items={['A prick with standards', 'Months of doses in one pen', 'Screened before anything else', 'A clinician in your corner', 'Designed for women']} />
       <Range
         pens={pens}
         error={error}

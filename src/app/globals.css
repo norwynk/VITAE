@@ -15,6 +15,9 @@
   --sand: #efe3d0;
   --sky: #cfe6ff;
   --black: #111111;
+  /* Deep brand pink for bands; cream text on it passes contrast. */
+  --pink-deep: #c4125c;
+  --cream-ink: #fff6ec;
   --ink: #111111;
   --ink-soft: #55504a;
   --line: #e4dccf;
@@ -185,10 +188,10 @@ button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 .site-footer__legal { margin-top: var(--space-5); padding-top: var(--space-3); border-top: 1px solid rgb(255 255 255 / 0.15); font-size: 0.8rem; opacity: 0.7; }
 
 /* Marquee */
-.marquee { overflow: hidden; background: var(--black); color: #fff; padding: 1.1rem 0; white-space: nowrap; }
+.marquee { overflow: hidden; background: var(--pink-deep); color: var(--cream-ink); padding: 1rem 0; white-space: nowrap; border-block: 1px solid rgb(255 255 255 / 0.18); }
 .marquee__track { display: inline-flex; gap: 3rem; animation: marquee 32s linear infinite; padding-right: 3rem; }
-.marquee__item { font-family: var(--font-display); font-size: var(--step-2); text-transform: uppercase; display: inline-flex; align-items: center; gap: 3rem; }
-.marquee__dot { width: 0.45em; height: 0.45em; border-radius: 50%; display: inline-block; }
+.marquee__item { font-family: var(--font-display); font-size: var(--step-1); letter-spacing: 0.03em; text-transform: uppercase; display: inline-flex; align-items: center; gap: 3rem; }
+.marquee__spark { width: 0.7em; height: 0.7em; fill: var(--blush); flex: 0 0 auto; }
 .marquee:hover .marquee__track { animation-play-state: paused; }
 
 /* =========================================================================
