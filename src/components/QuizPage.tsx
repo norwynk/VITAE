@@ -23,10 +23,11 @@ const EMPTY_ANSWERS: QuizAnswers = { goals: [], hooks: {}, feelings: [] };
  * Consumer recommendation only. The match is a starting point for screening;
  * clinical eligibility is decided by the clinician, never here.
  */
-export function QuizPage() {
+export function QuizPage({ initialGoal }: { initialGoal?: string } = {}) {
   const { pens, error } = useCatalogue();
-  const [step, setStep] = useState<Step>({ kind: 'intro' });
-  const [answers, setAnswers] = useState<QuizAnswers>(EMPTY_ANSWERS);
+  // Arriving from a homepage goal card: that goal is chosen, so start at the next question.
+  const [step, setStep] = useState<Step>(initialGoal ? { kind: 'hook', index: 0 } : { kind: 'intro' });
+  const [answers, setAnswers] = useState<QuizAnswers>(initialGoal ? { ...EMPTY_ANSWERS, goals: [initialGoal] } : EMPTY_ANSWERS);
   const [hover, setHover] = useState<string | null>(null);
   const bySlug = (slug: string) => pens?.find((p) => p.treatment.slug === slug) ?? null;
 

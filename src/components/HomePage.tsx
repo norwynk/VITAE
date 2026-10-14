@@ -1,5 +1,6 @@
 'use client';
 import { BrandHero } from './brand/BrandHero';
+import { GoalCards } from './brand/GoalCards';
 import { Range } from './brand/Range';
 import { ClinicalTrustPanel, CoFounderQuote, EditorialStatement, FinalCta, HowItWorks, DesignedForWomen, LifestylePanel, Reviews, SubscriptionPanel } from './brand/Sections';
 import { BrandPage } from './site/BrandPage';
@@ -15,6 +16,7 @@ export function HomePage() {
     <BrandPage revealKey={pens}>
       <BrandHero />
       <Marquee items={['A prick with standards', 'Months of doses in one pen', 'Screened before anything else', 'A clinician in your corner', 'Designed for women']} />
+      <GoalCards />
       <Range
         pens={pens}
         error={error}

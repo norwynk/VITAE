@@ -96,6 +96,25 @@ test('shop filters by category and the expanded view keeps the clinical gate', a
   await expect(page.getByRole('link', { name: 'Start screening' }).first()).toHaveAttribute('href', '/app?pen=deep-sleep-rebuild');
 });
 
+test('goal cards come first and open the quiz with that goal chosen', async ({ page }) => {
+  await page.goto('/');
+  const goals = page.locator('section', { has: page.getByRole('heading', { name: /What are\s*you after\?/ }) });
+  for (const title of ['Lose the weight.', 'Get the glow.', 'Sleep. Recover. Repeat.', 'Feel like you again.']) {
+    await expect(goals.getByText(title, { exact: true })).toBeVisible();
+  }
+  // Goal cards sit above "Meet the pricks".
+  const goalsTop = (await goals.boundingBox())!.y;
+  const rangeTop = (await page.getByRole('heading', { name: /Meet the\s*pricks\./ }).boundingBox())!.y;
+  expect(goalsTop).toBeLessThan(rangeTop);
+  await goals.getByRole('link', { name: /Get the glow\./ }).click();
+  await expect(page).toHaveURL(/\/find-your-prick\?goal=skin$/);
+  await expect(page.getByText(/· Appearance & Skin/)).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Which sounds\s*most like you\?/ })).toBeVisible();
+  // An unknown goal falls back to the normal start.
+  await page.goto('/find-your-prick?goal=nonsense');
+  await expect(page.getByRole('heading', { name: /Have you met\s*your prick\?/ })).toBeVisible();
+});
+
 test('quiz asks enough to match, and matches build "My pens"', async ({ page }) => {
   await page.goto('/find-your-prick');
   await page.getByRole('button', { name: "Let's go" }).click();
