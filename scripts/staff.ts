@@ -5,6 +5,7 @@
  *   npm run staff -- set-role <email> <ROLE>
  *   npm run staff -- assign <clinicianEmail> <memberEmail>
  *   npm run staff -- unassign <clinicianEmail> <memberEmail>
+ *   npm run staff -- invite <email> <ROLE> [name]          create a staff account; prints a set-your-password link
  *   npm run staff -- default-clinician <clinicianEmail>   new members (and any unassigned ones) go to them
  *   npm run staff -- enable-totp                          let staff use an authenticator app as their second step
  *   npm run staff -- catalogue                            add any missing PRICK pens to the live catalogue
@@ -63,6 +64,18 @@ async function assignment(clinicianEmail: string, memberEmail: string, active: b
   console.log(`${active ? 'Assigned' : 'Unassigned'} ${clinicianEmail} ${active ? 'to' : 'from'} ${memberEmail}.`);
 }
 
+/** Creates a staff account and prints a one-time link where they choose their own password. */
+async function invite(email: string, role: string, name: string | undefined) {
+  if (!(ROLES as readonly string[]).includes(role) || role === 'MEMBER') throw new Error(`Role must be one of ${ROLES.filter((r) => r !== 'MEMBER').join(', ')}`);
+  const user = await auth.getUserByEmail(email).catch(() =>
+    auth.createUser({ email, emailVerified: true, password: randomUUID() + randomUUID(), displayName: name }),
+  );
+  await setRole(email, role);
+  if (name) await db.doc(`users/${user.uid}`).set({ displayName: name }, { merge: true });
+  const link = await auth.generatePasswordResetLink(email, process.env.SITE_URL ? { url: `${process.env.SITE_URL}/app` } : undefined);
+  console.log(`\nSend this to ${email}. It lets them choose a password, then sign in at /app and set up their authenticator app:\n\n${link}\n`);
+}
+
 async function defaultClinician(clinicianEmail: string) {
   const clinician = await auth.getUserByEmail(clinicianEmail);
   if (clinician.customClaims?.role !== 'CLINICIAN') throw new Error(`${clinicianEmail} is not a clinician. Run set-role first.`);
@@ -117,6 +130,8 @@ const run =
     ? setRole(a, b)
     : (cmd === 'assign' || cmd === 'unassign') && a && b
       ? assignment(a, b, cmd === 'assign')
+      : cmd === 'invite' && a && b
+        ? invite(a, b, process.argv.slice(5).join(' ') || undefined)
       : cmd === 'default-clinician' && a
         ? defaultClinician(a)
         : cmd === 'enable-totp'
@@ -125,7 +140,7 @@ const run =
             ? catalogue()
             : Promise.reject(
                 new Error(
-                  'Usage: set-role <email> <ROLE> | assign <clinicianEmail> <memberEmail> | unassign <clinicianEmail> <memberEmail> | default-clinician <clinicianEmail> | enable-totp | catalogue',
+                  'Usage: set-role <email> <ROLE> | assign <clinicianEmail> <memberEmail> | unassign <clinicianEmail> <memberEmail> | invite <email> <ROLE> [name] | default-clinician <clinicianEmail> | enable-totp | catalogue',
                 ),
               );
 
