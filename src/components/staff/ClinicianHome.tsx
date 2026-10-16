@@ -9,6 +9,7 @@ import {
   isApprovalCurrent,
   localDate,
 } from '@/domain/model';
+import { type IntakeAnswers, answerText, sectionsFor, visibleQuestions } from '@/domain/intake';
 import { Thread } from '../member/MemberHome';
 import { Badge, Card, Empty, Notice, fmtDateTime, formValues, humanise } from '../ui';
 import { useWorkspace } from '../workspace-context';
@@ -51,6 +52,37 @@ export function ClinicianHome() {
   );
 }
 
+/** The member's preparatory questionnaire, section by section, in the words they were asked. */
+function Questionnaire({ answers }: { answers: IntakeAnswers }) {
+  return (
+    <Card title="Questionnaire">
+      <div className="stack" style={{ gap: '0.4rem' }}>
+        {sectionsFor(answers).map((s) => {
+          const rows = visibleQuestions(s, answers)
+            .map((q) => ({ q, text: answerText(q, answers[q.id]) }))
+            .filter((r) => r.text);
+          if (!rows.length) return null;
+          return (
+            <details key={s.id} open={s.id === 'why' || s.id === 'history'} className="intake-review">
+              <summary>
+                <strong>{s.label}</strong> <span className="muted small">· {rows.length} answered</span>
+              </summary>
+              <dl>
+                {rows.map(({ q, text }) => (
+                  <div key={q.id}>
+                    <dt>{q.label}</dt>
+                    <dd>{text}</dd>
+                  </div>
+                ))}
+              </dl>
+            </details>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
 function MemberChart({ memberId }: { memberId: string }) {
   const { workspace, run, busy } = useWorkspace();
   const { store } = workspace;
@@ -89,6 +121,7 @@ function MemberChart({ memberId }: { memberId: string }) {
             </ul>
           )}
         </Card>
+        {intake?.intake ? <Questionnaire answers={intake.intake.answers} /> : null}
         {intake?.penAnswers?.length ? (
           <Card title="Pen-specific answers">
             <ul className="plain small stack" style={{ gap: '0.5rem' }}>

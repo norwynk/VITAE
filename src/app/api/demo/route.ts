@@ -4,12 +4,14 @@ import { DomainError } from '@/domain/commands';
 import { ROLES, type Role } from '@/domain/model';
 import {
   DEMO_COOKIE,
+  DEMO_SIGNUP_COOKIE,
   SESSION_TTL_MS,
   demoActorFor,
   demoAllowed,
   demoExecute,
   demoPublicCatalogue,
   demoReset,
+  demoSignUp,
   demoWorkspace,
   openSession,
   sealSession,
@@ -63,14 +65,23 @@ export async function POST(request: NextRequest) {
 
   if (body.action === 'session') {
     if (!body.role || !(ROLES as readonly string[]).includes(body.role)) return error(400, 'Unknown role');
-    const actor = demoActorFor(body.role as Role, body.persona);
-    jar.set(DEMO_COOKIE, await sealSession(actor), {
+    const cookie = {
       httpOnly: true,
-      sameSite: 'strict',
+      sameSite: 'strict' as const,
       secure: request.nextUrl.protocol === 'https:',
       path: '/api/demo',
       maxAge: SESSION_TTL_MS / 1000,
-    });
+    };
+    let actor;
+    if (body.role === 'MEMBER' && body.persona === 'signup') {
+      // A fresh account; remembered in this browser so switching roles comes back to it.
+      actor = await demoSignUp();
+      jar.set(DEMO_SIGNUP_COOKIE, await sealSession(actor), cookie);
+    } else {
+      const own = body.role === 'MEMBER' && !body.persona ? await openSession(jar.get(DEMO_SIGNUP_COOKIE)?.value) : null;
+      actor = own ?? demoActorFor(body.role as Role, body.persona);
+    }
+    jar.set(DEMO_COOKIE, await sealSession(actor), cookie);
     return json({ actor });
   }
 
@@ -78,6 +89,7 @@ export async function POST(request: NextRequest) {
 
   if (body.action === 'signOut') {
     jar.delete({ name: DEMO_COOKIE, path: '/api/demo' });
+    jar.delete({ name: DEMO_SIGNUP_COOKIE, path: '/api/demo' });
     return json({ ok: true });
   }
 

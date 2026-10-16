@@ -28,7 +28,8 @@ import { PenStage } from '../brand/Pen';
 import { worldStyle } from '../brand/worldStyle';
 import { Badge, Card, Empty, Notice, fmtDateTime, formValues, humanise } from '../ui';
 import { useWorkspace } from '../workspace-context';
-import { OnboardingForm } from './OnboardingForm';
+import { FinishScreening } from './FinishScreening';
+import { useScreening } from '@/hooks/useScreening';
 import { OnRepeat, renewalsDue } from './OnRepeat';
 
 const TABS = ['Overview', 'Plan', 'Orders', 'Messages', 'My health'] as const;
@@ -37,7 +38,7 @@ type Tab = (typeof TABS)[number];
 export function MemberHome() {
   const { workspace } = useWorkspace();
   const shortlist = useShortlist();
-  const [started, setStarted] = useState(false);
+  const screening = useScreening();
   const [tab, setTab] = useState<Tab>('Overview');
   // A pen linked from the site (?pen=) joins "My pens". A preference only, never a clinical input.
   const linked = useState(() => (typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('pen')))[0];
@@ -50,8 +51,8 @@ export function MemberHome() {
   if (!member) return <Notice tone="error">Your member record could not be found.</Notice>;
 
   if (!member.onboardedAt) {
-    if (!started) return <ScreeningIntro onBegin={() => setStarted(true)} />;
-    return <OnboardingForm />;
+    if (screening.complete) return <FinishScreening />;
+    return <ScreeningIntro resuming={Object.keys(screening.state.answers).length > 0} />;
   }
 
   return (
@@ -116,10 +117,9 @@ function RenewalDue({ onGo }: { onGo: () => void }) {
   );
 }
 
-function ScreeningIntro({ onBegin }: { onBegin: () => void }) {
+function ScreeningIntro({ resuming }: { resuming: boolean }) {
   const { workspace } = useWorkspace();
   const { slugs } = useShortlist();
-  const resuming = workspace.store.screeningDrafts?.[workspace.actor.uid]?.status === 'IN_PROGRESS';
   const names = slugs.map((slug) => Object.values(workspace.store.treatments).find((t) => t.slug === slug)?.name).filter(Boolean);
   const first = Object.values(workspace.store.treatments).find((t) => t.slug === slugs[0]);
   const brand = first ? penBrand(first) : null;
@@ -137,7 +137,7 @@ function ScreeningIntro({ onBegin }: { onBegin: () => void }) {
         </li>
         <li>
           <strong>A few calm questions</strong>
-          <span>About you, your health and your lifestyle. Five short steps.</span>
+          <span>About you, your health, sleep and lifestyle. One topic at a time.</span>
         </li>
         <li>
           <strong>A clinician reviews</strong>
@@ -151,9 +151,9 @@ function ScreeningIntro({ onBegin }: { onBegin: () => void }) {
         <span>Saved as you go</span>
       </div>
       <div>
-        <button type="button" onClick={onBegin}>
+        <a href="/start" className="btn">
           {resuming ? 'Pick up where you left off' : 'Begin screening'}
-        </button>
+        </a>
       </div>
     </section>
   );

@@ -49,7 +49,7 @@ export function HowItWorks() {
             ))}
           </ol>
           <div className="steps__cta" data-reveal>
-            <Link href="/app" className="btn steps__btn">
+            <Link href="/start" className="btn steps__btn">
               Start your screening
             </Link>
           </div>

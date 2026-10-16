@@ -53,7 +53,7 @@ export function ProductPage({ slug }: { slug: string }) {
 
   const { treatment: t, brand } = pen;
   const needsApproval = t.requiresClinicianApproval || t.requiresPrescription;
-  const startHref = `/app?pen=${t.slug}`;
+  const startHref = `/start?pen=${t.slug}`;
   const truth = t.productTruth ?? {};
   const related = pens.filter((p) => p.treatment.id !== t.id && p.treatment.category === t.category);
 

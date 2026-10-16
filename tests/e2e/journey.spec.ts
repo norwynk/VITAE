@@ -28,7 +28,7 @@ test('home shows colour cards that flip to outcome, feeling and transformation',
   await expect(page.locator('.founder-quote').getByRole('link', { name: 'About us' })).toHaveAttribute('href', '/about');
   await expect(page.getByText('Built around your goals, your body and your rhythm.')).toBeVisible();
   await expect(page.getByText('around her goals', { exact: false })).toHaveCount(0);
-  await expect(page.locator('#how-it-works').getByRole('link', { name: 'Start your screening' })).toHaveAttribute('href', '/app');
+  await expect(page.locator('#how-it-works').getByRole('link', { name: 'Start your screening' })).toHaveAttribute('href', '/start');
   await expect(page.locator('.marquee').getByText('Months of doses in one pen').first()).toBeAttached();
   for (const gone of ['Fun to pick', 'fits in a bag', 'Small pen', 'Clinician-checked']) {
     await expect(page.getByText(gone, { exact: false })).toHaveCount(0);
@@ -93,7 +93,7 @@ test('shop filters by category and the expanded view keeps the clinical gate', a
   await page.goto('/pens/deep-sleep-rebuild');
   await expect(page.getByText('You can only order it if your clinician approves it for you.')).toBeVisible();
   await expect(page.getByRole('button', { name: /add to cart|buy now/i })).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'Start screening' }).first()).toHaveAttribute('href', '/app?pen=deep-sleep-rebuild');
+  await expect(page.getByRole('link', { name: 'Start screening' }).first()).toHaveAttribute('href', '/start?pen=deep-sleep-rebuild');
 });
 
 test('goal cards come first and open the quiz with that goal chosen', async ({ page }) => {
@@ -148,65 +148,81 @@ test('quiz asks enough to match, and matches build "My pens"', async ({ page }) 
   // Adding a second pen keeps the first.
   await expect(page.getByRole('link', { name: 'My pens (2)' }).first()).toBeAttached();
 
+  // The questionnaire comes first, before any account, with the chosen pens.
   await page.getByRole('link', { name: 'Start your screening' }).click();
-  await page.getByRole('button', { name: 'New member' }).click();
-  await expect(page.getByText('Health screening · The Glow Up, Deep Sleep Rebuild')).toBeVisible();
-  await page.getByRole('button', { name: 'Begin screening' }).click();
-  await expect(page.getByText('Step 1 of 5 · Your pens')).toBeVisible();
+  await expect(page).toHaveURL(/\/start\?pen=deep-sleep-rebuild$/);
+  await expect(page.getByRole('heading', { name: /The fun part is picking it/ })).toBeVisible();
   await expect(page.locator('.screening__pen')).toHaveCount(2);
 });
 
 test('full journey across roles', async ({ page }) => {
   page.on('dialog', (d) => void d.accept(d.type() === 'prompt' ? 'DEMO-COURIER-1' : undefined));
 
-  // --- New member onboarding ---------------------------------------------------
-  await page.goto('/app');
-  // Earlier tests may have left a demo session; this context starts clean.
-  await page.getByRole('button', { name: 'New member' }).click();
-  await page.getByRole('button', { name: 'Begin screening' }).click();
-  await expect(page.getByText('Step 1 of 5 · Your pens')).toBeVisible();
-  await page.getByRole('button', { name: 'Next: About you' }).click();
+  // --- Questionnaire first, no account yet --------------------------------------
+  const pick = (q: string, option: string) => page.locator(`[data-q="${q}"]`).getByRole('button', { name: option, exact: true }).or(page.locator(`[data-q="${q}"]`).getByRole('radio', { name: option, exact: true })).click();
+  const next = () => page.getByRole('button', { name: /^(Next|See where I stand)$/ }).click();
+  await page.goto('/start');
+  await next();
   await expect(page.getByText('Choose at least one pen, or let your clinician suggest one.')).toBeVisible();
   await page.getByLabel('Choose a pen').selectOption({ label: 'Total Body Reset' });
-  await page.getByRole('button', { name: 'Next: About you' }).click();
+  await next();
+  await expect(page.getByRole('heading', { name: 'Let’s get to know each other first.' })).toBeVisible();
   await page.getByLabel('First name').fill('Alex');
   await page.getByLabel('Date of birth').fill('1990-01-15');
+  await pick('sex', 'Female');
   await page.getByLabel('Province').selectOption('Western Cape');
   await page.getByLabel('City or town').fill('Cape Town');
   await page.getByLabel('Height (cm)').fill('175');
   await page.getByLabel('Weight (kg)').fill('82');
-  await page.getByLabel('Energy', { exact: true }).check();
-  await page.getByRole('button', { name: 'Next: Your health' }).click();
-  await expectToast(page, /we’ll keep your place/);
-  // Leaving part-way loses nothing.
+  await next();
+  // Saved on this device: leaving part-way loses nothing.
   await page.reload();
-  await page.getByRole('button', { name: 'Pick up where you left off' }).click();
-  await expect(page.getByText('Step 3 of 5 · Your health')).toBeVisible();
-  await expect(page.getByText(/Welcome back\. We kept your answers/)).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'So, what brings you to us?' })).toBeVisible();
   await page.getByRole('button', { name: 'Back' }).click();
   await expect(page.getByLabel('First name')).toHaveValue('Alex');
-  await expect(page.getByLabel('Energy', { exact: true })).toBeChecked();
-  await page.getByRole('button', { name: 'Next: Your health' }).click();
+  await next();
+  await pick('goals', 'Energy');
+  await page.getByLabel(/What made you reach out\?/).fill('I want my energy back.');
+  await next();
   // Health lists need an answer, even if that answer is "none".
-  await page.getByRole('button', { name: 'Next: Your lifestyle' }).click();
-  await expect(page.getByText(/any health conditions, or tick that you have none/)).toBeVisible();
-  await page.getByRole('button', { name: 'Migraines', exact: true }).click();
-  await page.getByLabel("I don't take any medicines").check();
-  await page.getByLabel('I have no allergies').check();
-  await page.getByLabel('I am planning a pregnancy in the next 12 months').check();
-  await page.getByLabel('Menopause stage').selectOption('PRE');
+  await next();
+  await expect(page.getByText(/Health conditions: add something, or tick/)).toBeVisible();
+  await pick('conditions', 'Migraines');
+  await page.locator('[data-q="allergies"]').getByLabel('I have no allergies').check();
+  await page.getByLabel('Name, row 1').fill('Vitamin D');
+  await pick('previousPeptides', 'No');
+  await page.locator('[data-q="familyHistory"]').getByLabel('Nothing I know of').check();
   // Questions for the chosen weight pen; a family-history "Not sure" is flagged for the clinician.
-  await expect(page.getByRole('heading', { name: 'For your weight medicine' })).toBeVisible();
-  await page.locator('[data-question="glp1-thyroid"]').getByText('Not sure', { exact: true }).click();
-  await page.locator('[data-question="glp1-current"]').getByText('No', { exact: true }).click();
-  await page.getByLabel(/What weight would you like to reach/).fill('75');
-  await page.getByRole('button', { name: 'Next: Your lifestyle' }).click();
-  await page.getByLabel('Average sleep (hours)').fill('7');
-  await page.getByRole('button', { name: 'Next: Last details' }).click();
-  // The moment before consent reads the answers honestly.
+  await expect(page.getByText('For your weight medicine')).toBeVisible();
+  await pick('pen:glp1-thyroid', 'Not sure');
+  await pick('pen:glp1-current', 'No');
+  await page.locator('[data-q="pen:weight-goal"] input').fill('75');
+  await next();
+  await pick('smoking', 'No');
+  await pick('alcohol', 'Socially');
+  await page.getByLabel(/how many drinks a week/).fill('2');
+  await pick('activity', 'Moderate');
+  await next();
+  await page.getByLabel(/Hours of sleep a night/).fill('7');
+  await next();
+  await expect(page.getByRole('heading', { name: 'Your body, your cycle.' })).toBeVisible();
+  await pick('pregnant', 'No');
+  await pick('breastfeeding', 'No');
+  await pick('planningPregnancy', 'Yes');
+  await pick('menopauseStage', 'Before menopause');
+  await next();
+  await expect(page.getByRole('heading', { name: 'Head space.' })).toBeVisible();
+  await next();
+  await expect(page.getByRole('heading', { name: 'The bedroom bit.' })).toBeVisible();
+  await next();
+  // The good-fit moment reads the answers honestly, then: create an account.
   await expect(page.getByRole('heading', { name: /Thanks for being so open/ })).toBeVisible();
   await expect(page.getByText('Your clinician reads every answer.')).toBeVisible();
-  await page.getByLabel('Last name').fill('Demo');
+  await page.getByRole('button', { name: 'Create my account' }).click();
+
+  // --- Account created: last details, then send -----------------------------------
+  await expect(page.getByRole('heading', { name: /Nearly there, Alex\./ })).toBeVisible();
+  await page.getByLabel('Last name').fill('Newby');
   await page.getByLabel('ID number').fill('9001155000080');
   await page.getByLabel('Mobile number').fill('+27 82 000 0000');
   await page.getByLabel(/privacy notice/).check();
@@ -223,7 +239,7 @@ test('full journey across roles', async ({ page }) => {
   await expect(myPens.getByText('Waiting for your clinician')).toBeVisible();
 
   await page.getByRole('tab', { name: 'Orders' }).click();
-  await page.getByLabel('Recipient').fill('Alex Demo');
+  await page.getByLabel('Recipient').fill('Alex Newby');
   await page.getByLabel('Street address').fill('1 Example Street');
   await page.getByLabel('Suburb').fill('Gardens');
   await page.getByLabel('City', { exact: true }).fill('Cape Town');
@@ -240,10 +256,14 @@ test('full journey across roles', async ({ page }) => {
   // --- Clinician approves --------------------------------------------------------
   await switchRole(page, 'Clinician');
   await expect(page.getByRole('heading', { name: 'Clinician workspace' })).toBeVisible();
-  await page.getByRole('button', { name: /Alex Demo/ }).click();
+  await page.getByRole('button', { name: /Alex Newby/ }).click();
   const penAnswers = page.locator('section', { has: page.getByRole('heading', { name: 'Pen-specific answers' }) });
   await expect(penAnswers.getByText('Look at this')).toHaveCount(1);
   await expect(penAnswers.getByText(/medullary thyroid cancer/)).toBeVisible();
+  // The full questionnaire, in the words the member was asked.
+  const questionnaire = page.locator('section', { has: page.getByRole('heading', { name: 'Questionnaire' }) });
+  await expect(questionnaire.getByText('I want my energy back.')).toBeVisible();
+  await expect(questionnaire.getByText('Vitamin D')).toBeVisible();
   const review = page.getByRole('form', { name: /Review Total Body Reset/ });
   await review.getByLabel('Packs approved').fill('2');
   await review.getByLabel('Frequency').selectOption('DAILY');
@@ -327,7 +347,7 @@ test('full journey across roles', async ({ page }) => {
   // --- Clinician sees the escalation ---------------------------------------------
   await switchRole(page, 'Clinician');
   await expect(page.getByText(/escalated concern/)).toBeVisible();
-  await page.getByRole('button', { name: /Alex Demo/ }).click();
+  await page.getByRole('button', { name: /Alex Newby/ }).click();
   await expect(page.getByText('Feeling nauseous after the dose').first()).toBeVisible();
   await page.getByLabel('New note').fill('Confidential demo note');
   await page.getByRole('button', { name: 'Save note' }).click();
@@ -362,5 +382,5 @@ test('about page tells the founders story', async ({ page }) => {
   await expect(page.getByRole('img', { name: 'Dr Kylee Montgomerie and Norwyn K, co-founders of PRICK' })).toBeVisible();
   await expect(page.getByText('Start with the person, not the peptide.')).toBeVisible();
   await expect(page.getByText('Serious where it matters.')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Start your screening' })).toHaveAttribute('href', '/app');
+  await expect(page.getByRole('link', { name: 'Start your screening' })).toHaveAttribute('href', '/start');
 });

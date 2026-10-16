@@ -786,3 +786,58 @@ label.pen-questions__q { font-size: var(--step-0); }
 .goal-card:hover .goal-card__go { transform: translateX(3px); }
 @media (max-width: 1000px) { .goals__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .goals__grid { gap: 0.6rem; } .goal-card__title { font-size: var(--step-1); } .goal-card__covers { display: none; } .goal-card__text { right: 3rem; } .goal-card__go { width: 2.1rem; height: 2.1rem; } }
+
+/* Health questionnaire (/start) */
+.intake { min-height: calc(100svh - 110px); padding: var(--space-3) 0 var(--space-5); background: var(--cream); }
+.intake__top { display: grid; gap: 0.6rem; margin-bottom: var(--space-4); }
+.intake__top .quiz__progress { margin: 0; color: var(--accent); }
+.intake__screen { display: grid; gap: var(--space-3); animation: step-in var(--dur) var(--ease-out); }
+.intake__title { font-size: var(--step-3); margin: 0; }
+.intake__title .serif-i { display: block; text-transform: none; color: var(--accent); font-size: 0.6em; margin-top: 0.4rem; }
+.intake__lead { margin: 0; font-family: var(--font-serif); font-style: italic; font-size: var(--step-1); line-height: 1.25; max-width: 52ch; }
+.intake__fields { display: grid; gap: var(--space-3); }
+.intake__nav { display: flex; flex-wrap: wrap; align-items: center; gap: 0.8rem; margin-top: var(--space-4); }
+.intake__clear { margin-left: auto; background: none; border: 0; border-bottom: 2px solid currentColor; border-radius: 0; min-height: 0; padding: 0 0 2px; color: var(--ink-soft); }
+.intake__clear:hover { transform: none; }
+.intake__account { display: grid; gap: var(--space-2); padding: var(--space-4) var(--space-3); border-radius: var(--radius-m); background: var(--ink); color: #fff; }
+.intake__account h2 { font-size: var(--step-3); margin: 0; }
+.intake__account p { margin: 0; max-width: 52ch; }
+.intake__account .btn, .intake__account button { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.intake__account .link-arrow { color: #fff; }
+.intake__pen-qs { display: grid; gap: var(--space-3); }
+
+.qf { display: grid; gap: 0.5rem; margin: 0; border: 0; padding: 0; background: none; font-size: var(--step-0); font-weight: 400; }
+.qf > legend { padding: 0; margin-bottom: 0.5rem; font-family: inherit; text-transform: none; font-size: var(--step-0); }
+.qf__label { font-weight: 700; }
+.qf__opt { font-weight: 400; color: var(--ink-soft); }
+.qf__hint { display: block; font-size: var(--step--1); color: var(--ink-soft); margin-top: 0.15rem; font-weight: 400; }
+.qf--group { padding: var(--space-3); border-radius: var(--radius-m); background: var(--off-white); border: 1px solid var(--line); gap: var(--space-2); }
+.qf--group > legend { font-family: var(--font-serif); font-style: italic; font-size: var(--step-1); padding: 0 0.3rem; }
+.qf--tags, .qf--meds { padding: var(--space-3); border-radius: var(--radius-m); background: var(--off-white); border: 1px solid var(--line); }
+.qf__chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.qf__chip { min-height: 42px; padding: 0 1rem; border-radius: 999px; font-size: 0.92rem; font-weight: 600; letter-spacing: 0; text-transform: none; background: #fff; color: var(--ink); border: 1.5px solid var(--line); }
+.qf__chip[aria-pressed="true"], .qf__chip[aria-checked="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.qf__add { display: flex; gap: 0.5rem; align-items: center; }
+.qf__add input { flex: 1; }
+.qf__meds { display: grid; gap: 0.5rem; }
+.qf__meds-head, .qf__meds-row { display: grid; grid-template-columns: 1.4fr 0.8fr 1fr 1fr auto; gap: 0.5rem; align-items: center; }
+.qf__meds-head { font-size: var(--step--1); font-weight: 700; color: var(--ink-soft); padding-right: 2.6rem; }
+.qf__meds-row input { min-height: 44px; }
+@media (max-width: 640px) {
+  .qf__meds-head { display: none; }
+  .qf__meds-row { grid-template-columns: 1fr 1fr; padding-bottom: 0.6rem; border-bottom: 1px dashed var(--line); }
+}
+.qf__rank { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.45rem; }
+.qf__rank li { display: flex; align-items: center; gap: 0.8rem; }
+.qf__rank select { width: 4.6rem; min-height: 42px; }
+
+/* Last step after sign-in */
+.finish__title { font-size: var(--step-3); }
+.finish__title .serif-i { display: block; text-transform: none; color: var(--accent); font-size: 0.6em; margin-top: 0.4rem; }
+
+/* Clinician: questionnaire review */
+.intake-review { border: 1px solid var(--line); border-radius: var(--radius-s); padding: 0.5rem 0.8rem; background: #fff; }
+.intake-review summary { cursor: pointer; }
+.intake-review dl { margin: 0.6rem 0 0.2rem; display: grid; gap: 0.45rem; }
+.intake-review dt { font-size: var(--step--1); color: var(--ink-soft); }
+.intake-review dd { margin: 0; font-size: 0.95rem; }

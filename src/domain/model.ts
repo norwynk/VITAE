@@ -5,6 +5,7 @@
  * This module is shared by the browser, the demo server and Cloud Functions.
  * It must stay free of Firebase, Node-only and DOM-only imports.
  */
+import type { IntakeAnswers } from './intake';
 
 export const SERVICE_TIME_ZONE = 'Africa/Johannesburg';
 
@@ -189,6 +190,8 @@ export interface HealthAssessment {
   checkin?: { mood: number; energy: number; sideEffects: boolean; needSupport: boolean; notes: string };
   /** Pen-specific screening answers, with the exact wording asked and any safety flag. */
   penAnswers?: PenAnswer[];
+  /** The full preparatory questionnaire, as answered (see domain/intake). */
+  intake?: { version: string; answers: IntakeAnswers };
   /** Set when this check-in was the renewal check-in for an On repeat plan. */
   repeatId?: string;
   completedAt: string;

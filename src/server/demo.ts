@@ -14,6 +14,8 @@ import { DEMO_ESTABLISHED_MEMBER, DEMO_USERS, createFixtureStore } from '@/domai
 import { type Actor, type Role, type Store, ROLES, emptyStore, visible } from '@/domain/model';
 
 export const DEMO_COOKIE = 'demo_session';
+/** The member account this browser created through the questionnaire. */
+export const DEMO_SIGNUP_COOKIE = 'demo_signup';
 export const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 
 const DEMO_DIR = process.env.DEMO_DATA_DIR ?? path.join(process.cwd(), '.demo');
@@ -148,6 +150,34 @@ export function demoExecute(actor: Actor, command: unknown): Promise<Omit<Comman
     const { store: next, resultId, auditEventId } = applyCommand(store, actor, command, { now: new Date(), mode: 'demo', newId });
     await writeStore(next);
     return { resultId, auditEventId };
+  });
+}
+
+/**
+ * A brand-new demo member, as if they had just created an account after the
+ * questionnaire. Each sign-up gets its own record, assigned to the demo
+ * clinician, so visitors never share answers.
+ */
+export function demoSignUp(): Promise<Actor> {
+  return exclusive(async () => {
+    const store = await readStore();
+    const uid = `demo-member-${randomBytes(6).toString('hex')}`;
+    const at = new Date().toISOString();
+    store.users[uid] = { id: uid, email: `${uid}@example.invalid`, displayName: '', role: 'MEMBER', createdAt: at, updatedAt: at };
+    store.members[uid] = { id: uid, memberId: uid, firstName: '', lastName: '', email: `${uid}@example.invalid`, createdAt: at, updatedAt: at };
+    store.operationalProfiles[uid] = {
+      id: uid,
+      memberId: uid,
+      displayName: 'New member',
+      onboardingStatus: 'NOT_STARTED',
+      hasDeliveryAddress: false,
+      openRequestCount: 0,
+      consentWithdrawn: false,
+      lastActivityAt: at,
+    };
+    store.providerAssignments[`pa-${uid}`] = { id: `pa-${uid}`, memberId: uid, clinicianId: DEMO_USERS.CLINICIAN.uid, active: true, createdAt: at };
+    await writeStore(store);
+    return { uid, role: 'MEMBER' as const };
   });
 }
 

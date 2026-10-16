@@ -41,6 +41,7 @@ import {
   isValidDate,
   localDate,
 } from './model';
+import { INTAKE_VERSION, type IntakeAnswers, validateIntake } from './intake';
 import { invalidAnswer, isFlagged, penQuestion } from './penQuestions';
 
 // ---------------------------------------------------------------------------
@@ -166,6 +167,8 @@ const onboardSchema = z.object({
   }),
   testingInterest: z.boolean(),
   consents: consentFlags,
+  /** The preparatory questionnaire; validated against domain/intake. */
+  intake: z.record(z.string(), z.unknown()).optional(),
   /** Pen-specific answers: ids and answers only; the server supplies wording and flags. */
   penAnswers: z
     .array(z.object({ questionId: z.string().trim().min(1).max(60), answer: text(500) }))
@@ -842,6 +845,12 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
         if (problem) fail('INVALID', problem);
         if (answer) penAnswers.push({ questionId, question: q.question, answer, flagged: isFlagged(q, answer) });
       }
+      let intake: { version: string; answers: IntakeAnswers } | undefined;
+      if (command.intake) {
+        const checked = validateIntake(command.intake, SA_PROVINCES);
+        if (checked.problem) fail('INVALID', checked.problem);
+        intake = { version: INTAKE_VERSION, answers: checked.answers };
+      }
       const assessmentId = ctx.newId('asmt');
       store.healthAssessments[assessmentId] = {
         id: assessmentId,
@@ -850,6 +859,7 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
         status: 'COMPLETE',
         testingInterest: command.testingInterest,
         ...(penAnswers.length ? { penAnswers } : {}),
+        ...(intake ? { intake } : {}),
         completedAt: at,
       };
       // Keep the combined flag consistent with the detailed answers.
