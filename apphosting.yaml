@@ -39,5 +39,5 @@ env:
     value: 1:922416529637:web:b9f3b54b686650e9a0940c
     availability: [BUILD, RUNTIME]
   - variable: NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY
-    value: RECAPTCHA_SITE_KEY_PENDING
+    value: 6LcRpPItAAAAAHfNbafvsU6bY57xaujUVUu8GtV8
     availability: [BUILD, RUNTIME]
