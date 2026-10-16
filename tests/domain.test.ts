@@ -861,3 +861,68 @@ describe('On repeat', () => {
     expect(visible(started.store, ops).repeatDeliveries[rid]).toBeUndefined();
   });
 });
+
+describe('preparatory questionnaire', () => {
+  const herIntake = (extra: Record<string, unknown> = {}) => ({
+    firstName: 'Alex',
+    dateOfBirth: '1990-01-15',
+    sex: 'Female',
+    province: 'Western Cape',
+    city: 'Cape Town',
+    heightCm: '175',
+    weightKg: '82',
+    goals: ['Energy'],
+    reason: 'Feel better',
+    conditions: ['None'],
+    allergies: ['Penicillin'],
+    medications: [{ name: 'Vitamin D', dose: '1000 IU', frequency: 'Daily', reason: 'Low levels' }],
+    previousPeptides: 'No',
+    familyHistory: ['Diabetes'],
+    smoking: 'No',
+    alcohol: 'Socially',
+    alcoholUnits: '3',
+    activity: 'Moderate',
+    sleepHours: '7',
+    pregnant: 'No',
+    breastfeeding: 'No',
+    planningPregnancy: 'No',
+    menopauseStage: 'Before menopause',
+    stressResponse: ['2', '1', '3', '4', '6', '5'],
+    ...extra,
+  });
+
+  it('stores the answers with the intake, for the member and clinician only', () => {
+    const { store, resultId } = run(createFixtureStore(NOW), member, onboardCommand({ intake: herIntake() }));
+    const saved = store.healthAssessments[resultId!].intake!;
+    expect(saved.version).toBe('prep-v1');
+    expect(saved.answers).toMatchObject({ sex: 'Female', menopauseStage: 'Before menopause', alcoholUnits: '3' });
+    expect(visible(store, clinician).healthAssessments[resultId!].intake).toBeDefined();
+    for (const actor of [ops, fulfilment, admin, corporate]) expect(visible(store, actor).healthAssessments[resultId!]).toBeUndefined();
+  });
+
+  it('drops answers to sections that do not apply', () => {
+    const { store, resultId } = run(createFixtureStore(NOW), member, onboardCommand({ intake: herIntake({ mLibido: 'Yes', alcohol: 'None' }) }));
+    const answers = store.healthAssessments[resultId!].intake!.answers;
+    expect(answers.mLibido).toBeUndefined();
+    expect(answers.alcoholUnits).toBeUndefined();
+  });
+
+  it('asks men their own section', () => {
+    const men = herIntake({ sex: 'Male', pregnant: undefined, breastfeeding: undefined, planningPregnancy: undefined, menopauseStage: undefined });
+    expectError(() => run(createFixtureStore(NOW), member, onboardCommand({ intake: men })), 'INVALID', /sex drive/);
+    const yes = Object.fromEntries(['mLibido', 'mEnergy', 'mStrength', 'mHeight', 'mEnjoyment', 'mMood', 'mErections', 'mSport', 'mDinnerSleep', 'mWork'].map((k) => [k, 'No']));
+    const { store, resultId } = run(createFixtureStore(NOW), member, onboardCommand({ intake: { ...men, ...yes } }));
+    expect(store.healthAssessments[resultId!].intake!.answers.mWork).toBe('No');
+  });
+
+  it('rejects unknown questions, invalid options, missing answers and bad rankings', () => {
+    const bad = (extra: Record<string, unknown>) => () => run(createFixtureStore(NOW), member, onboardCommand({ intake: herIntake(extra) }));
+    expectError(bad({ shoeSize: '7' }), 'INVALID', /unknown/);
+    expectError(bad({ smoking: 'Sometimes' }), 'INVALID', /smoke/);
+    expectError(bad({ reason: '' }), 'INVALID', /reach out/);
+    expectError(bad({ conditions: ['None', 'Migraines'] }), 'INVALID', /none/);
+    expectError(bad({ medications: [{ name: '', dose: '', frequency: '', reason: '' }] }), 'INVALID', /name/);
+    expectError(bad({ stressResponse: ['1', '1', '2', '3', '4', '5'] }), 'INVALID', /each number once/);
+    expectError(bad({ heightCm: '20' }), 'INVALID', /Height/);
+  });
+});

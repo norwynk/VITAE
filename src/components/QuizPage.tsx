@@ -286,7 +286,7 @@ export function MatchReveal({ pen, others = [], onRestart }: { pen: BrandedPen; 
               )}
               <div className="row" style={{ gap: 'var(--space-3)', marginTop: 'var(--space-3)' }}>
                 <ShortlistButton slug={t.slug} name={t.name} className="btn light" />
-                <Link href={`/app?pen=${t.slug}`} className="btn ghost" style={{ color: 'inherit' }}>
+                <Link href={`/start?pen=${t.slug}`} className="btn ghost" style={{ color: 'inherit' }}>
                   Start your screening
                 </Link>
               </div>

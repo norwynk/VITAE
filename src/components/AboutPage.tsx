@@ -55,7 +55,7 @@ export function AboutPage() {
           <br />
           <span className="serif-i">Different everywhere else.</span>
         </p>
-        <Link href="/app" className="btn steps__btn">
+        <Link href="/start" className="btn steps__btn">
           Start your screening
         </Link>
       </article>
