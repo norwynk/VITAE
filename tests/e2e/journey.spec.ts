@@ -384,3 +384,41 @@ test('about page tells the founders story', async ({ page }) => {
   await expect(page.getByText('Serious where it matters.')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Start your screening' })).toHaveAttribute('href', '/start');
 });
+
+// Runs last: it wipes the shared demo store.
+test('reset clears the demo and this browser, and a vanished account starts afresh', async ({ page, browser }) => {
+  page.on('dialog', (d) => void d.accept());
+  const demo = (body: object) =>
+    page.evaluate((b) => fetch('/api/demo', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) }).then((r) => r.status), body);
+
+  // A visitor picks pens and starts the questionnaire.
+  await page.goto('/pens/the-glow-up');
+  await page.getByRole('button', { name: 'Add The Glow Up to my pens' }).first().click();
+  await expect(page.getByRole('link', { name: 'My pens (1)' }).first()).toBeAttached();
+  await page.evaluate(() => localStorage.setItem('prick:screening', JSON.stringify({ answers: { firstName: 'Test' }, penAnswers: {}, letClinicianSuggest: false, step: 2 })));
+
+  // Reset clears the server, the session and this browser.
+  await page.goto('/app');
+  await page.getByRole('button', { name: 'Established member' }).click();
+  await page.getByRole('button', { name: 'Reset demo data' }).click();
+  await expect(page.getByRole('heading', { name: /Welcome in\./ })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Account' }).first()).toBeAttached();
+  expect(await page.evaluate(() => [localStorage.getItem('prick:shortlist'), localStorage.getItem('prick:screening')])).toEqual(['[]', null]);
+  // New members start with the questionnaire.
+  await page.getByRole('button', { name: 'New member: start the questionnaire' }).click();
+  await expect(page).toHaveURL(/\/start$/);
+
+  // A sign-up whose account disappears (reset elsewhere, or the demo server restarted) gets a clean start.
+  expect(await demo({ action: 'session', role: 'MEMBER', persona: 'signup' })).toBe(200);
+  const other = await browser.newPage();
+  await other.goto('/app');
+  await other.evaluate(async () => {
+    const post = (b: object) => fetch('/api/demo', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) });
+    await post({ action: 'session', role: 'SUPER_ADMIN' });
+    await post({ action: 'reset' });
+  });
+  await other.close();
+  await page.goto('/app');
+  await expect(page.getByText('That demo account no longer exists.', { exact: false })).toBeVisible();
+  await expect(page.getByText('Your member record could not be found.')).toHaveCount(0);
+});
