@@ -659,8 +659,8 @@ export interface NotificationRecord {
 export const REQUIRED_CONSENTS = ['PRIVACY', 'TERMS', 'HEALTH_DATA', 'CLINICAL_SERVICE'] as const;
 export const OPTIONAL_CONSENTS = ['COMMUNICATIONS', 'MARKETING'] as const;
 export type ConsentType = (typeof REQUIRED_CONSENTS)[number] | (typeof OPTIONAL_CONSENTS)[number];
-/** Placeholder until legal-approved consent wording exists. */
-export const CONSENT_VERSION = 'draft-unapproved-0';
+/** The privacy notice and terms (dated) that a consent was given against. */
+export const CONSENT_VERSION = '2026-10-16';
 
 export interface Consent {
   id: string;

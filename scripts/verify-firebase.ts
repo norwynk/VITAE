@@ -13,7 +13,7 @@ import { runReminderSweep, REMINDER_TITLE } from '../functions/src/reminders';
 
 const PROJECT = process.env.GCLOUD_PROJECT ?? 'demo-vitae';
 const AUTH_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST ?? '127.0.0.1:9099';
-const FUNCTIONS_BASE = `http://127.0.0.1:5001/${PROJECT}/europe-west1`;
+const FUNCTIONS_BASE = `http://127.0.0.1:5001/${PROJECT}/africa-south1`;
 const PASSWORD = 'emulator-only-password';
 
 initializeApp({ projectId: PROJECT, storageBucket: `${PROJECT}.appspot.com` });

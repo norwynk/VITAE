@@ -1,24 +1,43 @@
 # Firebase App Hosting: builds from GitHub `main` and redeploys on every push.
-# The site runs in demo mode (fictional products and accounts) until the live
-# Firebase backend is configured.
+# Live mode: real accounts on Firebase Auth, data in Firestore (Johannesburg)
+# through the Cloud Functions. The demo is off. Online sales stay closed until
+# NEXT_PUBLIC_SALES_ENABLED is "true".
 runConfig:
   minInstances: 0
-  # The demo store is a file on the server; one instance keeps it consistent.
-  maxInstances: 1
+  maxInstances: 4
   cpu: 1
   memoryMiB: 512
   concurrency: 80
 
 env:
   - variable: DATA_MODE
-    value: demo
+    value: live
     availability: [BUILD, RUNTIME]
   - variable: NEXT_PUBLIC_DATA_MODE
-    value: demo
+    value: live
     availability: [BUILD, RUNTIME]
-  - variable: ALLOW_PRODUCTION_DEMO
-    value: "true"
+  - variable: NEXT_PUBLIC_SALES_ENABLED
+    value: "false"
     availability: [BUILD, RUNTIME]
-  - variable: DEMO_DATA_DIR
-    value: /tmp/prick-demo
+  # Public web config (safe to publish; access is controlled by Auth, App Check and the rules).
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: AIzaSyD4Cx0yAZEVrnq-7uqd1WSXQMAuVTIHr4c
+    availability: [BUILD, RUNTIME]
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: prick-c3c43.firebaseapp.com
+    availability: [BUILD, RUNTIME]
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: prick-c3c43
+    availability: [BUILD, RUNTIME]
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: prick-c3c43.firebasestorage.app
+    availability: [BUILD, RUNTIME]
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "922416529637"
+    availability: [BUILD, RUNTIME]
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: 1:922416529637:web:b9f3b54b686650e9a0940c
+    availability: [BUILD, RUNTIME]
+  - variable: NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY
+    value: 6LcRpPItAAAAAHfNbafvsU6bY57xaujUVUu8GtV8
     availability: [BUILD, RUNTIME]

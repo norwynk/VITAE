@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { feelingLine } from '@/brand/pens';
 import { RENEWAL_LEAD_DAYS, formatRand } from '@/domain/model';
+import { salesOpen } from '@/config';
 import { useCatalogue } from '@/hooks/useCatalogue';
 import { NeedsVerification } from './brand/NeedsVerification';
 import { PenStage } from './brand/Pen';
@@ -70,7 +71,7 @@ export function ProductPage({ slug }: { slug: string }) {
             <h1 className="display product-hero__name">{t.name}</h1>
             <p className="serif-i product-hero__statement">{brand.hook}</p>
             <p style={{ margin: 0, maxWidth: '46ch' }}>{brand.outcome}</p>
-            {t.priceCents > 0 && (
+            {salesOpen() && t.priceCents > 0 && (
               <p className="price" style={{ margin: 0 }}>
                 {formatRand(t.priceCents)} <span className="small muted">demo price{t.billing === 'MONTHLY' ? ' per month' : ''}</span>
               </p>
@@ -80,7 +81,7 @@ export function ProductPage({ slug }: { slug: string }) {
                 <span>
                   <strong>One pen</strong>
                   <br />
-                  <span className="small muted">Ordered from your account once approved</span>
+                  <span className="small muted">{salesOpen() ? 'Ordered from your account once approved' : 'Arranged with your care team once approved'}</span>
                 </span>
                 <span className="badge">Available after approval</span>
               </div>
@@ -104,7 +105,7 @@ export function ProductPage({ slug }: { slug: string }) {
             </div>
             {needsApproval && (
               <p className="gate-note">
-                Every pen starts with a private health screening and a clinician&apos;s review. You can only order it if
+                Every pen starts with a private health screening and a clinician&apos;s review. You can only get it if
                 your clinician approves it for you.
               </p>
             )}

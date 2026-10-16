@@ -22,6 +22,7 @@ import {
   scheduledDates,
 } from '@/domain/model';
 import { penBrand } from '@/brand/pens';
+import { salesOpen } from '@/config';
 import { MAX_SHORTLIST, useShortlist } from '@/hooks/useShortlist';
 import { paymentAdapterFor } from '@/services/payment';
 import { PenStage } from '../brand/Pen';
@@ -78,12 +79,27 @@ export function MemberHome() {
         </div>
       </div>
       <div role="tabpanel" id="panel-Orders" aria-labelledby="tab-Orders" hidden={tab !== 'Orders'} className="stack">
-        <OnRepeat />
-        <div className="grid">
-          <Ordering />
-          <DeliveryAddress />
-        </div>
-        <Orders />
+        {salesOpen() ? (
+          <>
+            <OnRepeat />
+            <div className="grid">
+              <Ordering />
+              <DeliveryAddress />
+            </div>
+            <Orders />
+          </>
+        ) : (
+          <div className="grid">
+            <Card title="Getting your pens">
+              <p>
+                Online ordering isn&apos;t open yet. Once your clinician approves a pen, your care team will be in touch to
+                arrange it with you.
+              </p>
+              <p className="muted small">Saving your delivery address now makes that quicker. It doesn&apos;t place an order.</p>
+            </Card>
+            <DeliveryAddress />
+          </div>
+        )}
       </div>
       <div role="tabpanel" id="panel-Messages" aria-labelledby="tab-Messages" hidden={tab !== 'Messages'}>
         <Messages />
@@ -206,6 +222,10 @@ function NextStep({ onGo }: { onGo: (tab: Tab) => void }) {
     title = "Today's dose.";
     body = `Log your ${treatmentName(store, approval.treatmentId)} dose once you've taken it.`;
     action = { label: 'Log it', tab: 'Plan' };
+  } else if (approval && !hasOrder && !salesOpen()) {
+    title = "You're approved.";
+    body = `Your clinician approved ${treatmentName(store, approval.treatmentId)}. Your care team will be in touch to arrange your first pen.`;
+    action = { label: 'See your plan', tab: 'Plan' };
   } else if (approval && !hasOrder) {
     title = "You're approved.";
     body = `Your clinician approved ${treatmentName(store, approval.treatmentId)}. Order your first pen when you're ready.`;

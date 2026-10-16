@@ -9,7 +9,7 @@ import { type Firestore, connectFirestoreEmulator, getFirestore } from 'firebase
 import { type Functions, connectFunctionsEmulator, getFunctions } from 'firebase/functions';
 import { type FirebaseStorage, connectStorageEmulator, getStorage } from 'firebase/storage';
 
-export const FUNCTIONS_REGION = 'europe-west1';
+export const FUNCTIONS_REGION = 'africa-south1';
 
 let services: { app: FirebaseApp; auth: Auth; db: Firestore; functions: Functions; storage: FirebaseStorage } | undefined;
 

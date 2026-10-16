@@ -4,7 +4,7 @@ import type { CommandInput } from '@/domain/commands';
 import { ROLES, type Role } from '@/domain/model';
 import { SiteNav } from './site/SiteNav';
 import { RepositoryError, type Workspace, demoRepository, repository } from '@/services/repository';
-import { LiveAuthGate } from './LiveAuthGate';
+import { LiveAccountBar, LiveAuthGate } from './LiveAuthGate';
 import { MemberHome } from './member/MemberHome';
 import { AdminHome } from './staff/AdminHome';
 import { ClinicianHome } from './staff/ClinicianHome';
@@ -84,6 +84,7 @@ export function WorkspaceApp() {
   return (
     <div className="calm">
       <SiteNav cta={false} />
+      {repo.mode === 'live' && workspace && <LiveAccountBar onSignedOut={() => setWorkspace(null)} />}
       {repo.mode === 'demo' && workspace && (
         <div className="container toolbar">
           <span className="muted">Demo workspace · fictional data</span>

@@ -2,7 +2,14 @@
 
 Peptide pens with a personality, on top of an assessment-led, clinician-reviewed health service: health assessment, clinician review of peptide pen pathways, reminders and adherence, check-ins, secure messaging and order handling.
 
-**This is not a commissioned clinical service or a live medicine shop.** Every treatment in the catalogue is a fictional demo pathway that starts unverified and not purchasable. Demo payments are simulated, and live mode cannot take payment because no payment provider is integrated. Nothing is deployed.
+**Live mode** (apphosting.yaml): real member accounts, screening and saved pens, with data in Firestore in Johannesburg (africa-south1). Online sales are closed (`NEXT_PUBLIC_SALES_ENABLED=false`): no prices are shown and the care team arranges supply after approval. Local development and tests use demo mode.
+
+## Live setup (once per project)
+
+1. Firebase console: create the Firestore database in `africa-south1`, enable Email/Password sign-in, upgrade Auth to Identity Platform, register the web app with App Check (reCAPTCHA Enterprise) and put the site key in `apphosting.yaml`.
+2. `firebase deploy --only firestore,functions --project prick-c3c43`
+3. With `GOOGLE_APPLICATION_CREDENTIALS` pointing at a service-account key: `npm run staff -- catalogue`, `npm run staff -- enable-totp`, `set-role` for each staff member, then `default-clinician <email>`.
+4. Merge to `main`. A live build without its Firebase settings refuses to build, so the last good version stays up.
 
 ## Stack
 

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { publicDataMode } from '@/config';
 import { Logo } from './Logo';
 
 export function SiteFooter() {
@@ -37,8 +38,11 @@ export function SiteFooter() {
         </div>
         <p className="site-footer__women">Designed for women.</p>
         <div className="site-footer__legal">
-          © {new Date().getFullYear()} PRICK. Preview build: products are fictional demos, not available to buy, and
-          nothing here is medical advice. In an emergency call 10177.
+          © {new Date().getFullYear()} PRICK.{' '}
+          {publicDataMode() === 'demo'
+            ? 'Preview build: products are fictional demos, not available to buy, and nothing here is medical advice.'
+            : 'Every pen needs a clinician’s approval, and nothing on this site is medical advice.'}{' '}
+          In an emergency call 10177. <Link href="/privacy">Privacy</Link> · <Link href="/terms">Terms</Link>
         </div>
       </div>
     </footer>
