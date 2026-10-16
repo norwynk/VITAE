@@ -14,11 +14,20 @@
  * revoke refresh tokens so the user must sign in again to pick up the claim.
  */
 import { randomUUID } from 'node:crypto';
+import { existsSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 import { createFixtureStore } from '../src/domain/fixtures';
 import { ROLES, type ProviderAssignment, type Role } from '../src/domain/model';
+
+// The operator's key, kept outside the repo, unless credentials or an emulator are set explicitly.
+const KEY_FILE = join(homedir(), 'Documents', 'prick-admin-key.json');
+if (!process.env.GOOGLE_APPLICATION_CREDENTIALS && !process.env.FIRESTORE_EMULATOR_HOST && existsSync(KEY_FILE)) {
+  process.env.GOOGLE_APPLICATION_CREDENTIALS = KEY_FILE;
+}
 
 initializeApp();
 const auth = getAuth();
