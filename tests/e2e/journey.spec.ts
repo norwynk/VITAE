@@ -91,7 +91,7 @@ test('shop filters by category and the expanded view keeps the clinical gate', a
   await expect(ingredient).toBeVisible();
   await expect(ingredient).toContainText('has not disclosed the individual actives');
   await page.goto('/pens/deep-sleep-rebuild');
-  await expect(page.getByText('You can only order it if your clinician approves it for you.')).toBeVisible();
+  await expect(page.getByText('You can only get it if your clinician approves it for you.')).toBeVisible();
   await expect(page.getByRole('button', { name: /add to cart|buy now/i })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Start screening' }).first()).toHaveAttribute('href', '/start?pen=deep-sleep-rebuild');
 });

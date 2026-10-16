@@ -18,6 +18,7 @@ import {
   type DocumentRecord,
   type MemberRecord,
   type OperationalProfile,
+  type ProviderAssignment,
   type Role,
   type UserRecord,
   MFA_REQUIRED_ROLES,
@@ -43,7 +44,8 @@ const db = getFirestore();
 db.settings({ ignoreUndefinedProperties: true });
 
 const IS_EMULATOR = process.env.FUNCTIONS_EMULATOR === 'true';
-const REGION = 'europe-west1';
+// Johannesburg, next to the Firestore database, so health data stays in South Africa.
+const REGION = 'africa-south1';
 setGlobalOptions({ region: REGION, maxInstances: 10 });
 
 const callableOptions = { enforceAppCheck: !IS_EMULATOR, region: REGION, maxInstances: 10 };
@@ -117,6 +119,8 @@ export const provisionMember = onCall(callableOptions, async (request) => {
     const created = await db.runTransaction(async (tx) => {
       const memberRef = db.doc(`members/${uid}`);
       if ((await tx.get(memberRef)).exists) return false;
+      // New members go straight to the default clinician (set with `npm run staff -- default-clinician`).
+      const clinicianId = (await tx.get(db.doc('config/care'))).get('defaultClinicianId');
       const member: MemberRecord = { id: uid, memberId: uid, firstName: '', lastName: '', email, createdAt: now, updatedAt: now };
       const profile: OperationalProfile = {
         id: uid,
@@ -132,6 +136,10 @@ export const provisionMember = onCall(callableOptions, async (request) => {
       tx.set(memberRef, member);
       tx.set(db.doc(`operationalProfiles/${uid}`), profile);
       tx.set(db.doc(`users/${uid}`), user, { merge: true });
+      if (typeof clinicianId === 'string' && clinicianId) {
+        const assignment: ProviderAssignment = { id: `pa_${uid}_${clinicianId}`, memberId: uid, clinicianId, active: true, createdAt: now };
+        tx.set(db.doc(`providerAssignments/${assignment.id}`), assignment);
+      }
       return true;
     });
     if (existingRole === undefined) await getAuth().setCustomUserClaims(uid, { role: 'MEMBER' });

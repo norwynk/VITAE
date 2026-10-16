@@ -460,6 +460,10 @@ ul.plain { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.6rem; 
 .toast { position: sticky; top: 84px; z-index: 35; }
 .toolbar { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: space-between; padding: 0.75rem 0; font-size: var(--step--1); }
 .toolbar select { min-height: 40px; width: auto; padding: 0.3rem 0.6rem; }
+.auth-card { max-width: 32rem; margin: var(--space-4) auto; }
+.auth-card__title { font-size: var(--step-3); line-height: 0.95; margin: 0; }
+.auth-card button.link-arrow { background: none; border: 0; border-bottom: 2px solid currentColor; border-radius: 0; min-height: 0; padding: 0 0 2px; color: inherit; cursor: pointer; }
+.auth-card button.link-arrow:hover { transform: none; }
 
 /* =========================================================================
    Pen stage: places the horizontal pen at an angle inside any box
@@ -653,6 +657,9 @@ fieldset.nested { background: var(--off-white); }
 .about__title { font-size: var(--step-5); line-height: 0.9; margin: var(--space-2) 0 var(--space-4); }
 .about__body p { font-size: var(--step-0); line-height: 1.7; margin: 0 0 var(--space-3); text-wrap: pretty; }
 .about__body .about__lead { font-family: var(--font-serif); font-size: var(--step-2); line-height: 1.2; }
+.about__body h2 { font-size: var(--step-1); margin: var(--space-4) 0 var(--space-2); }
+.about__body ul { margin: 0 0 var(--space-3); padding-left: 1.2rem; line-height: 1.7; }
+.about__body li { margin-bottom: 0.35rem; }
 .about__idea { margin: var(--space-4) 0; padding: 0; }
 .about__idea p { font-family: var(--font-serif); font-style: italic; font-size: var(--step-2); line-height: 1.2; color: var(--pink); margin: 0 0 0.3rem; }
 .about__idea .about__idea-main { font-family: var(--font-display); font-style: normal; text-transform: uppercase; color: var(--ink, #111); font-size: var(--step-3); line-height: 0.95; margin-bottom: var(--space-2); }

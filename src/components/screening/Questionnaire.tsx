@@ -101,8 +101,10 @@ export function Questionnaire({ initialPen }: { initialPen?: string }) {
   const createAccount = async () => {
     setBusy(true);
     try {
-      if (publicDataMode() === 'demo') await demoRepository.startSession('MEMBER', 'signup');
-      router.push('/app');
+      if (publicDataMode() === 'demo') {
+        await demoRepository.startSession('MEMBER', 'signup');
+        router.push('/app');
+      } else router.push('/app?signup=1');
     } catch (e) {
       setProblem((e as Error).message);
       setBusy(false);
@@ -124,7 +126,7 @@ export function Questionnaire({ initialPen }: { initialPen?: string }) {
               <span style={{ width: `${progress}%` }} />
             </div>
             <p className="muted small" style={{ margin: 0 }}>
-              Private. Only your clinician sees your answers. Saved on this device as you go.
+              Private. Only your clinician sees your answers. Saved on this device as you go, and sent only when you finish.
             </p>
           </div>
 

@@ -169,12 +169,19 @@ export function FinishScreening() {
 
       <fieldset>
         <legend>Consent</legend>
-        <Notice tone="warn">Draft wording: final privacy, terms and clinical consent text has not been legally approved yet.</Notice>
         <label className="check">
-          <input type="checkbox" name="consentPrivacy" required /> I have read the privacy notice (required)
+          <input type="checkbox" name="consentPrivacy" required /> I have read the{' '}
+          <a href="/privacy" target="_blank" rel="noopener">
+            privacy notice
+          </a>{' '}
+          (required)
         </label>
         <label className="check">
-          <input type="checkbox" name="consentTerms" required /> I accept the terms of use (required)
+          <input type="checkbox" name="consentTerms" required /> I accept the{' '}
+          <a href="/terms" target="_blank" rel="noopener">
+            terms of use
+          </a>{' '}
+          (required)
         </label>
         <label className="check">
           <input type="checkbox" name="consentHealthData" required /> I consent to my health information being processed for my care

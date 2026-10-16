@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { Anton, Caveat, DM_Sans, Instrument_Serif } from 'next/font/google';
-import { SERVICE_NAME } from '@/config';
+import { SERVICE_NAME, publicDataMode } from '@/config';
 import './globals.css';
 
 const display = Anton({ weight: '400', subsets: ['latin'], variable: '--font-display-loaded', display: 'swap' });
@@ -28,9 +28,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
       </head>
       <body>
-        <div className="demo-bar">
-          Preview build. Pens shown are fictional demo products and can&apos;t be bought yet.
-        </div>
+        {publicDataMode() === 'demo' && (
+          <div className="demo-bar">Preview build. Pens shown are fictional demo products and can&apos;t be bought yet.</div>
+        )}
         {children}
       </body>
     </html>
