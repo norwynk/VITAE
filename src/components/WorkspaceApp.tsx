@@ -12,6 +12,9 @@ import { CorporateHome } from './staff/CorporateHome';
 import { FulfilmentHome } from './staff/FulfilmentHome';
 import { OperationsHome } from './staff/OperationsHome';
 import { Notice, humanise } from './ui';
+import { useScreening } from '@/hooks/useScreening';
+import { useShortlist } from '@/hooks/useShortlist';
+import { useRouter } from 'next/navigation';
 import { WorkspaceContext, type WorkspaceApi } from './workspace-context';
 
 type Flash = { tone: 'ok' | 'error'; text: string } | null;
@@ -20,6 +23,7 @@ export function WorkspaceApp() {
   const repo = useMemo(() => repository(), []);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [needsSession, setNeedsSession] = useState(false);
+  const [sessionNote, setSessionNote] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [flash, setFlash] = useState<Flash>(null);
@@ -30,7 +34,10 @@ export function WorkspaceApp() {
       setNeedsSession(false);
       setLoadError(null);
     } catch (e) {
-      if (e instanceof RepositoryError && e.status === 401) setNeedsSession(true);
+      if (e instanceof RepositoryError && e.status === 401) {
+        setNeedsSession(true);
+        setSessionNote(/no longer exists/.test(e.message) ? e.message : null);
+      }
       else setLoadError((e as Error).message);
       setWorkspace(null);
     }
@@ -64,7 +71,7 @@ export function WorkspaceApp() {
 
   const body: ReactNode = (() => {
     if (repo.mode === 'live' && !workspace) return <LiveAuthGate onReady={refresh} error={loadError} />;
-    if (needsSession) return <DemoRolePicker onChosen={refresh} />;
+    if (needsSession) return <DemoRolePicker onChosen={refresh} note={sessionNote} />;
     if (loadError) return <Notice tone="error">{loadError}</Notice>;
     if (!api) return <p className="muted">Loading…</p>;
     return (
@@ -125,7 +132,8 @@ const PERSONAS: { label: string; role: Role; persona?: string }[] = [
   ...ROLES.filter((r) => r !== 'MEMBER').map((role) => ({ label: humanise(role), role })),
 ];
 
-function DemoRolePicker({ onChosen }: { onChosen: () => Promise<void> }) {
+function DemoRolePicker({ onChosen, note }: { onChosen: () => Promise<void>; note: string | null }) {
+  const router = useRouter();
   const choose = async (p: (typeof PERSONAS)[number]) => {
     await demoRepository.startSession(p.role, p.persona);
     await onChosen();
@@ -140,9 +148,11 @@ function DemoRolePicker({ onChosen }: { onChosen: () => Promise<void> }) {
       <p style={{ maxWidth: '52ch' }}>
         Everyone and everything here is fictional, and demo payments are simulated. No money is ever charged.
       </p>
+      {note && <Notice tone="info">{note}</Notice>}
       <div className="row">
-        <button type="button" onClick={() => choose(PERSONAS[0])}>
-          New member
+        {/* New members start where real ones do: the questionnaire, then an account. */}
+        <button type="button" onClick={() => router.push('/start')}>
+          New member: start the questionnaire
         </button>
         <button type="button" className="secondary" onClick={() => choose(PERSONAS[1])}>
           Established member
@@ -165,6 +175,8 @@ function DemoRolePicker({ onChosen }: { onChosen: () => Promise<void> }) {
 }
 
 function DemoControls({ role, uid, onChanged }: { role: Role; uid: string; onChanged: () => Promise<void> }) {
+  const shortlist = useShortlist();
+  const screening = useScreening();
   const current = PERSONAS.findIndex(
     (p) => p.role === role && (role !== 'MEMBER' || (p.persona === 'established') === uid.includes('established')),
   );
@@ -192,8 +204,10 @@ function DemoControls({ role, uid, onChanged }: { role: Role; uid: string; onCha
         type="button"
         className="secondary"
         onClick={async () => {
-          if (!window.confirm('Reset all demo data to the fictional starting state?')) return;
+          if (!window.confirm('Reset the demo? This removes every demo account and clears the pens and answers saved in this browser.')) return;
           await demoRepository.reset();
+          shortlist.clear();
+          screening.clear();
           await onChanged();
         }}
       >

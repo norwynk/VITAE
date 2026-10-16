@@ -98,12 +98,23 @@ export async function POST(request: NextRequest) {
 
   try {
     switch (body.action) {
-      case 'workspace':
-        return json(await demoWorkspace(actor));
+      case 'workspace': {
+        const ws = await demoWorkspace(actor);
+        // A member whose record is gone (demo reset, or the demo server restarted) starts afresh.
+        if (actor.role === 'MEMBER' && !ws.store.members[actor.uid]) {
+          jar.delete({ name: DEMO_COOKIE, path: '/api/demo' });
+          jar.delete({ name: DEMO_SIGNUP_COOKIE, path: '/api/demo' });
+          return error(401, 'That demo account no longer exists. Choose a demo role or start the questionnaire.');
+        }
+        return json(ws);
+      }
       case 'command':
         return json({ ok: true, ...(await demoExecute(actor, body.command)) });
       case 'reset':
         await demoReset();
+        // Everyone starts from the role picker; accounts created by sign-up no longer exist.
+        jar.delete({ name: DEMO_COOKIE, path: '/api/demo' });
+        jar.delete({ name: DEMO_SIGNUP_COOKIE, path: '/api/demo' });
         return json({ ok: true });
       default:
         return error(400, 'Unknown action');
