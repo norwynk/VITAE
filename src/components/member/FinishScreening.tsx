@@ -132,7 +132,7 @@ export function FinishScreening() {
       }}
     >
       <div className="screening__head">
-        <p className="eyebrow">Last step</p>
+        <p className="eyebrow">Final stop</p>
         <h1 className="display finish__title">
           Nearly there{s(a, 'firstName') ? `, ${s(a, 'firstName')}` : ''}.
           <span className="serif-i">Your answers are saved. Just the official bits now.</span>

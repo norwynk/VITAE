@@ -21,6 +21,7 @@ import {
   nextScheduledDate,
   scheduledDates,
 } from '@/domain/model';
+import { GOALS } from '@/brand/goals';
 import { penBrand } from '@/brand/pens';
 import { salesOpen } from '@/config';
 import { MAX_SHORTLIST, useShortlist } from '@/hooks/useShortlist';
@@ -199,6 +200,9 @@ function NextStep({ onGo }: { onGo: (tab: Tab) => void }) {
   const { store, actor } = workspace;
   const member = store.members[actor.uid];
   const now = today();
+  // The destination they chose at the start of screening, from the goals they sent.
+  const chosenGoals = Object.values(store.memberGoals).find((g) => g.memberId === actor.uid)?.goals ?? [];
+  const destination = GOALS.find((g) => g.intakeGoals.some((x) => chosenGoals.includes(x)));
   const approval = Object.values(store.approvedTreatments).find((a) => isApprovalCurrent(a, now));
   const requests = latestRequests(store);
   const pending = requests.filter((r) => PENDING_REQUEST_STATUSES.includes(r.status));
@@ -249,7 +253,9 @@ function NextStep({ onGo }: { onGo: (tab: Tab) => void }) {
   return (
     <section className="next-step" style={brand ? worldStyle(brand.colours) : undefined}>
       <div className="next-step__copy">
-        <p className="eyebrow">Hey, {member.firstName}.</p>
+        <p className="eyebrow">
+          Hey, {member.firstName}.{destination ? ` Heading for: ${destination.title}` : ''}
+        </p>
         <h1 className="display next-step__title">{title}</h1>
         <p className="next-step__body">{body}</p>
         <div className="row" style={{ gap: 'var(--space-2)' }}>

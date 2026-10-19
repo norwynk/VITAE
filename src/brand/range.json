@@ -127,7 +127,7 @@
       "name": "The Glow Up",
       "category": "Appearance & Skin",
       "hero_colour": "#FF0F78",
-      "active_ingredient": "Glow Stack",
+      "active_ingredient": "BPC-157 + TB-500 + GHK-Cu (the Glow Stack)",
       "supplier_strength": "70 mg pen",
       "front_hook": "Look as good as you want to feel.",
       "one_line_outcome": "A skin and appearance-focused pathway built around radiance, freshness and confidence.",
@@ -138,11 +138,11 @@
       ],
       "transformation": "From looking tired or flat to feeling like your outside better matches how good you want to feel inside.",
       "product_class": "Supplier-defined peptide combination.",
-      "mechanism_summary": "The supplied product sheet describes a combination of performance and recovery peptides, but does not list the individual actives or ratios.",
-      "evidence_status": "Cannot be clinically characterised as a single product until the exact composition is confirmed.",
+      "mechanism_summary": "Three research peptides in one pen: BPC-157 and TB-500, studied for tissue repair, and GHK-Cu, a copper peptide studied for skin and collagen.",
+      "evidence_status": "Mostly laboratory and early human research. Long-term human safety data is limited.",
       "regulatory_note": "Do not publish ingredient-specific mechanism or efficacy claims until the full formulation, concentration and route are supplied and reviewed.",
       "product_detail_copy": "This is one of the strongest emotional products in the range. The front should sell radiance and freshness. The detail drawer must list the actual active ingredients once confirmed, then explain each ingredient's role separately rather than treating 'Glow Stack' as a medically established ingredient.",
-      "clinical_content_status": "COMPOSITION REQUIRED FROM SUPPLIER."
+      "clinical_content_status": "Composition confirmed. Composition and safety from the PRICK clinical reference \"Understanding Peptides\"."
     },
     {
       "id": "skin-rewind",
@@ -259,7 +259,7 @@
       "name": "Rapid Recovery",
       "category": "Energy, Sleep & Recovery",
       "hero_colour": "#00B85A",
-      "active_ingredient": "Wolverine Stack",
+      "active_ingredient": "BPC-157 + TB-500 (the Wolverine Stack)",
       "supplier_strength": "20 mg pen",
       "front_hook": "Get back to doing what you love sooner.",
       "one_line_outcome": "A recovery-focused concept built around getting back to movement, routine and the things you enjoy.",
@@ -270,11 +270,34 @@
       ],
       "transformation": "From feeling sidelined by recovery to wanting to return to your normal rhythm sooner.",
       "product_class": "Supplier-defined peptide combination.",
-      "mechanism_summary": "The supplied sheet describes an advanced tissue-repair and regeneration stack, but it does not disclose the active ingredients or ratios.",
-      "evidence_status": "Cannot be clinically characterised or verified until exact stack composition is supplied.",
+      "mechanism_summary": "Two research peptides in one pen, BPC-157 and TB-500, studied for how the body repairs tissue.",
+      "evidence_status": "Mostly laboratory and early human research. Long-term human safety data is limited.",
       "regulatory_note": "Do not publish tissue-healing, inflammation or accelerated-recovery claims until the exact actives, evidence and regulatory position are reviewed.",
       "product_detail_copy": "Sell the feeling of getting back to your life, not comic-book healing. Behind the card, the stack must be broken down ingredient by ingredient once the supplier confirms composition.",
-      "clinical_content_status": "COMPOSITION REQUIRED FROM SUPPLIER."
+      "clinical_content_status": "Composition confirmed. Composition and safety from the PRICK clinical reference \"Understanding Peptides\"."
+    },
+    {
+      "id": "full-throttle",
+      "name": "Full Throttle",
+      "category": "Energy, Sleep & Recovery",
+      "hero_colour": "#1D1F22",
+      "active_ingredient": "Testosterone cypionate",
+      "supplier_strength": null,
+      "for_him": true,
+      "front_hook": "Get your drive back.",
+      "one_line_outcome": "Testosterone replacement for men, with a clinician and regular blood tests behind it.",
+      "feeling": [
+        "Driven",
+        "Strong",
+        "Like yourself"
+      ],
+      "transformation": "From running on empty to feeling like yourself again.",
+      "product_class": "Hormone (testosterone).",
+      "mechanism_summary": "Replaces testosterone when the body is not making enough of its own.",
+      "evidence_status": "An established prescription hormone treatment for men with low testosterone.",
+      "regulatory_note": "Prescription only. Eligibility, dose and monitoring are set by the clinician.",
+      "product_detail_copy": "Sell the feeling of having your drive back. Never imply performance enhancement or bodybuilding use.",
+      "clinical_content_status": "Ingredient and class established. Composition and safety from the PRICK clinical reference \"Understanding Peptides\"."
     },
     {
       "id": "age-defiance",

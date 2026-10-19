@@ -9,7 +9,7 @@
  * before launch.
  */
 
-export const INTAKE_VERSION = 'prep-v1';
+export const INTAKE_VERSION = 'prep-v2';
 
 export type MedRow = { name: string; dose: string; frequency: string; reason: string };
 export type IntakeValue = string | string[] | MedRow[];
@@ -43,6 +43,8 @@ export interface IntakeSection {
   /** The PRICK headline on the screen. */
   title: string;
   lead?: string;
+  /** Why this stop matters on the way to their goal. `{goal}` becomes their destination ("your glow"). */
+  why?: string;
   showIf?: (a: IntakeAnswers) => boolean;
   questions: IntakeQuestion[];
 }
@@ -69,10 +71,25 @@ export const STRESS_RESPONSES = [
 
 export const INTAKE: IntakeSection[] = [
   {
+    id: 'why',
+    label: 'Your why',
+    title: 'Picture it.',
+    lead: 'A few months from now, it’s working. Hold that thought for a second.',
+    why: 'Your clinician reads this first. It’s how they know what {goal} really means to you.',
+    questions: [
+      { id: 'vision', kind: 'long', label: 'What’s different when it’s working?', hint: 'A sentence is plenty. Say it the way you’d say it to a friend.', maxLength: 500 },
+      { id: 'goals', kind: 'multi', label: 'What would you like help with?', options: GOALS, required: true },
+      { id: 'reason', kind: 'long', label: 'What made you reach out now?', hint: 'Your main health concerns, and what you’d love to change.', required: true, maxLength: 1000 },
+      { id: 'mainWorry', kind: 'long', label: 'What concerns you most of the time?', maxLength: 1000 },
+      { id: 'since', kind: 'choice', label: 'When did this first start?', options: ['Less than 3 months ago', '3 to 12 months ago', '1 to 3 years ago', 'Longer than 3 years', 'Not sure'] },
+    ],
+  },
+  {
     id: 'about',
     label: 'About you',
-    title: 'Let’s get to know each other first.',
+    title: 'Let’s get to know each other.',
     lead: 'The basics. Your surname, ID and number come right at the end.',
+    why: 'So your clinician knows exactly who they’re looking after, and every pen fits your body.',
     questions: [
       { id: 'firstName', kind: 'text', label: 'First name', required: true, maxLength: 80 },
       { id: 'dateOfBirth', kind: 'date', label: 'Date of birth', required: true },
@@ -89,22 +106,11 @@ export const INTAKE: IntakeSection[] = [
     ],
   },
   {
-    id: 'why',
-    label: 'Why you’re here',
-    title: 'So, what brings you to us?',
-    lead: 'In your own words. There are no wrong answers here.',
-    questions: [
-      { id: 'goals', kind: 'multi', label: 'What would you like help with?', options: GOALS, required: true },
-      { id: 'reason', kind: 'long', label: 'What made you reach out?', hint: 'Your main health concerns, and what you’d love to change.', required: true, maxLength: 1000 },
-      { id: 'mainWorry', kind: 'long', label: 'What concerns you most of the time?', maxLength: 1000 },
-      { id: 'since', kind: 'choice', label: 'When did this first start?', options: ['Less than 3 months ago', '3 to 12 months ago', '1 to 3 years ago', 'Longer than 3 years', 'Not sure'] },
-    ],
-  },
-  {
     id: 'history',
     label: 'Health history',
     title: 'Your health story.',
     lead: 'Tap what applies, add anything else in your own words, or tick none. Only your clinician sees this.',
+    why: 'This is what keeps the road to {goal} safe. Your clinician checks every pen against it.',
     questions: [
       {
         id: 'conditions',
@@ -162,6 +168,7 @@ export const INTAKE: IntakeSection[] = [
     label: 'Lifestyle',
     title: 'How you live.',
     lead: 'No judgement. It just helps your clinician see the full picture.',
+    why: 'Pens work with your habits, not instead of them. This shows your clinician where you’re starting from.',
     questions: [
       { id: 'smoking', kind: 'choice', label: 'Do you smoke or vape?', options: ['Yes', 'No', 'I’ve quit'], required: true },
       { id: 'alcohol', kind: 'choice', label: 'Alcohol', options: ['None', 'Socially', 'Regularly'], required: true },
@@ -179,6 +186,7 @@ export const INTAKE: IntakeSection[] = [
     id: 'sleep',
     label: 'Sleep',
     title: 'Sleep. The good stuff.',
+    why: 'Sleep is when your body does its repair work, so it matters for every pen.',
     questions: [
       { id: 'sleepHours', kind: 'number', label: 'Hours of sleep a night (roughly)', required: true, min: 0, max: 24 },
       { id: 'fallAsleep', kind: 'choice', label: 'How long does it take you to fall asleep?', options: ['Under 15 minutes', '15 to 30 minutes', '30 to 60 minutes', 'Over an hour'] },
@@ -195,6 +203,7 @@ export const INTAKE: IntakeSection[] = [
     title: 'Your body, your cycle.',
     lead: 'These matter for your safety with several pens. Only your clinician sees them.',
     showIf: isFemale,
+    why: 'Several pens aren’t safe in pregnancy, so these are never skipped.',
     questions: [
       { id: 'pregnant', kind: 'choice', label: 'Are you pregnant, or might you be?', options: ['Yes', 'No', 'Not sure'], required: true },
       { id: 'breastfeeding', kind: 'choice', label: 'Are you breastfeeding?', options: YN, required: true },
@@ -227,6 +236,7 @@ export const INTAKE: IntakeSection[] = [
     title: 'For him.',
     lead: 'A quick check-in. Yes or no is all we need.',
     showIf: isMale,
+    why: 'Low energy, drive and mood can point to hormones. This helps your clinician see the pattern.',
     questions: [
       { id: 'mLibido', kind: 'choice', label: 'Has your sex drive dropped?', options: YN, required: true },
       { id: 'mEnergy', kind: 'choice', label: 'Do you lack energy?', options: YN, required: true },
@@ -245,6 +255,7 @@ export const INTAKE: IntakeSection[] = [
     label: 'Head space',
     title: 'Head space.',
     lead: 'How life feels at the moment. Answer as much or as little as you like.',
+    why: 'How you feel matters as much as how you look. It helps your clinician support you properly.',
     questions: [
       { id: 'behaviourChange', kind: 'long', label: 'Is there anything about your habits or behaviour you’d like to change?', maxLength: 1000 },
       { id: 'lifeSituations', kind: 'long', label: 'Is anything in your life causing problems right now, or something you’d like to change?', maxLength: 1000 },
@@ -266,6 +277,7 @@ export const INTAKE: IntakeSection[] = [
     label: 'Intimacy',
     title: 'The bedroom bit.',
     lead: 'Totally optional, totally private. Skip anything you’d rather talk about with your clinician.',
+    why: 'Here because it’s part of feeling like yourself. Skip whatever you like.',
     questions: [
       { id: 'sexAttitude', kind: 'long', label: 'How do you feel about sex at the moment?', maxLength: 600 },
       { id: 'sexConcerns', kind: 'long', label: 'Any questions or concerns about sex?', maxLength: 600 },

@@ -894,7 +894,7 @@ describe('preparatory questionnaire', () => {
   it('stores the answers with the intake, for the member and clinician only', () => {
     const { store, resultId } = run(createFixtureStore(NOW), member, onboardCommand({ intake: herIntake() }));
     const saved = store.healthAssessments[resultId!].intake!;
-    expect(saved.version).toBe('prep-v1');
+    expect(saved.version).toBe('prep-v2');
     expect(saved.answers).toMatchObject({ sex: 'Female', menopauseStage: 'Before menopause', alcoholUnits: '3' });
     expect(visible(store, clinician).healthAssessments[resultId!].intake).toBeDefined();
     for (const actor of [ops, fulfilment, admin, corporate]) expect(visible(store, actor).healthAssessments[resultId!]).toBeUndefined();
