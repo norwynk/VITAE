@@ -272,8 +272,10 @@ export const accessDocument = onCall(callableOptions, async (request) => {
   }
 });
 
+// Cloud Scheduler has no Johannesburg location, so the reminder timer runs in Belgium. Data stays in the Johannesburg database.
+const SCHEDULER_REGION = 'europe-west1';
 export const sendTreatmentReminders = onSchedule(
-  { schedule: 'every 15 minutes', timeZone: SERVICE_TIME_ZONE, region: REGION, maxInstances: 1 },
+  { schedule: 'every 15 minutes', timeZone: SERVICE_TIME_ZONE, region: SCHEDULER_REGION, maxInstances: 1 },
   async () => {
     const result = await runReminderSweep(db, getMessaging(), new Date());
     logger.info('Reminder sweep complete', result);
