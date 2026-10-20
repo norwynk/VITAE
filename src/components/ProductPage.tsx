@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { feelingLine } from '@/brand/pens';
 import { RENEWAL_LEAD_DAYS, formatRand } from '@/domain/model';
 import { salesOpen } from '@/config';
+import { penSafety } from '@/domain/penSafety';
 import { useCatalogue } from '@/hooks/useCatalogue';
 import { NeedsVerification } from './brand/NeedsVerification';
 import { PenStage } from './brand/Pen';
@@ -56,6 +57,7 @@ export function ProductPage({ slug }: { slug: string }) {
   const needsApproval = t.requiresClinicianApproval || t.requiresPrescription;
   const startHref = `/start?pen=${t.slug}`;
   const truth = t.productTruth ?? {};
+  const safety = penSafety(t.slug);
   const related = pens.filter((p) => p.treatment.id !== t.id && p.treatment.category === t.category);
 
   return (
@@ -68,6 +70,7 @@ export function ProductPage({ slug }: { slug: string }) {
           </div>
           <div className="product-hero__info">
             <span className="tag dark">{brand.category}</span>
+            {brand.forHim && <span className="tag">For him</span>}
             <h1 className="display product-hero__name">{t.name}</h1>
             <p className="serif-i product-hero__statement">{brand.hook}</p>
             <p style={{ margin: 0, maxWidth: '46ch' }}>{brand.outcome}</p>
@@ -178,6 +181,42 @@ export function ProductPage({ slug }: { slug: string }) {
               </dl>
             </div>
           </section>
+
+          {safety && (
+            <section className="info-block" data-reveal>
+              <div>
+                <span className="layer-label">Before you choose</span>
+                <h2 className="display">Read this bit. Really.</h2>
+              </div>
+              <div className="before-you-choose">
+                <p>
+                  <strong>What&apos;s in it:</strong> {safety.contains}
+                </p>
+                <div>
+                  <strong>{t.name} is not for you if:</strong>
+                  <ul>
+                    {safety.notFor.map((x) => (
+                      <li key={x}>{x}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <strong>Your clinician needs to know if you have:</strong>
+                  <ul>
+                    {safety.tellUs.map((x) => (
+                      <li key={x}>{x}</li>
+                    ))}
+                  </ul>
+                </div>
+                <p>
+                  <strong>What a course looks like:</strong> {safety.course} Your clinician sets your dose.
+                </p>
+                <p className="small muted" style={{ margin: 0 }}>
+                  Your screening asks about every one of these, so nothing gets missed.
+                </p>
+              </div>
+            </section>
+          )}
 
           {/* Certificate of analysis: the only verification document shown to customers. */}
           <section className="info-block" data-reveal>

@@ -17,7 +17,8 @@
     "test:firebase": "npm run functions:build && firebase emulators:exec --only auth,firestore,functions,storage --project demo-vitae \"tsx scripts/verify-firebase.ts\"",
     "test:e2e": "playwright test",
     "functions:build": "npm --prefix functions run build",
-    "staff": "tsx scripts/staff.ts"
+    "staff": "tsx scripts/staff.ts",
+    "deploy:functions": "node scripts/deploy-functions.mjs"
   },
   "dependencies": {
     "firebase": "^12.19.0",

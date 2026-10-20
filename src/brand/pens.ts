@@ -52,6 +52,8 @@ export interface PenBrand {
   botanical: Botanical;
   /** Card photograph (public path). Falls back to the painted card when absent. */
   cardImage?: string;
+  /** The one pen made for men. */
+  forHim?: boolean;
 }
 
 /** "Quieter. Calmer. Less preoccupied." */
@@ -144,6 +146,7 @@ const BOTANICALS: Record<string, Botanical> = {
   'all-day-energy': 'citrus',
   'deep-sleep-rebuild': 'lavender',
   'rapid-recovery': 'leaf',
+  'full-throttle': 'leaf',
   'age-defiance': 'blossom',
   'hormone-reset': 'blossom',
   'bedroom-confidence': 'berry',
@@ -186,6 +189,7 @@ export const PEN_BRANDS: Record<string, PenBrand> = Object.fromEntries(
       benefits: [],
       botanical: BOTANICALS[p.id] ?? 'leaf',
       cardImage: CARD_IMAGES[p.id],
+      forHim: 'for_him' in p && p.for_him === true,
     } satisfies PenBrand,
   ]),
 );

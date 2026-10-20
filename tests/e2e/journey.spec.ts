@@ -18,7 +18,7 @@ test('home shows colour cards that flip to outcome, feeling and transformation',
   for (const name of ['Total Body Reset', 'Craving Control', 'Body Sculpt', 'The Glow Up', 'Skin Rewind', 'Skin Rewind Reserve']) {
     await expect(page.getByRole('heading', { name, exact: true }).first()).toBeVisible();
   }
-  await expect(page.getByRole('link', { name: 'Meet all 17' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Meet all 18' })).toBeVisible();
   await expect(page.getByText('Designed for women.').first()).toBeVisible();
   await expect(page.getByRole('heading', { name: /A prick that\s*gets her\./ })).toBeVisible();
   await expect(page.getByRole('img', { name: 'Dr Kylee Montgomerie' })).toBeVisible();
@@ -59,7 +59,7 @@ test('home shows colour cards that flip to outcome, feeling and transformation',
 
 test('shop filters by category and the expanded view keeps the clinical gate', async ({ page }) => {
   await page.goto('/shop');
-  await expect(page.getByRole('button', { name: 'All (17)' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'All (18)' })).toBeVisible();
   await page.getByRole('button', { name: 'Weight & Body' }).click();
   for (const name of ['Total Body Reset', 'Slow & Steady', 'Momentum']) await expect(page.getByRole('article', { name })).toBeVisible();
   await page.getByRole('article', { name: 'Slow & Steady' }).getByRole('link', { name: 'View the pen' }).click();
@@ -85,11 +85,16 @@ test('shop filters by category and the expanded view keeps the clinical gate', a
     await expect(page.getByText(hidden, { exact: false })).toHaveCount(0);
   }
 
-  // A stack name is never shown as an ingredient.
+  // The stacks show what's actually in them, and who they're not for.
   await page.goto('/pens/the-glow-up');
-  const ingredient = page.locator('[data-needs-verification="activeIngredient"]');
-  await expect(ingredient).toBeVisible();
-  await expect(ingredient).toContainText('has not disclosed the individual actives');
+  await expect(page.getByText('BPC-157 + TB-500 + GHK-Cu (the Glow Stack)', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Read this bit. Really.' })).toBeVisible();
+  await expect(page.getByText('The Glow Up is not for you if:')).toBeVisible();
+  await expect(page.getByText('You have cancer now, or have had it in the past.')).toBeVisible();
+  await page.goto('/pens/full-throttle');
+  await expect(page.getByRole('heading', { level: 1, name: 'Full Throttle' })).toBeVisible();
+  await expect(page.getByText('For him', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('You want to have children soon: testosterone can lower fertility')).toBeVisible();
   await page.goto('/pens/deep-sleep-rebuild');
   await expect(page.getByText('You can only get it if your clinician approves it for you.')).toBeVisible();
   await expect(page.getByRole('button', { name: /add to cart|buy now/i })).toHaveCount(0);
@@ -151,8 +156,10 @@ test('quiz asks enough to match, and matches build "My pens"', async ({ page }) 
   // The questionnaire comes first, before any account, with the chosen pens.
   await page.getByRole('link', { name: 'Start your screening' }).click();
   await expect(page).toHaveURL(/\/start\?pen=deep-sleep-rebuild$/);
-  await expect(page.getByRole('heading', { name: /The fun part is picking it/ })).toBeVisible();
-  await expect(page.locator('.screening__pen')).toHaveCount(2);
+  // It starts with the destination, already pointed at the pen's goal.
+  await expect(page.getByRole('heading', { name: /Where are you heading\?/ })).toBeVisible();
+  await expect(page.getByRole('radio', { name: /Sleep\. Recover\. Repeat\./ })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByText('Heading for: Sleep. Recover. Repeat.')).toBeVisible();
 });
 
 test('full journey across roles', async ({ page }) => {
@@ -162,61 +169,85 @@ test('full journey across roles', async ({ page }) => {
   const pick = (q: string, option: string) => page.locator(`[data-q="${q}"]`).getByRole('button', { name: option, exact: true }).or(page.locator(`[data-q="${q}"]`).getByRole('radio', { name: option, exact: true })).click();
   const next = () => page.getByRole('button', { name: /^(Next|See where I stand)$/ }).click();
   await page.goto('/start');
-  await next();
-  await expect(page.getByText('Choose at least one pen, or let your clinician suggest one.')).toBeVisible();
-  await page.getByLabel('Choose a pen').selectOption({ label: 'Total Body Reset' });
-  await next();
-  await expect(page.getByRole('heading', { name: 'Let’s get to know each other first.' })).toBeVisible();
-  await page.getByLabel('First name').fill('Alex');
-  await page.getByLabel('Date of birth').fill('1990-01-15');
-  await pick('sex', 'Female');
-  await page.getByLabel('Province').selectOption('Western Cape');
-  await page.getByLabel('City or town').fill('Cape Town');
-  await page.getByLabel('Height (cm)').fill('175');
-  await page.getByLabel('Weight (kg)').fill('82');
-  await next();
-  // Saved on this device: leaving part-way loses nothing.
-  await page.reload();
-  await expect(page.getByRole('heading', { name: 'So, what brings you to us?' })).toBeVisible();
-  await page.getByRole('button', { name: 'Back' }).click();
-  await expect(page.getByLabel('First name')).toHaveValue('Alex');
-  await next();
-  await pick('goals', 'Energy');
-  await page.getByLabel(/What made you reach out\?/).fill('I want my energy back.');
-  await next();
-  // Health lists need an answer, even if that answer is "none".
-  await next();
-  await expect(page.getByText(/Health conditions: add something, or tick/)).toBeVisible();
-  await pick('conditions', 'Migraines');
-  await page.locator('[data-q="allergies"]').getByLabel('I have no allergies').check();
-  await page.getByLabel('Name, row 1').fill('Vitamin D');
-  await pick('previousPeptides', 'No');
-  await page.locator('[data-q="familyHistory"]').getByLabel('Nothing I know of').check();
-  // Questions for the chosen weight pen; a family-history "Not sure" is flagged for the clinician.
-  await expect(page.getByText('For your weight medicine')).toBeVisible();
-  await pick('pen:glp1-thyroid', 'Not sure');
-  await pick('pen:glp1-current', 'No');
-  await page.locator('[data-q="pen:weight-goal"] input').fill('75');
-  await next();
-  await pick('smoking', 'No');
-  await pick('alcohol', 'Socially');
-  await page.getByLabel(/how many drinks a week/).fill('2');
-  await pick('activity', 'Moderate');
-  await next();
-  await page.getByLabel(/Hours of sleep a night/).fill('7');
-  await next();
-  await expect(page.getByRole('heading', { name: 'Your body, your cycle.' })).toBeVisible();
-  await pick('pregnant', 'No');
-  await pick('breastfeeding', 'No');
-  await pick('planningPregnancy', 'Yes');
-  await pick('menopauseStage', 'Before menopause');
-  await next();
-  await expect(page.getByRole('heading', { name: 'Head space.' })).toBeVisible();
-  await next();
-  await expect(page.getByRole('heading', { name: 'The bedroom bit.' })).toBeVisible();
-  await next();
-  // The good-fit moment reads the answers honestly, then: create an account.
-  await expect(page.getByRole('heading', { name: /Thanks for being so open/ })).toBeVisible();
+  // Stop 0: the destination. One tap, and the journey moves on.
+  await page.getByRole('radio', { name: /Lose the weight\./ }).click();
+  await expect(page.getByRole('heading', { name: /Picture it\./ })).toBeVisible();
+  await expect(page.getByText(/Why this matters:.*your goal weight/)).toBeVisible();
+  await expect(page.getByText('Heading for: Lose the weight.')).toBeVisible();
+
+  // Then every screen: answer what's shown, move on. The answers each question gets:
+  const answers: Record<string, () => Promise<unknown>> = {
+    vision: () => page.locator('[data-q="vision"] textarea').fill('My jeans fit again.'),
+    reason: () => page.locator('[data-q="reason"] textarea').fill('I want my energy back.'),
+    firstName: () => page.getByLabel('First name').fill('Alex'),
+    dateOfBirth: () => page.getByLabel('Date of birth').fill('1990-01-15'),
+    sex: () => pick('sex', 'Female'),
+    province: () => page.getByLabel('Province').selectOption('Western Cape'),
+    city: () => page.getByLabel('City or town').fill('Cape Town'),
+    heightCm: () => page.getByLabel('Height (cm)').fill('175'),
+    weightKg: () => page.getByLabel('Weight (kg)').fill('82'),
+    conditions: () => pick('conditions', 'Migraines'),
+    allergies: () => page.locator('[data-q="allergies"]').getByLabel('I have no allergies').check(),
+    medications: () => page.getByLabel('Name, row 1').fill('Vitamin D'),
+    previousPeptides: () => pick('previousPeptides', 'No'),
+    familyHistory: () => page.locator('[data-q="familyHistory"]').getByLabel('Nothing I know of').check(),
+    // A family-history "Not sure" is flagged for the clinician.
+    'pen:glp1-thyroid': () => pick('pen:glp1-thyroid', 'Not sure'),
+    'pen:glp1-current': () => pick('pen:glp1-current', 'No'),
+    'pen:weight-goal': () => page.locator('[data-q="pen:weight-goal"] input').fill('75'),
+    smoking: () => pick('smoking', 'No'),
+    alcohol: () => pick('alcohol', 'Socially'),
+    alcoholUnits: () => page.getByLabel(/how many drinks a week/).fill('2'),
+    activity: () => pick('activity', 'Moderate'),
+    sleepHours: () => page.getByLabel(/Hours of sleep a night/).fill('7'),
+    pregnant: () => pick('pregnant', 'No'),
+    breastfeeding: () => pick('breastfeeding', 'No'),
+    planningPregnancy: () => pick('planningPregnancy', 'Yes'),
+    menopauseStage: () => pick('menopauseStage', 'Before menopause'),
+  };
+  const seen = new Set<string>();
+  // Which screen we're on, read without waiting (later parts of a stop have no heading).
+  const where = () => page.evaluate(() => document.querySelector('.intake__screen')?.textContent ?? '');
+  for (let i = 0; i < 80 && !(await page.getByRole('heading', { name: 'Save your journey.' }).isVisible()); i++) {
+    // Saved on this device: leaving part-way loses nothing.
+    if (seen.has('firstName') && !seen.has('reloaded') && !(await page.getByLabel('First name').isVisible())) {
+      seen.add('reloaded');
+      await page.reload();
+      await page.getByRole('button', { name: 'Back' }).click();
+      await expect(page.getByLabel('First name')).toHaveValue('Alex');
+      await next();
+    }
+    const before = await where();
+    for (const q of await page.locator('.intake__screen [data-q]').evaluateAll((els) => els.map((e) => e.getAttribute('data-q') ?? ''))) {
+      if (answers[q] && !seen.has(q)) {
+        seen.add(q);
+        await answers[q]();
+      }
+    }
+    // The pen picker: nothing chosen is an error, then pick one.
+    if (!seen.has('pens') && (await page.getByRole('heading', { name: 'Now, pack for the trip.' }).isVisible())) {
+      seen.add('pens');
+      await next();
+      await expect(page.getByText('Choose at least one pen, or let your clinician suggest one.')).toBeVisible();
+      await page.getByRole('button', { name: /^Total Body Reset/ }).click();
+    }
+    // Health lists need an answer, even if that answer is "none".
+    if (await page.locator('[data-q="conditions"]').isVisible() && !seen.has('checked-conditions')) {
+      seen.add('checked-conditions');
+      await page.locator('[data-q="conditions"]').getByRole('button', { name: 'Migraines' }).click();
+      await next();
+      await expect(page.getByText(/Health conditions: add something, or tick/)).toBeVisible();
+      await pick('conditions', 'Migraines');
+    }
+    await page.waitForTimeout(450);
+    const after = await where();
+    // Single-tap screens move on by themselves; otherwise press Next (the arriving moment moves on alone).
+    if (after === before && (await page.getByRole('button', { name: /^(Next|See where I stand)$/ }).isVisible())) await next();
+  }
+  expect([...seen]).toEqual(expect.arrayContaining(['pen:glp1-thyroid', 'pregnant', 'sleepHours', 'reloaded']));
+  // The good-fit moment reads the answers honestly, plays back their words, then: create an account.
+  await expect(page.getByRole('heading', { name: /Thanks for being so open, Alex/ })).toBeVisible();
+  await expect(page.getByText('“My jeans fit again.”')).toBeVisible();
   await expect(page.getByText('Your clinician reads every answer.')).toBeVisible();
   await page.getByRole('button', { name: 'Create my account' }).click();
 

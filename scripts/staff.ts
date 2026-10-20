@@ -8,7 +8,7 @@
  *   npm run staff -- invite <email> <ROLE> [name]          create a staff account; prints a set-your-password link
  *   npm run staff -- default-clinician <clinicianEmail>   new members (and any unassigned ones) go to them
  *   npm run staff -- enable-totp                          let staff use an authenticator app as their second step
- *   npm run staff -- catalogue                            add any missing PRICK pens to the live catalogue
+ *   npm run staff -- catalogue                            add missing PRICK pens; refresh their product facts
  *
  * Uses GOOGLE_APPLICATION_CREDENTIALS (or emulator env vars). Role changes
  * revoke refresh tokens so the user must sign in again to pick up the claim.
@@ -116,13 +116,23 @@ async function enableTotp() {
   console.log('Authenticator-app sign-in is on. Staff set it up the first time they sign in.');
 }
 
-/** Adds missing pens only: anything already in the catalogue (and edited by staff) is left alone. No prices, nothing purchasable. */
+/** Adds missing pens (no prices, nothing purchasable) and refreshes sheet-only product facts. Staff-edited fields are left alone. */
 async function catalogue() {
   const range = createFixtureStore(new Date());
   let added = 0;
   for (const t of Object.values(range.treatments)) {
     const ref = db.doc(`treatments/${t.id}`);
-    if ((await ref.get()).exists) continue;
+    const existing = await ref.get();
+    if (existing.exists) {
+      // Product facts come only from the character sheet (staff can't edit them): keep them current.
+      const facts = { productTruth: t.productTruth, clinicalTruth: t.clinicalTruth };
+      if (JSON.stringify(facts) !== JSON.stringify({ productTruth: existing.get('productTruth'), clinicalTruth: existing.get('clinicalTruth') })) {
+        await ref.set({ ...facts, updatedAt: new Date().toISOString() }, { merge: true });
+        await audit('catalogue_facts_refreshed', [t.id]);
+        console.log(`Updated product facts for ${t.name}`);
+      }
+      continue;
+    }
     await ref.set({ ...t, demoFictional: false, priceCents: 0, purchasable: false });
     const stock = range.inventory[t.inventorySku];
     if (stock) await db.doc(`inventory/${stock.id}`).set({ ...stock, onHand: 0 }, { merge: true });

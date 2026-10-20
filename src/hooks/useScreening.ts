@@ -11,6 +11,8 @@ export interface ScreeningState {
   /** Pen-specific answers, keyed by question id. */
   penAnswers: Record<string, string>;
   letClinicianSuggest: boolean;
+  /** The goal they are heading for (a goal slug, or "unsure"). */
+  destination?: string;
   /** Index of the screen they reached. */
   step: number;
   completedAt?: string;

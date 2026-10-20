@@ -37,6 +37,7 @@ export function PenCard({ pen, index = 0 }: { pen: BrandedPen; index?: number })
           onClick={flipFromCard}
           style={brand.cardImage ? { backgroundImage: `url(${brand.cardImage})` } : undefined}
         >
+          {brand.forHim && <span className="tag dark">For him</span>}
           <h3 className="flip-card__name flip-card__name--bloom">{t.name}</h3>
           <p className="flip-card__hook">{brand.hook}</p>
           <p className="flip-card__outcome">{brand.outcome}</p>

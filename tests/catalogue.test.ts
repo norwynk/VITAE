@@ -6,6 +6,8 @@
  * - Investigational ingredients are never described as approved.
  * - Missing information stays missing (NEEDS VERIFICATION), never generated.
  */
+import { NONE_OF_THESE, PEN_QUESTION_GROUPS, groupsFor, invalidAnswer, isFlagged, penQuestion } from '../src/domain/penQuestions';
+import { PEN_SAFETY } from '../src/domain/penSafety';
 import { describe, expect, it } from 'vitest';
 import RANGE from '../src/brand/range.json';
 import { PEN_BRANDS, feelingLine } from '../src/brand/pens';
@@ -17,7 +19,7 @@ const treatment = (id: string) => store.treatments[`trt-${id}`];
 
 describe('range', () => {
   it('has every product from the character sheet, in the catalogue and the brand layer', () => {
-    expect(RANGE.products).toHaveLength(17);
+    expect(RANGE.products).toHaveLength(18);
     for (const p of RANGE.products) {
       expect(treatment(p.id)?.name).toBe(p.name);
       expect(PEN_BRANDS[p.id]).toBeDefined();
@@ -37,14 +39,15 @@ describe('Layer 3 product truth', () => {
   });
 
   it('never treats a stack name as an ingredient', () => {
-    const stacks = RANGE.products.filter(compositionUndisclosed).map((p) => p.id);
-    expect(stacks.sort()).toEqual(['rapid-recovery', 'the-glow-up']);
-    for (const id of stacks) {
-      const truth = treatment(id).productTruth!;
+    // An undisclosed stack shows NEEDS VERIFICATION, never its trade name as the ingredient.
+    for (const p of RANGE.products.filter(compositionUndisclosed)) {
+      const truth = treatment(p.id).productTruth!;
       expect(truth.activeIngredient).toBeUndefined();
-      expect(truth.supplierName).toMatch(/Stack$/);
-      expect(missingTruth(treatment(id))).toContain('productTruth.activeIngredient');
+      expect(missingTruth(treatment(p.id))).toContain('productTruth.activeIngredient');
     }
+    // The two stacks now list their actual peptides (PRICK clinical reference).
+    expect(treatment('the-glow-up').productTruth!.activeIngredient).toMatch(/BPC-157.*TB-500.*GHK-Cu/);
+    expect(treatment('rapid-recovery').productTruth!.activeIngredient).toMatch(/BPC-157.*TB-500/);
   });
 
   it('leaves a missing strength missing', () => {
@@ -80,7 +83,7 @@ describe('Layers 1 and 2', () => {
 
   it('carry no product facts', () => {
     for (const b of Object.values(PEN_BRANDS)) {
-      expect(Object.keys(b).sort()).toEqual(['benefits', 'botanical', 'cardImage', 'category', 'colours', 'feeling', 'hook', 'outcome', 'penLabel', 'slug', 'transformation']);
+      expect(Object.keys(b).sort()).toEqual(['benefits', 'botanical', 'cardImage', 'category', 'colours', 'feeling', 'forHim', 'hook', 'outcome', 'penLabel', 'slug', 'transformation']);
     }
   });
 
@@ -126,5 +129,33 @@ describe('branded weight pens', () => {
     }
     expect(treatment('total-body-reset').clinicalDescription).toBe('');
     expect(treatment('total-body-reset').productTruth?.brandName).toBeUndefined();
+  });
+});
+
+describe('pen safety checks', () => {
+  const pen = (slug: string) => ({ slug, category: treatment(slug).category });
+
+  it('every pen with a safety sheet has its own required safety check', () => {
+    for (const slug of Object.keys(PEN_SAFETY)) {
+      expect(treatment(slug), slug).toBeDefined();
+      const own = groupsFor([pen(slug)]).find((g) => g.slugs?.includes(slug));
+      expect(own, slug).toBeDefined();
+      expect(own!.questions.filter((q) => q.required).length, slug).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('checklist options never contain the answer separator', () => {
+    for (const g of PEN_QUESTION_GROUPS) for (const q of g.questions.filter((x) => x.kind === 'multi')) for (const o of q.options ?? []) expect(o, q.id).not.toContain(',');
+  });
+
+  it('flags any condition, and "None of these" stands alone', () => {
+    const q = penQuestion('rr-conditions')!;
+    expect(isFlagged(q, NONE_OF_THESE)).toBe(false);
+    expect(isFlagged(q, 'Serious heart disease')).toBe(true);
+    expect(invalidAnswer(q, '')).toMatch(/Answer/);
+    expect(invalidAnswer(q, `Serious heart disease, ${NONE_OF_THESE}`)).toMatch(/can’t go with/);
+    expect(invalidAnswer(q, 'Serious heart disease, Serious liver disease')).toBeNull();
+    expect(isFlagged(penQuestion('ft-fertility')!, 'Yes')).toBe(true);
+    expect(isFlagged(penQuestion('gu-injections')!, 'Very anxious about it')).toBe(true);
   });
 });
