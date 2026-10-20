@@ -156,10 +156,48 @@ test('quiz asks enough to match, and matches build "My pens"', async ({ page }) 
   // The questionnaire comes first, before any account, with the chosen pens.
   await page.getByRole('link', { name: 'Start your screening' }).click();
   await expect(page).toHaveURL(/\/start\?pen=deep-sleep-rebuild$/);
-  // It starts with the destination, already pointed at the pen's goal.
-  await expect(page.getByRole('heading', { name: /Where are you heading\?/ })).toBeVisible();
-  await expect(page.getByRole('radio', { name: /Sleep\. Recover\. Repeat\./ })).toHaveAttribute('aria-checked', 'true');
+  // The goal is already known from the pens, so it isn't asked again: straight to "Picture it".
+  await expect(page.getByRole('heading', { name: /Picture it\./ })).toBeVisible();
   await expect(page.getByText('Heading for: Sleep. Recover. Repeat.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Where are you heading\?/ })).toHaveCount(0);
+});
+
+test('without an account, My pens is their shortlist, and starting over really clears it', async ({ page }) => {
+  page.on('dialog', (d) => void d.accept());
+  await page.goto('/pens/the-glow-up');
+  await page.getByRole('button', { name: 'Add The Glow Up to my pens' }).first().click();
+  // My pens opens the shortlist, not a sign-in page.
+  await page.getByRole('link', { name: 'My pens (1)' }).first().click();
+  await expect(page).toHaveURL(/\/my-pens$/);
+  await expect(page.getByRole('heading', { name: 'Your shortlist.' })).toBeVisible();
+  await expect(page.getByText('The Glow Up', { exact: true })).toBeVisible();
+  // Into screening: the pen is confirmed, never sold to ("add more").
+  await page.getByRole('link', { name: 'Start my screening' }).click();
+  await expect(page.getByRole('heading', { name: /Picture it\./ })).toBeVisible();
+  await page.locator('[data-q="vision"] textarea').fill('Glowing.');
+  await page.getByRole('button', { name: 'Next' }).click();
+  // Starting over clears the answers and the pens.
+  await page.getByRole('button', { name: 'Clear my answers' }).click();
+  await expect(page.getByRole('link', { name: 'Account' }).first()).toBeAttached();
+  await expect(page.getByRole('link', { name: /My pens/ })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: /Where are you heading\?/ })).toBeVisible();
+  expect(await page.evaluate(() => [localStorage.getItem('prick:shortlist'), localStorage.getItem('prick:screening')])).toEqual(['[]', null]);
+});
+
+test('a pen chosen up front is confirmed in screening, not sold to', async ({ page }) => {
+  await page.goto('/start?pen=rapid-recovery');
+  await expect(page.getByRole('heading', { name: /Picture it\./ })).toBeVisible();
+  for (let i = 0; i < 5 && !(await page.getByRole('heading', { name: 'The pen you’re bringing.' }).isVisible()); i++) {
+    await page.getByRole('button', { name: 'Next' }).click().catch(() => {});
+    if (await page.getByText(/What would you like help with|What made you reach out/).first().isVisible()) {
+      const reason = page.locator('[data-q="reason"] textarea');
+      if (await reason.isVisible()) await reason.fill('Back to running.');
+    }
+  }
+  await expect(page.getByRole('heading', { name: 'The pen you’re bringing.' })).toBeVisible();
+  await expect(page.getByText('Rapid Recovery', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^All-Day Energy/ })).toHaveCount(0);
+  await expect(page.getByText(/Choose up to/)).toHaveCount(0);
 });
 
 test('full journey across roles', async ({ page }) => {
@@ -180,7 +218,12 @@ test('full journey across roles', async ({ page }) => {
     vision: () => page.locator('[data-q="vision"] textarea').fill('My jeans fit again.'),
     reason: () => page.locator('[data-q="reason"] textarea').fill('I want my energy back.'),
     firstName: () => page.getByLabel('First name').fill('Alex'),
-    dateOfBirth: () => page.getByLabel('Date of birth').fill('1990-01-15'),
+    dateOfBirth: async () => {
+      await page.getByLabel('Day').fill('15');
+      await page.getByLabel('Month').selectOption('1');
+      await page.getByLabel('Year').fill('1990');
+      await expect(page.getByText(/You’re \d+\./)).toBeVisible();
+    },
     sex: () => pick('sex', 'Female'),
     province: () => page.getByLabel('Province').selectOption('Western Cape'),
     city: () => page.getByLabel('City or town').fill('Cape Town'),
@@ -225,7 +268,7 @@ test('full journey across roles', async ({ page }) => {
       }
     }
     // The pen picker: nothing chosen is an error, then pick one.
-    if (!seen.has('pens') && (await page.getByRole('heading', { name: 'Now, pack for the trip.' }).isVisible())) {
+    if (!seen.has('pens') && (await page.getByRole('heading', { name: 'Which pen brings you here?' }).isVisible())) {
       seen.add('pens');
       await next();
       await expect(page.getByText('Choose at least one pen, or let your clinician suggest one.')).toBeVisible();

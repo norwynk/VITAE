@@ -75,9 +75,10 @@ function chunk(questions: IntakeQuestion[]): IntakeQuestion[][] {
 }
 
 /** The route: why, pens, who you are, your health, safety for your pens, the rest of your life. */
-function buildRoute(sections: IntakeSection[], answers: IntakeAnswers, groups: PenQuestionGroup[], chosen: Treatment[]) {
+function buildRoute(sections: IntakeSection[], answers: IntakeAnswers, groups: PenQuestionGroup[], chosen: Treatment[], askDestination: boolean) {
   const stops: string[] = [];
-  const screens: Screen[] = [{ kind: 'destination', stop: -1 }];
+  // Only asked when nothing upstream (home goal cards, the quiz, a pen page) already told us.
+  const screens: Screen[] = askDestination ? [{ kind: 'destination', stop: -1 }] : [];
   const addSection = (s: IntakeSection) => {
     const stop = stops.push(s.label) - 1;
     // Chunk every question, then hide the ones that don't apply, so a follow-up appearing never moves another question.
@@ -126,14 +127,33 @@ export function Questionnaire({ initialPen, initialGoal }: { initialPen?: string
 
   const available = (pens ?? []).map((p) => p.treatment);
   const chosen = shortlist.slugs.map((s) => available.find((t) => t.slug === s)).filter((t): t is Treatment => Boolean(t));
-  const presetGoal = goalBySlug(initialGoal) ?? goalForCategory(available.find((t) => t.slug === initialPen)?.category);
-  const destination = state.destination ?? presetGoal?.slug;
+  // Where they're heading is already known if they came with a goal or with pens: never ask twice.
+  const known =
+    goalBySlug(initialGoal) ??
+    goalForCategory(available.find((t) => t.slug === initialPen)?.category) ??
+    goalForCategory(chosen[0]?.category);
+  const destination = state.destination ?? known?.slug;
   const goal = goalBySlug(destination);
+  useEffect(() => {
+    if (state.destination || !known) return;
+    update((s) => ({
+      destination: known.slug,
+      destinationFrom: 'known',
+      answers: Array.isArray(s.answers.goals) && s.answers.goals.length ? s.answers : { ...s.answers, goals: known.intakeGoals },
+    }));
+  }, [state.destination, known, update]);
   const firstName = typeof state.answers.firstName === 'string' ? state.answers.firstName : '';
 
   const sections = sectionsFor(state.answers);
   const groups = groupsFor(chosen);
-  const { stops, screens } = buildRoute(sections, state.answers, groups, chosen);
+  const { stops, screens } = buildRoute(
+    sections,
+    state.answers,
+    groups,
+    chosen,
+    // Once asked here it stays on the route, so picking pens later never shifts the steps.
+    state.destinationFrom === 'asked' || (state.destinationFrom !== 'known' && !known),
+  );
   const step = Math.min(state.step, screens.length - 1);
   const screen = screens[step];
   // Endowed progress: the route starts a little way along.
@@ -204,7 +224,7 @@ export function Questionnaire({ initialPen, initialGoal }: { initialPen?: string
     const g = goalBySlug(slug);
     update((s) => {
       const goals = Array.isArray(s.answers.goals) && s.answers.goals.length ? s.answers.goals : g?.intakeGoals;
-      return { destination: slug, answers: goals ? { ...s.answers, goals } : s.answers };
+      return { destination: slug, destinationFrom: 'asked', answers: goals ? { ...s.answers, goals } : s.answers };
     });
     autoAdvance(slug);
   };
@@ -273,22 +293,14 @@ export function Questionnaire({ initialPen, initialGoal }: { initialPen?: string
             )}
 
             {screen.kind === 'pens' && (
-              <>
-                <StopHead
-                  eyebrow="Your pens"
-                  title="Now, pack for the trip."
-                  lead={`Choose up to ${MAX_SHORTLIST}. Each one goes to your clinician, who decides what’s right for you.`}
-                  why={goal ? `These are the pens made for ${goal.destination}. Each one adds its own safety check later, so you only answer what matters to you.` : undefined}
-                />
-                <PensPicker
-                  chosen={chosen}
-                  available={available}
-                  goal={goal}
-                  shortlist={shortlist}
-                  letClinicianSuggest={state.letClinicianSuggest}
-                  onLet={(v) => update({ letClinicianSuggest: v })}
-                />
-              </>
+              <PensStep
+                chosen={chosen}
+                available={available}
+                goal={goal}
+                shortlist={shortlist}
+                letClinicianSuggest={state.letClinicianSuggest}
+                onLet={(v) => update({ letClinicianSuggest: v })}
+              />
             )}
 
             {screen.kind === 'safety' && (
@@ -361,8 +373,9 @@ export function Questionnaire({ initialPen, initialGoal }: { initialPen?: string
                   type="button"
                   className="link-arrow intake__clear"
                   onClick={() => {
-                    if (window.confirm('Clear all your answers from this device?')) {
+                    if (window.confirm('Start over? This clears your answers and the pens you picked from this device.')) {
                       clear();
+                      shortlist.clear();
                       setProblem(null);
                     }
                   }}
@@ -519,6 +532,60 @@ function Arriving({ pens, goal, onDone }: { pens: Treatment[]; goal?: Goal; onDo
   );
 }
 
+/**
+ * Pens they already picked are confirmed, not sold to: no "add more". Only
+ * someone who arrives with none is shown the pens for their goal.
+ */
+function PensStep(props: Parameters<typeof PensPicker>[0]) {
+  const { chosen, shortlist, goal } = props;
+  // Decided when the step opens, so removing a pen doesn't turn this into a shop.
+  const [arrivedWithPens] = useState(shortlist.slugs.length > 0);
+  if (arrivedWithPens && shortlist.slugs.length > 0) {
+    return (
+      <>
+        <StopHead
+          eyebrow="Your pens"
+          title={chosen.length === 1 ? 'The pen you’re bringing.' : 'The pens you’re bringing.'}
+          lead="Your clinician reviews each one and decides what’s right for you."
+          why="Each pen comes with its own safety check later on, so you only answer the questions that matter to you."
+        />
+        <ul className="plain screening__pens">
+          {chosen.map((t) => {
+            const b = penBrand(t);
+            return (
+              <li key={t.id} className="screening__pen" style={worldStyle(b.colours)}>
+                <span className="screening__pen-dot" />
+                <span className="screening__pen-name">{t.name}</span>
+                <span className="screening__pen-hook">
+                  {b.hook}
+                  {penSafety(t.slug) && <span className="pen-pick__safety"> · Includes a safety check</span>}
+                </span>
+                <button type="button" className="secondary small" onClick={() => shortlist.remove(t.slug)} aria-label={`Remove ${t.name}`}>
+                  Remove
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        <p className="small muted" style={{ margin: 0 }}>
+          Changed your mind about one? Remove it here.
+        </p>
+      </>
+    );
+  }
+  return (
+    <>
+      <StopHead
+        eyebrow="Your pens"
+        title="Which pen brings you here?"
+        lead="Pick the one you’d like your clinician to consider. Not sure? Let them suggest."
+        why={goal ? `These are the pens made for ${goal.destination}. Each one comes with its own safety check later on.` : undefined}
+      />
+      <PensPicker {...props} />
+    </>
+  );
+}
+
 function PensPicker({
   chosen,
   available,
@@ -578,7 +645,7 @@ function PensPicker({
           <div className="pen-picks">{others.map(card)}</div>
         </details>
       )}
-      {shortlist.full && <p className="small muted">That’s {MAX_SHORTLIST}, the most your clinician reviews at once. Tap one to swap it out.</p>}
+      {shortlist.full && <p className="small muted">Your clinician reviews up to {MAX_SHORTLIST} at a time.</p>}
       {!chosen.length && (
         <label className="check">
           <input type="checkbox" checked={letClinicianSuggest} onChange={(e) => onLet(e.target.checked)} /> Not sure yet. Let my clinician
