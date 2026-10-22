@@ -926,3 +926,47 @@ describe('preparatory questionnaire', () => {
     expectError(bad({ heightCm: '20' }), 'INVALID', /Height/);
   });
 });
+
+describe('approval releases the pen to the team', () => {
+  it('creates a dispatch record with pen, quantity and dose, and nothing from the screening', () => {
+    const { store, approvalId } = approved();
+    const releases = Object.values(store.penReleases);
+    expect(releases).toHaveLength(1);
+    const r = releases[0];
+    expect(r).toMatchObject({ approvalId, treatmentName: 'Craving Control', quantity: 2, status: 'TO_SEND', memberId: NEW });
+    expect(r.dose).toMatch(/every day/i);
+    expect(JSON.stringify(r)).not.toMatch(/conditions|medications|allergies|intake/i);
+  });
+
+  it('admin and operations see releases but never health records', () => {
+    const { store } = approved();
+    for (const who of [admin, ops]) {
+      const v = visible(store, who);
+      expect(Object.keys(v.penReleases)).toHaveLength(1);
+      expect(v.healthAssessments).toEqual({});
+      expect(v.medicalHistories).toEqual({});
+      expect(v.treatmentRequests).toEqual({});
+      expect(v.clinicalNotes).toEqual({});
+    }
+  });
+
+  it('only admin or operations mark it sent, once, and the member is told', () => {
+    const { store } = approved();
+    const r = Object.values(store.penReleases)[0];
+    const cmd = { type: 'releaseSent' as const, memberId: NEW, releaseId: r.id, courierReference: 'TRK-1' };
+    expectError(() => run(store, member, cmd), 'FORBIDDEN');
+    expectError(() => run(store, clinician, cmd), 'FORBIDDEN');
+    const sent = run(store, admin, cmd).store;
+    expect(sent.penReleases[r.id]).toMatchObject({ status: 'SENT', courierReference: 'TRK-1', sentBy: admin.uid });
+    expect(Object.values(sent.notifications).some((n) => n.memberId === NEW && /on its way/.test(n.title))).toBe(true);
+    expectError(() => run(sent, ops, cmd), 'CONFLICT');
+  });
+
+  it('the repeat-script route skips lifestyle and still onboards', () => {
+    const base = onboardCommand() as Record<string, unknown>;
+    const { lifestyle: _lifestyle, ...withoutLifestyle } = base;
+    const store = run(createFixtureStore(NOW), member, withoutLifestyle as CommandInput).store;
+    expect(store.members[NEW].onboardedAt).toBeDefined();
+    expect(store.lifestyleProfiles[NEW]).toBeUndefined();
+  });
+});

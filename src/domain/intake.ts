@@ -58,6 +58,12 @@ const str = (a: IntakeAnswers, id: string) => (typeof a[id] === 'string' ? (a[id
 export const isFemale = (a: IntakeAnswers) => str(a, 'sex') === 'Female';
 export const isMale = (a: IntakeAnswers) => str(a, 'sex') === 'Male';
 
+/** Two ways in: new to peptides (the full journey), or already on a prescribed protocol. */
+export const ROUTE_NEW = 'I’m new to peptides';
+export const ROUTE_REPEAT = 'I already have a script';
+export const isRepeatRoute = (a: IntakeAnswers) => str(a, 'route') === ROUTE_REPEAT;
+export const isNewRoute = (a: IntakeAnswers) => !isRepeatRoute(a);
+
 export const GOALS = ['Weight management', 'Skin and appearance', 'Energy', 'Sleep', 'Recovery', 'Hormones', 'Libido', 'Focus', 'General wellbeing'];
 export const SA_LANGUAGES = ['English', 'Afrikaans', 'isiZulu', 'isiXhosa', 'Sesotho', 'Other'];
 export const STRESS_RESPONSES = [
@@ -71,7 +77,38 @@ export const STRESS_RESPONSES = [
 
 export const INTAKE: IntakeSection[] = [
   {
+    id: 'start',
+    label: 'How you’re starting',
+    title: 'Is this your first time with peptides?',
+    questions: [{ id: 'route', kind: 'choice', label: 'How are you starting?', options: [ROUTE_NEW, ROUTE_REPEAT] }],
+  },
+  {
+    id: 'script',
+    label: 'Your script',
+    title: 'Your current script.',
+    lead: 'You know your protocol. Tell us what you’re on, and your clinician will verify it with you before anything is released.',
+    why: 'A pen can only be released against a valid script, checked by a registered clinician. Your clinician will also ask you for a copy.',
+    showIf: isRepeatRoute,
+    questions: [
+      { id: 'prescriber', kind: 'text', label: 'Who prescribed it?', hint: 'Your doctor’s name and practice.', required: true, maxLength: 160 },
+      { id: 'prescriberNumber', kind: 'text', label: 'Their practice or HPCSA number', hint: 'If you have it. It’s usually on the script.', maxLength: 60 },
+      { id: 'scriptDate', kind: 'date', label: 'Date on your script', required: true },
+      {
+        id: 'protocol',
+        kind: 'long',
+        label: 'Your current protocol',
+        hint: 'Each peptide, the dose and how often. For example: “BPC-157 0.25 mg once a day”.',
+        required: true,
+        maxLength: 1000,
+      },
+      { id: 'usingFor', kind: 'choice', label: 'How long have you been on it?', options: ['Less than 3 months', '3 to 12 months', 'More than a year'], required: true },
+      { id: 'recentBloods', kind: 'choice', label: 'Have you had blood tests or markers checked?', options: ['Yes, in the last 6 months', 'Yes, longer ago', 'No'], required: true },
+      { id: 'sideEffects', kind: 'long', label: 'Any side effects so far?', hint: 'Leave it blank if none.', maxLength: 1000 },
+    ],
+  },
+  {
     id: 'why',
+    showIf: isNewRoute,
     label: 'Your why',
     title: 'Picture it.',
     lead: 'A few months from now, it’s working. Hold that thought for a second.',
@@ -165,6 +202,7 @@ export const INTAKE: IntakeSection[] = [
   },
   {
     id: 'lifestyle',
+    showIf: isNewRoute,
     label: 'Lifestyle',
     title: 'How you live.',
     lead: 'No judgement. It just helps your clinician see the full picture.',
@@ -184,6 +222,7 @@ export const INTAKE: IntakeSection[] = [
   },
   {
     id: 'sleep',
+    showIf: isNewRoute,
     label: 'Sleep',
     title: 'Sleep. The good stuff.',
     why: 'Sleep is when your body does its repair work, so it matters for every pen.',
@@ -235,7 +274,7 @@ export const INTAKE: IntakeSection[] = [
     label: 'For him',
     title: 'For him.',
     lead: 'A quick check-in. Yes or no is all we need.',
-    showIf: isMale,
+    showIf: (a) => isMale(a) && isNewRoute(a),
     why: 'Low energy, drive and mood can point to hormones. This helps your clinician see the pattern.',
     questions: [
       { id: 'mLibido', kind: 'choice', label: 'Has your sex drive dropped?', options: YN, required: true },
@@ -252,6 +291,7 @@ export const INTAKE: IntakeSection[] = [
   },
   {
     id: 'mind',
+    showIf: isNewRoute,
     label: 'Head space',
     title: 'Head space.',
     lead: 'How life feels at the moment. Answer as much or as little as you like.',
@@ -274,6 +314,7 @@ export const INTAKE: IntakeSection[] = [
   },
   {
     id: 'intimacy',
+    showIf: isNewRoute,
     label: 'Intimacy',
     title: 'The bedroom bit.',
     lead: 'Totally optional, totally private. Skip anything you’d rather talk about with your clinician.',

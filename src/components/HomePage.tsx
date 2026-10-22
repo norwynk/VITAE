@@ -2,6 +2,7 @@
 import { BrandHero } from './brand/BrandHero';
 import { GoalCards } from './brand/GoalCards';
 import { Range } from './brand/Range';
+import { RepeatScriptBand } from './brand/RepeatScriptBand';
 import { ClinicalTrustPanel, CoFounderQuote, EditorialStatement, FinalCta, HowItWorks, DesignedForWomen, LifestylePanel, Reviews, SubscriptionPanel } from './brand/Sections';
 import { BrandPage } from './site/BrandPage';
 import { Marquee } from './site/Marquee';
@@ -30,6 +31,7 @@ export function HomePage() {
           </>
         }
       />
+      <RepeatScriptBand />
       <EditorialStatement top="A little prick." bottom="A lot more you.">
         <p>Pretty enough to show off. Serious enough to need a clinician&apos;s yes.</p>
       </EditorialStatement>

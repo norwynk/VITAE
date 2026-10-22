@@ -159,7 +159,9 @@ test('quiz asks enough to match, and matches build "My pens"', async ({ page }) 
   // The questionnaire comes first, before any account, with the chosen pens.
   await page.getByRole('link', { name: 'Start your screening' }).click();
   await expect(page).toHaveURL(/\/start\?pen=deep-sleep-rebuild$/);
-  // The goal is already known from the pens, so it isn't asked again: straight to "Picture it".
+  // First the fork (new, or repeating a script); the goal is known from the pens, so it isn't asked again.
+  await expect(page.getByRole('heading', { name: /first time with peptides/ })).toBeVisible();
+  await page.getByRole('radio', { name: 'I’m new to peptides' }).click();
   await expect(page.getByRole('heading', { name: /Picture it\./ })).toBeVisible();
   await expect(page.getByText('Heading for: Sleep. Recover. Repeat.')).toBeVisible();
   await expect(page.getByRole('heading', { name: /Where are you heading\?/ })).toHaveCount(0);
@@ -176,6 +178,7 @@ test('without an account, My pens is their shortlist, and starting over really c
   await expect(page.getByText('The Glow Up', { exact: true })).toBeVisible();
   // Into screening: the pen is confirmed, never sold to ("add more").
   await page.getByRole('link', { name: 'Start my screening' }).click();
+  await page.getByRole('radio', { name: 'I’m new to peptides' }).click();
   await expect(page.getByRole('heading', { name: /Picture it\./ })).toBeVisible();
   await page.locator('[data-q="vision"] textarea').fill('Glowing.');
   await page.getByRole('button', { name: 'Next' }).click();
@@ -183,12 +186,13 @@ test('without an account, My pens is their shortlist, and starting over really c
   await page.getByRole('button', { name: 'Clear my answers' }).click();
   await expect(page.getByRole('link', { name: 'Account' }).first()).toBeAttached();
   await expect(page.getByRole('link', { name: /My pens/ })).toHaveCount(0);
-  await expect(page.getByRole('heading', { name: /Where are you heading\?/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /first time with peptides/ })).toBeVisible();
   expect(await page.evaluate(() => [localStorage.getItem('prick:shortlist'), localStorage.getItem('prick:screening')])).toEqual(['[]', null]);
 });
 
 test('a pen chosen up front is confirmed in screening, not sold to', async ({ page }) => {
   await page.goto('/start?pen=rapid-recovery');
+  await page.getByRole('radio', { name: 'I’m new to peptides' }).click();
   await expect(page.getByRole('heading', { name: /Picture it\./ })).toBeVisible();
   for (let i = 0; i < 5 && !(await page.getByRole('heading', { name: 'The pen you’re bringing.' }).isVisible()); i++) {
     await page.getByRole('button', { name: 'Next' }).click().catch(() => {});
@@ -203,6 +207,20 @@ test('a pen chosen up front is confirmed in screening, not sold to', async ({ pa
   await expect(page.getByText(/Choose up to/)).toHaveCount(0);
 });
 
+test('people already on a protocol take the shorter repeat-script route', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Repeat my script' }).click();
+  await expect(page).toHaveURL(/\/start\?route=repeat$/);
+  await expect(page.getByRole('radio', { name: 'I already have a script' })).toHaveAttribute('aria-checked', 'true');
+  await page.getByRole('button', { name: 'Next' }).click();
+  // Straight to their script: no goal, no "picture it", no lifestyle or sleep stops.
+  await expect(page.getByRole('heading', { name: 'Your current script.' })).toBeVisible();
+  await expect(page.getByText(/Stop 1 of \d+ · Your script/)).toBeVisible();
+  const stops = Number((await page.locator('.route__meta').innerText()).match(/of (\d+)/)![1]);
+  expect(stops).toBeLessThanOrEqual(6);
+  await expect(page.getByLabel('Who prescribed it?')).toBeVisible();
+});
+
 test('full journey across roles', async ({ page }) => {
   page.on('dialog', (d) => void d.accept(d.type() === 'prompt' ? 'DEMO-COURIER-1' : undefined));
 
@@ -210,7 +228,8 @@ test('full journey across roles', async ({ page }) => {
   const pick = (q: string, option: string) => page.locator(`[data-q="${q}"]`).getByRole('button', { name: option, exact: true }).or(page.locator(`[data-q="${q}"]`).getByRole('radio', { name: option, exact: true })).click();
   const next = () => page.getByRole('button', { name: /^(Next|See where I stand)$/ }).click();
   await page.goto('/start');
-  // Stop 0: the destination. One tap, and the journey moves on.
+  // The fork: new to peptides. Then the destination. One tap each, and the journey moves on.
+  await page.getByRole('radio', { name: 'I’m new to peptides' }).click();
   await page.getByRole('radio', { name: /Lose the weight\./ }).click();
   await expect(page.getByRole('heading', { name: /Picture it\./ })).toBeVisible();
   await expect(page.getByText(/Why this matters:.*your goal weight/)).toBeVisible();
@@ -345,12 +364,24 @@ test('full journey across roles', async ({ page }) => {
   await review.getByLabel('Packs approved').fill('2');
   await review.getByLabel('Frequency').selectOption('DAILY');
   await review.getByLabel('Decision note').fill('Suitable for the fictional demo plan.');
-  await review.getByRole('button', { name: 'Record decision' }).click();
+  await review.getByRole('button', { name: 'Approve and release the pen' }).click();
   await expectToast(page, 'Decision recorded: Approved');
   await expect(page.getByText(/2\/2 packs left/)).toBeVisible();
 
-  // --- Super admin: verification gate, then demo catalogue setup -----------------
+  // --- Super admin: the approved pen is ready to send; the screening stays private --
   await switchRole(page, 'Super admin');
+  const release = page.getByRole('article', { name: /Release Craving Control for Alex Newby/ });
+  await expect(release.getByText('Craving Control × 2')).toBeVisible();
+  await expect(release.getByText(/every day/i)).toBeVisible();
+  await expect(page.getByText('I want my energy back.')).toHaveCount(0);
+  await expect(page.getByText('Vitamin D')).toHaveCount(0);
+  await expect(page.getByText(/sent a screening to the clinician/).first()).toBeVisible();
+  await release.getByLabel('Courier reference').fill('DEMO-COURIER-7');
+  await release.getByRole('button', { name: 'Mark as sent' }).click();
+  await expectToast(page, /Craving Control marked as sent/);
+  await expect(page.getByRole('article', { name: /Release Craving Control for Alex Newby/ })).toHaveCount(0);
+
+  // --- Super admin: verification gate, then demo catalogue setup -----------------
   const recovery = page.getByRole('form', { name: /Edit The Glow Up/ });
   await recovery.getByLabel('Purchasable').check();
   await recovery.getByRole('button', { name: /^Save/ }).click();

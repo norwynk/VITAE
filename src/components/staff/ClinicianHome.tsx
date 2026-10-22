@@ -426,9 +426,14 @@ function ReviewForm({ request, store }: { request: TreatmentRequest; store: Stor
         Decision note (shown to the member)
         <textarea name="note" required />
       </label>
+      {decision === 'APPROVED' && (
+        <p className="small muted" style={{ margin: 0 }}>
+          Approving releases the pen: the team is emailed the pen, quantity and dose to send. They never see the screening.
+        </p>
+      )}
       <div>
         <button type="submit" disabled={busy}>
-          Record decision
+          {decision === 'APPROVED' ? 'Approve and release the pen' : 'Record decision'}
         </button>
       </div>
     </form>

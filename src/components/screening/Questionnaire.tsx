@@ -10,6 +10,9 @@ import {
   type IntakeQuestion,
   type IntakeSection,
   type IntakeValue,
+  ROUTE_REPEAT,
+  isNewRoute,
+  isRepeatRoute,
   problemWith,
   sectionsFor,
   visibleQuestions,
@@ -79,9 +82,10 @@ function chunk(questions: IntakeQuestion[]): IntakeQuestion[][] {
 function buildRoute(sections: IntakeSection[], answers: IntakeAnswers, groups: PenQuestionGroup[], chosen: Treatment[], askDestination: boolean) {
   const stops: string[] = [];
   // Only asked when nothing upstream (home goal cards, the quiz, a pen page) already told us.
-  const screens: Screen[] = askDestination ? [{ kind: 'destination', stop: -1 }] : [];
+  const screens: Screen[] = [];
   const addSection = (s: IntakeSection) => {
-    const stop = stops.push(s.label) - 1;
+    // The opening question (new, or repeating a script) comes before the route itself.
+    const stop = s.id === 'start' ? -1 : stops.push(s.label) - 1;
     // Chunk every question, then hide the ones that don't apply, so a follow-up appearing never moves another question.
     const visible = new Set(visibleQuestions(s, answers));
     const parts = chunk(s.questions)
@@ -89,9 +93,15 @@ function buildRoute(sections: IntakeSection[], answers: IntakeAnswers, groups: P
       .filter((c) => c.length);
     parts.forEach((questions, part) => screens.push({ kind: 'section', stop, section: s, questions, part, parts: parts.length }));
   };
+  let pensAdded = false;
   for (const s of sections) {
     addSection(s);
-    if (s.id === 'why') screens.push({ kind: 'pens', stop: stops.push('Your pens') - 1 });
+    // New to peptides: where they're heading, unless we already know.
+    if (s.id === 'start' && askDestination && isNewRoute(answers)) screens.push({ kind: 'destination', stop: -1 });
+    if ((s.id === 'why' || s.id === 'script') && !pensAdded) {
+      pensAdded = true;
+      screens.push({ kind: 'pens', stop: stops.push('Your pens') - 1 });
+    }
     if (s.id === 'history' && groups.length) {
       const stop = stops.push('Safety check') - 1;
       for (const g of groups) screens.push({ kind: 'safety', stop, group: g, pen: chosen.find((p) => g.slugs?.includes(p.slug)) });
@@ -112,7 +122,7 @@ function because(text: string | undefined, goal: Goal | undefined) {
  * why it matters. Saved on this device as they go. At the end: a short
  * "arriving" moment, the good-fit result, then an account to send it.
  */
-export function Questionnaire({ initialPen, initialGoal }: { initialPen?: string; initialGoal?: string }) {
+export function Questionnaire({ initialPen, initialGoal, initialRoute }: { initialPen?: string; initialGoal?: string; initialRoute?: string }) {
   const { pens } = useCatalogue();
   const shortlist = useShortlist();
   const { state, update, clear } = useScreening();
@@ -125,6 +135,9 @@ export function Questionnaire({ initialPen, initialGoal }: { initialPen?: string
   useEffect(() => {
     if (initialPen) add(initialPen);
   }, [initialPen, add]);
+  useEffect(() => {
+    if (initialRoute === 'repeat') update((s) => (s.answers.route ? {} : { answers: { ...s.answers, route: ROUTE_REPEAT } }));
+  }, [initialRoute, update]);
 
   const available = (pens ?? []).map((p) => p.treatment);
   const chosen = shortlist.slugs.map((s) => available.find((t) => t.slug === s)).filter((t): t is Treatment => Boolean(t));
@@ -183,7 +196,7 @@ export function Questionnaire({ initialPen, initialGoal }: { initialPen?: string
         return chosen.length || state.letClinicianSuggest ? null : 'Choose at least one pen, or let your clinician suggest one.';
       case 'section': {
         for (const q of screen.questions) {
-          const p = problemWith(q, state.answers[q.id], SA_PROVINCES);
+          const p = problemWith(onScreen(q), state.answers[q.id], SA_PROVINCES);
           if (p) return p;
           if (q.id === 'dateOfBirth' && underAge(state.answers.dateOfBirth)) return 'PRICK is only for adults aged 18 and over.';
         }
@@ -280,7 +293,7 @@ export function Questionnaire({ initialPen, initialGoal }: { initialPen?: string
                   {screen.questions.map((q) => (
                     <Field
                       key={q.id}
-                      q={q.id === 'vision' && goal ? { ...q, placeholder: `For example: “${goal.visionExample}”` } : q}
+                      q={q.id === 'vision' && goal ? { ...q, placeholder: `For example: “${goal.visionExample}”` } : onScreen(q)}
                       value={state.answers[q.id]}
                       onChange={(v) => {
                         setAnswer(q.id, v);
@@ -295,6 +308,7 @@ export function Questionnaire({ initialPen, initialGoal }: { initialPen?: string
 
             {screen.kind === 'pens' && (
               <PensStep
+                repeat={isRepeatRoute(state.answers)}
                 chosen={chosen}
                 available={available}
                 goal={goal}
@@ -324,7 +338,7 @@ export function Questionnaire({ initialPen, initialGoal }: { initialPen?: string
               </>
             )}
 
-            {screen.kind === 'arrive' && <Arriving pens={chosen} goal={goal} onDone={() => go(step + 1)} />}
+            {screen.kind === 'arrive' && <Arriving pens={chosen} goal={goal} repeat={isRepeatRoute(state.answers)} onDone={() => go(step + 1)} />}
 
             {screen.kind === 'fit' && (
               <>
@@ -336,6 +350,7 @@ export function Questionnaire({ initialPen, initialGoal }: { initialPen?: string
                   flagged={flaggedPens(state.penAnswers, chosen)}
                   needsLook={needsLook(state.answers, state.penAnswers, chosen)}
                   tooYoung={underAge(state.answers.dateOfBirth)}
+                  repeat={isRepeatRoute(state.answers)}
                 />
                 <div className="intake__account">
                   <h2 className="display">Save your journey.</h2>
@@ -498,11 +513,12 @@ function GoodToKnow({ name, safety }: { name: string; safety: PenSafety }) {
 }
 
 /** A short, honest "working on it" moment: each line is a check that really runs. */
-function Arriving({ pens, goal, onDone }: { pens: Treatment[]; goal?: Goal; onDone: () => void }) {
+function Arriving({ pens, goal, repeat, onDone }: { pens: Treatment[]; goal?: Goal; repeat: boolean; onDone: () => void }) {
   const lines = [
     'Reading your answers',
+    ...(repeat ? ['Checking your script details'] : []),
     ...pens.map((p) => `Running the ${p.name} safety check`),
-    `Mapping your route to ${goal?.destination ?? 'your goal'}`,
+    ...(repeat ? [] : [`Mapping your route to ${goal?.destination ?? 'your goal'}`]),
     'Getting your file ready for your clinician',
   ];
   const [done, setDone] = useState(0);
@@ -537,7 +553,7 @@ function Arriving({ pens, goal, onDone }: { pens: Treatment[]; goal?: Goal; onDo
  * Pens they already picked are confirmed, not sold to: no "add more". Only
  * someone who arrives with none is shown the pens for their goal.
  */
-function PensStep(props: Parameters<typeof PensPicker>[0]) {
+function PensStep({ repeat, ...props }: Parameters<typeof PensPicker>[0] & { repeat: boolean }) {
   const { chosen, shortlist, goal } = props;
   // Decided when the step opens, so removing a pen doesn't turn this into a shop.
   const [arrivedWithPens] = useState(shortlist.slugs.length > 0);
@@ -578,11 +594,11 @@ function PensStep(props: Parameters<typeof PensPicker>[0]) {
     <>
       <StopHead
         eyebrow="Your pens"
-        title="Which pen brings you here?"
-        lead="Pick the one you’d like your clinician to consider. Not sure? Let them suggest."
+        title={repeat ? 'Which pens are on your script?' : 'Which pen brings you here?'}
+        lead={repeat ? 'Pick the pens that match your current protocol.' : 'Pick the one you’d like your clinician to consider. Not sure? Let them suggest.'}
         why={goal ? `These are the pens made for ${goal.destination}. Each one comes with its own safety check later on.` : undefined}
       />
-      <PensPicker {...props} />
+      <PensPicker {...props} allowSuggest={!repeat} />
     </>
   );
 }
@@ -594,7 +610,9 @@ function PensPicker({
   shortlist,
   letClinicianSuggest,
   onLet,
+  allowSuggest = true,
 }: {
+  allowSuggest?: boolean;
   chosen: Treatment[];
   available: Treatment[];
   goal?: Goal;
@@ -648,7 +666,7 @@ function PensPicker({
         </details>
       )}
       {shortlist.full && <p className="small muted">Your clinician reviews up to {MAX_SHORTLIST} at a time.</p>}
-      {!chosen.length && (
+      {!chosen.length && allowSuggest && (
         <label className="check">
           <input type="checkbox" checked={letClinicianSuggest} onChange={(e) => onLet(e.target.checked)} /> Not sure yet. Let my clinician
           suggest something.
@@ -706,4 +724,12 @@ function PenField({ q, value, onChange }: { q: PenQuestion; value: string; onCha
       <input type={q.kind === 'number' ? 'number' : 'text'} min={q.min} max={q.max} step="any" maxLength={500} value={value} onChange={(e) => onChange(e.target.value)} />
     </label>
   );
+}
+
+/**
+ * The opening fork is optional on the server (older screenings never had it),
+ * but on screen an answer is needed to choose the route.
+ */
+function onScreen(q: IntakeQuestion): IntakeQuestion {
+  return q.id === 'route' ? { ...q, required: true } : q;
 }

@@ -6,6 +6,7 @@ import { CATEGORIES } from '@/brand/pens';
 import { useCatalogue } from '@/hooks/useCatalogue';
 import { ConsultCard } from './brand/ConsultCard';
 import { PenCard } from './brand/PenCard';
+import { RepeatScriptBand } from './brand/RepeatScriptBand';
 import { BrandPage } from './site/BrandPage';
 
 export function ShopPage() {
@@ -49,6 +50,7 @@ export function ShopPage() {
           </div>
         </div>
       </section>
+      <RepeatScriptBand />
     </BrandPage>
   );
 }
