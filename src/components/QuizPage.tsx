@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { ConsultCard } from './brand/ConsultCard';
 import { useState } from 'react';
 import { CATEGORIES, PEN_BRANDS } from '@/brand/pens';
 import { CLINICIAN_MAY_SUGGEST, MAX_GOALS, type QuizAnswers, feelingChoices, pensIn, results, tiebreakPair } from '@/brand/quiz';
@@ -290,6 +291,7 @@ export function MatchReveal({ pen, others = [], onRestart }: { pen: BrandedPen; 
                   Start your screening
                 </Link>
               </div>
+              {t.category === 'Weight & Body' && <ConsultCard variant="inline" />}
               {others.length > 0 && (
                 <div className="match__others">
                   <p className="eyebrow">Also worth asking your clinician about</p>

@@ -40,7 +40,7 @@ export const YES_NO = ['Yes', 'No', 'Not sure'];
 const YES_OR_UNSURE = ['Yes', 'Not sure'];
 
 /** GLP-1 based weight medicines in the range. */
-export const GLP1_PENS = ['total-body-reset', 'craving-control', 'slow-and-steady', 'momentum'];
+export const GLP1_PENS = ['craving-control', 'slow-and-steady', 'momentum'];
 
 /** In a checklist, the answer that says nothing applies. Can't be combined with other answers. */
 export const NONE_OF_THESE = 'None of these';

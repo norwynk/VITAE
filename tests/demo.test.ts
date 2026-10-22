@@ -43,7 +43,7 @@ describe('demo store', () => {
     const member = demo.demoActorFor('MEMBER', 'established');
     const before = await demo.demoWorkspace(member);
     expect(Object.keys(before.store.approvedTreatments)).toHaveLength(1);
-    await expect(demo.demoExecute(member, { type: 'checkout', treatmentId: 'trt-total-body-reset', quantity: 1 })).rejects.toThrow(
+    await expect(demo.demoExecute(member, { type: 'checkout', treatmentId: 'trt-craving-control', quantity: 1 })).rejects.toThrow(
       /not available to order/,
     );
     await demo.demoExecute(member, { type: 'measurement', measurement: { kind: 'SLEEP', unit: 'hours', value: 7 } });
@@ -63,10 +63,10 @@ describe('demo store upgrades', () => {
     const saved = createFixtureStore(new Date('2026-10-01T08:00:00Z'));
     delete saved.treatments['trt-slow-and-steady'];
     delete saved.inventory['PRK-SLOW-AND-STEADY'];
-    saved.treatments['trt-total-body-reset'].name = 'Edited in this demo';
+    saved.treatments['trt-craving-control'].name = 'Edited in this demo';
     const upgraded = demo.withNewPens(saved);
     expect(upgraded.treatments['trt-slow-and-steady']?.name).toBe('Slow & Steady');
     expect(upgraded.inventory['PRK-SLOW-AND-STEADY']).toMatchObject({ treatmentId: 'trt-slow-and-steady' });
-    expect(upgraded.treatments['trt-total-body-reset'].name).toBe('Edited in this demo');
+    expect(upgraded.treatments['trt-craving-control'].name).toBe('Edited in this demo');
   });
 });

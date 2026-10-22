@@ -22,6 +22,7 @@ import { useScreening } from '@/hooks/useScreening';
 import { MAX_SHORTLIST, useShortlist } from '@/hooks/useShortlist';
 import { demoRepository } from '@/services/repository';
 import { worldStyle } from '../brand/worldStyle';
+import { ConsultCard } from '../brand/ConsultCard';
 import { FitMoment } from '../member/FitMoment';
 import { SiteNav } from '../site/SiteNav';
 import { Notice } from '../ui';
@@ -639,6 +640,7 @@ function PensPicker({
   return (
     <div className="stack">
       <div className="pen-picks">{forGoal.map(card)}</div>
+      {goal?.slug === 'weight' && <ConsultCard variant="inline" />}
       {others.length > 0 && (
         <details className="pen-picks__more" open={chosen.some((t) => t.category !== goal?.category)}>
           <summary>More pens</summary>
