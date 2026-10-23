@@ -212,6 +212,16 @@ function NextStep({ onGo }: { onGo: (tab: Tab) => void }) {
   const recordedToday = approval && Object.values(store.adherenceEvents).some((e) => e.approvalId === approval.id && e.dueDate === now && e.action !== 'SNOOZED');
   const nextDose = regimen && nextScheduledDate(regimen, recordedToday ? addDays(now, 1) : now);
   const hasOrder = Object.keys(store.orders).length > 0;
+  // Sent in the last two days: it's probably still with the courier.
+  const justSent = Boolean(
+    approval &&
+      Object.values(store.penReleases).some(
+        (r) => r.approvalId === approval.id && r.status === 'SENT' && r.sentAt && r.sentAt.slice(0, 10) >= addDays(now, -1),
+      ),
+  );
+  const awaitingPen = Boolean(
+    approval && Object.values(store.penReleases).some((r) => r.approvalId === approval.id && r.status === 'TO_SEND'),
+  );
   const focus = store.treatments[approval?.treatmentId ?? pending[0]?.treatmentId ?? requests[0]?.treatmentId ?? ''];
   const brand = focus ? penBrand(focus) : null;
 
@@ -222,14 +232,19 @@ function NextStep({ onGo }: { onGo: (tab: Tab) => void }) {
     title = 'Your clinician has a question.';
     body = `They need a little more information about ${treatmentName(store, needsInfo.treatmentId)}.`;
     action = { label: 'Read and reply', tab: 'Messages' };
+  } else if (approval && awaitingPen) {
+    // Approved, but the pen hasn't gone out yet: no dose prompts before they have it.
+    title = "You're approved.";
+    body = `Your clinician approved ${treatmentName(store, approval.treatmentId)}. Your care team is getting your pen ready and will be in touch.`;
+    action = { label: 'See your plan', tab: 'Plan' };
+  } else if (approval && justSent) {
+    title = 'Your pen is on its way.';
+    body = `Your care team has sent your ${treatmentName(store, approval.treatmentId)}. Your plan and reminders are ready in the Plan tab.`;
+    action = { label: 'See your plan', tab: 'Plan' };
   } else if (approval && nextDose === now && !recordedToday) {
     title = "Today's dose.";
     body = `Log your ${treatmentName(store, approval.treatmentId)} dose once you've taken it.`;
     action = { label: 'Log it', tab: 'Plan' };
-  } else if (approval && !hasOrder && !salesOpen() && Object.values(store.penReleases).some((r) => r.approvalId === approval.id && r.status === 'SENT')) {
-    title = 'Your pen is on its way.';
-    body = `Your care team has sent your ${treatmentName(store, approval.treatmentId)}. Your plan and reminders are ready in the Plan tab.`;
-    action = { label: 'See your plan', tab: 'Plan' };
   } else if (approval && !hasOrder && !salesOpen()) {
     title = "You're approved.";
     body = `Your clinician approved ${treatmentName(store, approval.treatmentId)}. Your care team will be in touch to arrange your first pen.`;
