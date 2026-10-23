@@ -38,12 +38,13 @@ async function send(to: string[], subject: string, text: string) {
   }
 }
 
-/** "address app-password", forgiving stray quotes, a colon instead of a space, and spaces inside the app password. */
+/** "address app-password", forgiving stray quotes, a colon instead of a space, and anything that isn't a letter in the password. */
 export function parseLogin(raw: string): { user: string; pass: string } {
   const login = raw.trim().replace(/^["']|["']$/g, '').trim();
   const match = /^(\S+@\S+?)[\s:]+(.+)$/.exec(login);
   if (!match) throw new Error('The sending account should be saved as the email address, a space, then the app password.');
-  return { user: match[1], pass: match[2].replace(/[\s"']/g, '') };
+  // App passwords are letters only; drop anything pasted along with them (spaces, quotes, invisible characters).
+  return { user: match[1], pass: match[2].replace(/[^A-Za-z0-9]/g, '') };
 }
 
 async function emailsFor(db: Firestore, roles: Role[]): Promise<string[]> {
