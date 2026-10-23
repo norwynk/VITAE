@@ -116,6 +116,9 @@ async function enableTotp() {
   console.log('Authenticator-app sign-in is on. Staff set it up the first time they sign in.');
 }
 
+/** Pens taken out of the range. Retatrutide (Total Body Reset): consultation only, not on the site. */
+const WITHDRAWN = ['trt-total-body-reset'];
+
 /** Adds missing pens (no prices, nothing purchasable) and refreshes sheet-only product facts. Staff-edited fields are left alone. */
 async function catalogue() {
   const range = createFixtureStore(new Date());
@@ -141,6 +144,15 @@ async function catalogue() {
     added++;
   }
   console.log(`${added} pen(s) added; ${Object.keys(range.treatments).length - added} already there.`);
+  // Withdrawn from the range: hidden and closed, never deleted (requests and audit keep pointing at them).
+  for (const id of WITHDRAWN) {
+    const ref = db.doc(`treatments/${id}`);
+    const snap = await ref.get();
+    if (!snap.exists || (snap.get('public') === false && snap.get('active') === false)) continue;
+    await ref.set({ public: false, active: false, purchasable: false, updatedAt: new Date().toISOString() }, { merge: true });
+    await audit('catalogue_withdrawn', [id]);
+    console.log(`Withdrew ${snap.get('name')} from the site`);
+  }
 }
 
 const [cmd, a, b] = process.argv.slice(2);

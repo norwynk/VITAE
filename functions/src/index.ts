@@ -38,6 +38,7 @@ import {
 import { SIGNED_URL_TTL_MS, assertDocumentAccess, validateDocumentRegistration } from '../../src/domain/documents';
 import { loadCatalogueScope, loadMemberScope, loadWorkspace } from './store';
 import { runReminderSweep } from './reminders';
+import { MAIL_LOGIN, notifyTeam } from './mail';
 
 initializeApp();
 const db = getFirestore();
@@ -161,19 +162,24 @@ export const getWorkspace = onCall(callableOptions, async (request) => {
   }
 });
 
-export const executeCommand = onCall(callableOptions, async (request) => {
+export const executeCommand = onCall({ ...callableOptions, secrets: [MAIL_LOGIN] }, async (request) => {
   try {
     const who = actor(request);
     const command = parseCommand(request.data);
     const memberId = commandMemberId(command, who);
     const result = await db.runTransaction(async (tx) => {
       const before = memberId ? await loadMemberScope(db, memberId, tx) : await loadCatalogueScope(db, tx);
+      // The acting user's own record, so approvals carry the clinician's name.
+      const self = await tx.get(db.doc(`users/${who.uid}`));
+      if (self.exists) before.users[who.uid] = { ...(self.data() as UserRecord), id: who.uid };
       const applied = applyCommand(before, who, command, { now: new Date(), mode: 'live', newId });
       for (const change of diffStores(before, applied.store)) {
         tx.set(db.doc(`${change.collection}/${change.id}`), toFirestoreData(change.data as object));
       }
       return { resultId: applied.resultId, auditEventId: applied.auditEventId };
     });
+    // Emails to the clinician and the team (never health details). Best effort.
+    await notifyTeam(db, command, memberId, result.resultId);
     return { ok: true, ...result };
   } catch (e) {
     throw toHttpsError(e);

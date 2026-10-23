@@ -13,6 +13,8 @@ export interface ScreeningState {
   letClinicianSuggest: boolean;
   /** The goal they are heading for (a goal slug, or "unsure"). */
   destination?: string;
+  /** "known" when it came from the goal cards, the quiz or a pen page; "asked" when they chose it here. */
+  destinationFrom?: 'known' | 'asked';
   /** Index of the screen they reached. */
   step: number;
   completedAt?: string;

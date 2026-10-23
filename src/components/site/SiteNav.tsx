@@ -32,7 +32,7 @@ export function SiteNav({ cta = true }: { cta?: boolean }) {
         </nav>
         <Logo />
         <div className="site-nav__end">
-          <Link href="/app" className="link-arrow site-nav__pens">
+          <Link href={slugs.length ? '/my-pens' : '/app'} className="link-arrow site-nav__pens">
             {slugs.length ? `My pens (${slugs.length})` : 'Account'}
           </Link>
           {cta && (
@@ -51,7 +51,7 @@ export function SiteNav({ cta = true }: { cta?: boolean }) {
             {l.label}
           </Link>
         ))}
-        <Link href="/app" onClick={() => setOpen(false)}>
+        <Link href={slugs.length ? '/my-pens' : '/app'} onClick={() => setOpen(false)}>
           {slugs.length ? `My pens (${slugs.length})` : 'Account'}
         </Link>
       </nav>

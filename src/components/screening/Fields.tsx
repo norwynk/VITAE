@@ -1,5 +1,6 @@
 'use client';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { ageOn, localDate } from '@/domain/model';
 import { type IntakeQuestion, type IntakeValue, type MedRow, NONE } from '@/domain/intake';
 
 /** One questionnaire answer control. Controlled: `value` in, `onChange` out. */
@@ -16,9 +17,15 @@ export function Field({ q, value, onChange, options }: { q: IntakeQuestion; valu
   const text = typeof value === 'string' ? value : '';
 
   switch (q.kind) {
+    case 'date':
+      return (
+        <fieldset className="qf" data-q={q.id}>
+          <legend>{label}</legend>
+          <DateParts id={q.id} value={text} onChange={onChange} showAge={q.id === 'dateOfBirth'} />
+        </fieldset>
+      );
     case 'text':
     case 'number':
-    case 'date':
     case 'time':
       return (
         <label className="qf" data-q={q.id}>
@@ -250,5 +257,89 @@ function Meds({ q, value, onChange, label }: { q: IntakeQuestion; value: (MedRow
         {q.noneLabel}
       </label>
     </fieldset>
+  );
+}
+
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+/** Day, month by name, year: three big boxes that move on by themselves. Emits YYYY-MM-DD once it's a real date. */
+function DateParts({ id, value, onChange, showAge }: { id: string; value: string; onChange: (v: IntakeValue | undefined) => void; showAge: boolean }) {
+  const [initY, initM, initD] = /^d{4}-d{2}-d{2}$/.test(value) ? value.split('-') : ['', '', ''];
+  const [day, setDay] = useState(initD ? String(Number(initD)) : '');
+  const [month, setMonth] = useState(initM ? String(Number(initM)) : '');
+  const [year, setYear] = useState(initY);
+  const monthRef = useRef<HTMLSelectElement>(null);
+  const yearRef = useRef<HTMLInputElement>(null);
+  const iso = (d: string, m: string, y: string) => {
+    const dn = Number(d), mn = Number(m), yn = Number(y);
+    if (!dn || !mn || y.length !== 4) return undefined;
+    const date = new Date(Date.UTC(yn, mn - 1, dn));
+    if (date.getUTCDate() !== dn || date.getUTCMonth() !== mn - 1) return undefined;
+    return `${y}-${String(mn).padStart(2, '0')}-${String(dn).padStart(2, '0')}`;
+  };
+  const emit = (d: string, m: string, y: string) => onChange(iso(d, m, y));
+  const complete = iso(day, month, year);
+  const age = complete && showAge ? ageOn(complete, localDate(new Date())) : null;
+  return (
+    <div className="date-parts">
+      <label className="date-parts__day">
+        <span>Day</span>
+        <input
+          inputMode="numeric"
+          autoComplete={showAge ? 'bday-day' : 'off'}
+          placeholder="DD"
+          maxLength={2}
+          value={day}
+          aria-label="Day"
+          onChange={(e) => {
+            const d = e.target.value.replace(/D/g, '').slice(0, 2);
+            setDay(d);
+            emit(d, month, year);
+            if (d.length === 2 || Number(d) > 3) monthRef.current?.focus();
+          }}
+        />
+      </label>
+      <label className="date-parts__month">
+        <span>Month</span>
+        <select
+          ref={monthRef}
+          autoComplete={showAge ? 'bday-month' : 'off'}
+          value={month}
+          aria-label="Month"
+          onChange={(e) => {
+            setMonth(e.target.value);
+            emit(day, e.target.value, year);
+            if (e.target.value) yearRef.current?.focus();
+          }}
+        >
+          <option value="">Month</option>
+          {MONTHS.map((m, i) => (
+            <option key={m} value={String(i + 1)}>
+              {m}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="date-parts__year">
+        <span>Year</span>
+        <input
+          ref={yearRef}
+          inputMode="numeric"
+          autoComplete={showAge ? 'bday-year' : 'off'}
+          placeholder="YYYY"
+          maxLength={4}
+          value={year}
+          aria-label="Year"
+          id={`${id}-year`}
+          onChange={(e) => {
+            const y = e.target.value.replace(/D/g, '').slice(0, 4);
+            setYear(y);
+            emit(day, month, y);
+          }}
+        />
+      </label>
+      {age !== null && age >= 0 && <span className="date-parts__age">You’re {age}.</span>}
+      {day && month && year.length === 4 && !complete && <span className="date-parts__age date-parts__age--bad">That date doesn’t exist. Check the day.</span>}
+    </div>
   );
 }

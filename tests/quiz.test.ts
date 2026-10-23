@@ -23,9 +23,9 @@ describe('Find your Prick quiz', () => {
   it('lets feelings pull the match across goals', () => {
     const a = 'Weight & Body';
     const b = 'Energy, Sleep & Recovery';
-    const base = { goals: [a, b], hooks: { [a]: 'total-body-reset', [b]: 'deep-sleep-rebuild' } };
+    const base = { goals: [a, b], hooks: { [a]: 'craving-control', [b]: 'deep-sleep-rebuild' } };
     expect(results({ ...base, feelings: ['Rested', 'Rebuilt'] })[0].id).toBe('deep-sleep-rebuild');
-    expect(results({ ...base, feelings: ['More in control', 'Less stuck'] })[0].id).toBe('total-body-reset');
+    expect(results({ ...base, feelings: ['Quieter', 'Calmer'] })[0].id).toBe('craving-control');
   });
 
   it('asks a tie-breaker when the top two are close, and it settles them', () => {

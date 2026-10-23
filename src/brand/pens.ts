@@ -134,7 +134,6 @@ export function coloursFor(hero: string): PenColours {
 
 /** Art direction only: which painted motif each pen wears. */
 const BOTANICALS: Record<string, Botanical> = {
-  'total-body-reset': 'citrus',
   'craving-control': 'berry',
   'body-sculpt': 'lavender',
   'slow-and-steady': 'daisy',
@@ -156,7 +155,6 @@ const BOTANICALS: Record<string, Botanical> = {
 
 /** Card photographs (AI-generated in Canva), served from public/cards. Decoration only. */
 const CARD_IMAGES: Record<string, string> = {
-  'total-body-reset': '/cards/total-body-reset.jpg',
   'craving-control': '/cards/craving-control.jpg',
   'body-sculpt': '/cards/body-sculpt.jpg',
   'the-glow-up': '/cards/the-glow-up.jpg',
@@ -225,7 +223,7 @@ export function sortRange<T extends Pick<Treatment, 'slug' | 'name'>>(items: T[]
 
 /** Shop filters and quiz first step, in character-sheet order. */
 export const CATEGORIES: { name: string; choice: string; colour: string }[] = [
-  { name: 'Weight & Body', choice: 'I want to transform my body', colour: PEN_BRANDS['total-body-reset'].colours.main },
+  { name: 'Weight & Body', choice: 'I want to transform my body', colour: '#FF6A21' },
   { name: 'Appearance & Skin', choice: 'I want to love what I see', colour: PEN_BRANDS['the-glow-up'].colours.main },
   { name: 'Energy, Sleep & Recovery', choice: 'I want more energy, sleep or recovery', colour: PEN_BRANDS['deep-sleep-rebuild'].colours.main },
   { name: 'Hormones, Intimacy & Mind', choice: 'I want to feel more like me', colour: PEN_BRANDS['sharp-mind'].colours.main },

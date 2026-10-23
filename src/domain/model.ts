@@ -67,6 +67,7 @@ export const COLLECTIONS = [
   'inventory',
   'screeningDrafts',
   'repeatDeliveries',
+  'penReleases',
 ] as const;
 export type CollectionName = (typeof COLLECTIONS)[number];
 
@@ -102,6 +103,7 @@ export const MEMBER_COLLECTIONS = [
   'operationalProfiles',
   'screeningDrafts',
   'repeatDeliveries',
+  'penReleases',
 ] as const satisfies readonly CollectionName[];
 export type MemberCollectionName = (typeof MEMBER_COLLECTIONS)[number];
 
@@ -589,6 +591,36 @@ export interface CareTeam {
   clinicianIds: string[];
 }
 
+/**
+ * Created when a clinician approves a pen: what the team needs to send it,
+ * and nothing from the screening. Admin and operations see these; they
+ * never see health answers.
+ */
+export interface PenRelease {
+  id: string;
+  memberId: string;
+  approvalId: string;
+  treatmentId: string;
+  treatmentName: string;
+  memberName: string;
+  phone?: string;
+  email?: string;
+  /** Snapshot of the saved delivery address at approval, if there was one. */
+  deliveryAddress?: Address;
+  quantity: number;
+  /** As it goes on the label, e.g. "0.25 mg, every Monday". */
+  dose: string;
+  instructions: string;
+  startDate: string;
+  approvedBy: string;
+  approvedByName: string;
+  approvedAt: string;
+  status: 'TO_SEND' | 'SENT';
+  sentAt?: string;
+  sentBy?: string;
+  courierReference?: string;
+}
+
 export interface ProviderAssignment {
   id: string;
   memberId: string;
@@ -762,6 +794,7 @@ export interface CollectionTypes {
   inventory: InventoryRecord;
   screeningDrafts: ScreeningDraft;
   repeatDeliveries: RepeatDelivery;
+  penReleases: PenRelease;
 }
 
 export type Store = { [K in CollectionName]: Record<string, CollectionTypes[K]> };
@@ -1020,6 +1053,7 @@ export function visible(store: Store, actor: Actor): Store {
       return out;
     }
     case 'OPERATIONS': {
+      out.penReleases = { ...store.penReleases };
       out.operationalProfiles = { ...store.operationalProfiles };
       out.orders = { ...store.orders };
       out.orderItems = { ...store.orderItems };
@@ -1049,6 +1083,7 @@ export function visible(store: Store, actor: Actor): Store {
       return out;
     }
     case 'SUPER_ADMIN': {
+      out.penReleases = { ...store.penReleases };
       out.treatments = { ...store.treatments };
       out.inventory = { ...store.inventory };
       out.operationalProfiles = { ...store.operationalProfiles };

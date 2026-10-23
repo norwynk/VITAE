@@ -19,7 +19,7 @@ const treatment = (id: string) => store.treatments[`trt-${id}`];
 
 describe('range', () => {
   it('has every product from the character sheet, in the catalogue and the brand layer', () => {
-    expect(RANGE.products).toHaveLength(18);
+    expect(RANGE.products).toHaveLength(17);
     for (const p of RANGE.products) {
       expect(treatment(p.id)?.name).toBe(p.name);
       expect(PEN_BRANDS[p.id]).toBeDefined();
@@ -127,8 +127,8 @@ describe('branded weight pens', () => {
       const front = [t.name, b.penLabel, b.hook, b.outcome, feelingLine(b), b.transformation].join(' ');
       expect(front).not.toMatch(/ozempic|mounjaro/i);
     }
-    expect(treatment('total-body-reset').clinicalDescription).toBe('');
-    expect(treatment('total-body-reset').productTruth?.brandName).toBeUndefined();
+    expect(treatment('craving-control').clinicalDescription).toBe('');
+    expect(treatment('craving-control').productTruth?.brandName).toBeUndefined();
   });
 });
 

@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { type IntakeAnswers, NONE, medsText } from '@/domain/intake';
+import { type IntakeAnswers, NONE, isRepeatRoute, medsText } from '@/domain/intake';
 import { MENOPAUSE_STAGES, SA_PROVINCES, type Treatment } from '@/domain/model';
 import { groupsFor } from '@/domain/penQuestions';
 import { useScreening } from '@/hooks/useScreening';
@@ -49,6 +49,7 @@ export function FinishScreening() {
     .map((slug) => Object.values(workspace.store.treatments).find((t) => t.slug === slug))
     .filter((t): t is Treatment => Boolean(t));
   const female = s(a, 'sex') === 'Female';
+  const repeat = isRepeatRoute(a);
 
   return (
     <form
@@ -79,7 +80,10 @@ export function FinishScreening() {
               city: s(a, 'city'),
             },
             body: { heightCm: Number(s(a, 'heightCm')), weightKg: Number(s(a, 'weightKg')) },
-            goals: { goals: list(a, 'goals'), motivation: s(a, 'reason').slice(0, 1000) },
+            // The repeat-script route skips goals and lifestyle: it's about verifying an existing protocol.
+            goals: repeat
+              ? { goals: ['Repeat an existing script'], motivation: s(a, 'protocol').slice(0, 1000) }
+              : { goals: list(a, 'goals'), motivation: s(a, 'reason').slice(0, 1000) },
             health: {
               conditions: list(a, 'conditions').slice(0, 30),
               medications: medsText(a.medications),
@@ -99,13 +103,17 @@ export function FinishScreening() {
                   }
                 : {}),
             },
-            lifestyle: {
-              activityLevel: ACTIVITY[s(a, 'activity') as keyof typeof ACTIVITY] ?? 'LIGHT',
-              sleepHours: Number(s(a, 'sleepHours')),
-              smoking: s(a, 'smoking') === 'Yes',
-              alcoholUnitsPerWeek: s(a, 'alcohol') === 'None' ? 0 : Math.round(Number(s(a, 'alcoholUnits') || 0)),
-              diet: diet(a),
-            },
+            ...(repeat
+              ? {}
+              : {
+                  lifestyle: {
+                    activityLevel: ACTIVITY[s(a, 'activity') as keyof typeof ACTIVITY] ?? 'LIGHT',
+                    sleepHours: Number(s(a, 'sleepHours')),
+                    smoking: s(a, 'smoking') === 'Yes',
+                    alcoholUnitsPerWeek: s(a, 'alcohol') === 'None' ? 0 : Math.round(Number(s(a, 'alcoholUnits') || 0)),
+                    diet: diet(a),
+                  },
+                }),
             testingInterest: s(a, 'testingInterest') === 'Yes',
             penAnswers,
             intake: a,

@@ -109,7 +109,7 @@ function approvalPlan(overrides: Record<string, unknown> = {}) {
 /** New member onboarded, requested metabolic pen, clinician approved. */
 function approved(mode: 'demo' | 'live' = 'demo') {
   let store = onboarded();
-  const req = run(store, member, { type: 'request', treatmentId: 'trt-total-body-reset' }, mode);
+  const req = run(store, member, { type: 'request', treatmentId: 'trt-craving-control' }, mode);
   store = req.store;
   const rev = run(
     store,
@@ -132,7 +132,7 @@ function approved(mode: 'demo' | 'live' = 'demo') {
 function makePurchasable(store: Store): Store {
   return run(store, admin, {
     type: 'catalogue',
-    treatmentId: 'trt-total-body-reset',
+    treatmentId: 'trt-craving-control',
     changes: { regulatoryStatus: 'VERIFIED', regulatoryReference: 'DEMO-REG-0001', purchasable: true },
   }).store;
 }
@@ -263,18 +263,18 @@ describe('screening drafts', () => {
 
 describe('requests and review', () => {
   it('blocks requests before onboarding, for hidden pathways and duplicates', () => {
-    expectError(() => run(createFixtureStore(NOW), member, { type: 'request', treatmentId: 'trt-total-body-reset' }), 'PRECONDITION');
+    expectError(() => run(createFixtureStore(NOW), member, { type: 'request', treatmentId: 'trt-craving-control' }), 'PRECONDITION');
     let store = onboarded();
     store.treatments['trt-the-glow-up'].public = false;
     expectError(() => run(store, member, { type: 'request', treatmentId: 'trt-the-glow-up' }), 'NOT_FOUND');
-    store = run(store, member, { type: 'request', treatmentId: 'trt-total-body-reset' }).store;
+    store = run(store, member, { type: 'request', treatmentId: 'trt-craving-control' }).store;
     expect(store.operationalProfiles[NEW].openRequestCount).toBe(1);
-    expectError(() => run(store, member, { type: 'request', treatmentId: 'trt-total-body-reset' }), 'CONFLICT');
+    expectError(() => run(store, member, { type: 'request', treatmentId: 'trt-craving-control' }), 'CONFLICT');
   });
 
   it('only lets the assigned clinician review, with a future review date', () => {
     let store = onboarded();
-    const req = run(store, member, { type: 'request', treatmentId: 'trt-total-body-reset' });
+    const req = run(store, member, { type: 'request', treatmentId: 'trt-craving-control' });
     store = req.store;
     const review = {
       type: 'review' as const,
@@ -295,7 +295,7 @@ describe('requests and review', () => {
 
   it('requires a complete intake assessment', () => {
     let store = onboarded();
-    const req = run(store, member, { type: 'request', treatmentId: 'trt-total-body-reset' });
+    const req = run(store, member, { type: 'request', treatmentId: 'trt-craving-control' });
     store = req.store;
     for (const a of Object.values(store.healthAssessments)) if (a.memberId === NEW) a.status = 'INCOMPLETE';
     expectError(
@@ -326,7 +326,7 @@ describe('requests and review', () => {
 
   it('a new approval supersedes the previous one and stops its reminders', () => {
     const first = approved();
-    let store = run(first.store, member, { type: 'request', treatmentId: 'trt-total-body-reset' }).store;
+    let store = run(first.store, member, { type: 'request', treatmentId: 'trt-craving-control' }).store;
     const reqId = Object.values(store.treatmentRequests).find((r) => r.status === 'OPEN')!.id;
     const second = run(store, clinician, {
       type: 'review',
@@ -345,7 +345,7 @@ describe('requests and review', () => {
 
   it('validates approval details and alternatives', () => {
     let store = onboarded();
-    const req = run(store, member, { type: 'request', treatmentId: 'trt-total-body-reset' });
+    const req = run(store, member, { type: 'request', treatmentId: 'trt-craving-control' });
     store = req.store;
     const base = { type: 'review' as const, requestId: req.resultId!, memberId: NEW, note: 'n', reviewDate: addDays(TODAY, 5) };
     expectError(() => run(store, clinician, { ...base, decision: 'APPROVED' }), 'INVALID', /Approval details/);
@@ -353,7 +353,7 @@ describe('requests and review', () => {
     expectError(() => run(store, clinician, { ...base, decision: 'DECLINED', approval: approvalPlan() }), 'INVALID');
     expectError(() => run(store, clinician, { ...base, decision: 'ALTERNATIVE_RECOMMENDED' }), 'INVALID');
     expectError(
-      () => run(store, clinician, { ...base, decision: 'ALTERNATIVE_RECOMMENDED', alternativeTreatmentId: 'trt-total-body-reset' }),
+      () => run(store, clinician, { ...base, decision: 'ALTERNATIVE_RECOMMENDED', alternativeTreatmentId: 'trt-craving-control' }),
       'INVALID',
     );
     const alt = run(store, clinician, { ...base, decision: 'ALTERNATIVE_RECOMMENDED', alternativeTreatmentId: 'trt-the-glow-up' }).store;
@@ -399,7 +399,7 @@ describe('adherence and reminders', () => {
     expectError(() => run(store, member, { type: 'notificationTime', reminderId: reminder.id, time: '25:00' }), 'INVALID');
     expectError(() => run(store, established, { type: 'notificationTime', reminderId: reminder.id, time: '09:00' }), 'NOT_FOUND');
     // Members have no command that edits frequency.
-    expectError(() => run(store, member, { type: 'catalogue', treatmentId: 'trt-total-body-reset', changes: {} }), 'FORBIDDEN');
+    expectError(() => run(store, member, { type: 'catalogue', treatmentId: 'trt-craving-control', changes: {} }), 'FORBIDDEN');
   });
 
   it('decides reminders from approval, schedule, time and adherence', () => {
@@ -455,40 +455,40 @@ describe('delivery address and checkout', () => {
 
   it('blocks checkout for the unverified, non-purchasable seed treatment', () => {
     const { store } = approved();
-    expectError(() => run(store, member, { type: 'checkout', treatmentId: 'trt-total-body-reset', quantity: 1, address }), 'PRECONDITION');
-    expect(purchaseBlocks(store, NEW, store.treatments['trt-total-body-reset'], 1, TODAY)).toEqual(['NOT_PURCHASABLE', 'NOT_VERIFIED']);
+    expectError(() => run(store, member, { type: 'checkout', treatmentId: 'trt-craving-control', quantity: 1, address }), 'PRECONDITION');
+    expect(purchaseBlocks(store, NEW, store.treatments['trt-craving-control'], 1, TODAY)).toEqual(['NOT_PURCHASABLE', 'NOT_VERIFIED']);
   });
 
   it('requires a current approval with enough quantity, stock and an address', () => {
     let store = makePurchasable(onboarded());
-    expectError(() => run(store, member, { type: 'checkout', treatmentId: 'trt-total-body-reset', quantity: 1, address }), 'PRECONDITION', /approval/);
+    expectError(() => run(store, member, { type: 'checkout', treatmentId: 'trt-craving-control', quantity: 1, address }), 'PRECONDITION', /approval/);
     store = makePurchasable(approved().store);
-    expectError(() => run(store, member, { type: 'checkout', treatmentId: 'trt-total-body-reset', quantity: 3, address }), 'PRECONDITION', /quantity/);
-    expectError(() => run(store, member, { type: 'checkout', treatmentId: 'trt-total-body-reset', quantity: 1 }), 'INVALID', /address/);
-    expectError(() => run(store, member, { type: 'checkout', treatmentId: 'trt-total-body-reset', quantity: 7, address }), 'INVALID');
+    expectError(() => run(store, member, { type: 'checkout', treatmentId: 'trt-craving-control', quantity: 3, address }), 'PRECONDITION', /quantity/);
+    expectError(() => run(store, member, { type: 'checkout', treatmentId: 'trt-craving-control', quantity: 1 }), 'INVALID', /address/);
+    expectError(() => run(store, member, { type: 'checkout', treatmentId: 'trt-craving-control', quantity: 7, address }), 'INVALID');
     const lowStock = structuredClone(store);
-    lowStock.inventory['PRK-TOTAL-BODY-RESET'].onHand = 1;
-    expectError(() => run(lowStock, member, { type: 'checkout', treatmentId: 'trt-total-body-reset', quantity: 2, address }), 'PRECONDITION', /stock/);
+    lowStock.inventory['PRK-CRAVING-CONTROL'].onHand = 1;
+    expectError(() => run(lowStock, member, { type: 'checkout', treatmentId: 'trt-craving-control', quantity: 2, address }), 'PRECONDITION', /stock/);
   });
 
   it('demo checkout simulates payment and consumes stock and approval quantity', () => {
     const { store: s0, approvalId } = approved();
     let store = makePurchasable(s0);
     store = run(store, member, { type: 'deliveryAddress', address }).store;
-    const res = run(store, member, { type: 'checkout', treatmentId: 'trt-total-body-reset', quantity: 2 });
+    const res = run(store, member, { type: 'checkout', treatmentId: 'trt-craving-control', quantity: 2 });
     const order = res.store.orders[res.resultId!];
     expect(order).toMatchObject({ status: 'PAID', simulated: true, quantity: 2, totalCents: 379_800 });
     expect(order.deliveryAddress).toEqual(address);
     expect(Object.values(res.store.payments)[0]).toMatchObject({ provider: 'DEMO_SIMULATION', status: 'SIMULATED_PAID' });
     expect(Object.values(res.store.orderItems)).toHaveLength(1);
-    expect(res.store.inventory['PRK-TOTAL-BODY-RESET'].reserved).toBe(2);
+    expect(res.store.inventory['PRK-CRAVING-CONTROL'].reserved).toBe(2);
     expect(res.store.approvedTreatments[approvalId].remainingQuantity).toBe(0);
-    expectError(() => run(res.store, member, { type: 'checkout', treatmentId: 'trt-total-body-reset', quantity: 1 }), 'PRECONDITION');
+    expectError(() => run(res.store, member, { type: 'checkout', treatmentId: 'trt-craving-control', quantity: 1 }), 'PRECONDITION');
   });
 
   it('live checkout is payment pending and never claims payment', () => {
     const store = makePurchasable(approved('live').store);
-    const res = run(store, member, { type: 'checkout', treatmentId: 'trt-total-body-reset', quantity: 1, address }, 'live');
+    const res = run(store, member, { type: 'checkout', treatmentId: 'trt-craving-control', quantity: 1, address }, 'live');
     expect(res.store.orders[res.resultId!]).toMatchObject({ status: 'PAYMENT_PENDING', simulated: false });
     expect(Object.values(res.store.payments)[0]).toMatchObject({ provider: 'NONE', status: 'AWAITING_PROVIDER' });
   });
@@ -513,7 +513,7 @@ describe('delivery address and checkout', () => {
 describe('orders', () => {
   function paidOrder(mode: 'demo' | 'live' = 'demo') {
     const store = makePurchasable(approved(mode).store);
-    const res = run(store, member, { type: 'checkout', treatmentId: 'trt-total-body-reset', quantity: 1, address }, mode);
+    const res = run(store, member, { type: 'checkout', treatmentId: 'trt-craving-control', quantity: 1, address }, mode);
     return { store: res.store, orderId: res.resultId! };
   }
 
@@ -528,7 +528,7 @@ describe('orders', () => {
     expectError(() => move(ops, 'DISPENSED'), 'FORBIDDEN');
     expectError(() => move(admin, 'DISPENSED'), 'FORBIDDEN');
     store = move(fulfilment, 'DISPENSED').store;
-    expect(store.inventory['PRK-TOTAL-BODY-RESET']).toMatchObject({ onHand: 19, reserved: 0 });
+    expect(store.inventory['PRK-CRAVING-CONTROL']).toMatchObject({ onHand: 19, reserved: 0 });
     expect(store.shipments[`shp_${orderId}`].status).toBe('READY');
     store = move(fulfilment, 'SHIPPED').store;
     store = move(ops, 'DELIVERED').store;
@@ -541,7 +541,7 @@ describe('orders', () => {
     const { store, orderId } = paidOrder('live');
     expectError(() => run(store, ops, { type: 'orderStatus', orderId, memberId: NEW, status: 'PAID' }), 'CONFLICT');
     const cancelled = run(store, ops, { type: 'orderStatus', orderId, memberId: NEW, status: 'CANCELLED' }, 'live').store;
-    expect(cancelled.inventory['PRK-TOTAL-BODY-RESET'].reserved).toBe(0);
+    expect(cancelled.inventory['PRK-CRAVING-CONTROL'].reserved).toBe(0);
     expect(Object.values(cancelled.approvedTreatments).find((a) => a.memberId === NEW)!.remainingQuantity).toBe(2);
     expect(Object.values(cancelled.payments)[0].status).toBe('VOID');
   });
@@ -608,20 +608,20 @@ describe('messages, notes, check-ins and follow-ups', () => {
 describe('catalogue', () => {
   it('requires verification and a real reference to make a treatment purchasable', () => {
     const store = createFixtureStore(NOW);
-    expectError(() => run(store, admin, { type: 'catalogue', treatmentId: 'trt-total-body-reset', changes: { purchasable: true } }), 'PRECONDITION', /verified/);
+    expectError(() => run(store, admin, { type: 'catalogue', treatmentId: 'trt-craving-control', changes: { purchasable: true } }), 'PRECONDITION', /verified/);
     for (const ref of ['', 'TBD', 'n/a', '12345']) {
       expectError(
         () =>
           run(store, admin, {
             type: 'catalogue',
-            treatmentId: 'trt-total-body-reset',
+            treatmentId: 'trt-craving-control',
             changes: { purchasable: true, regulatoryStatus: 'VERIFIED', regulatoryReference: ref },
           }),
         'PRECONDITION',
       );
     }
-    expectError(() => run(store, ops, { type: 'catalogue', treatmentId: 'trt-total-body-reset', changes: { name: 'x' } }), 'FORBIDDEN');
-    expectError(() => run(store, clinician, { type: 'catalogue', treatmentId: 'trt-total-body-reset', changes: { name: 'x' } }), 'FORBIDDEN');
+    expectError(() => run(store, ops, { type: 'catalogue', treatmentId: 'trt-craving-control', changes: { name: 'x' } }), 'FORBIDDEN');
+    expectError(() => run(store, clinician, { type: 'catalogue', treatmentId: 'trt-craving-control', changes: { name: 'x' } }), 'FORBIDDEN');
   });
 
   it('creates private, inactive, unverified pathways with a zero-stock SKU', () => {
@@ -643,10 +643,10 @@ describe('catalogue', () => {
 
   it('never lets stock fall below reserved units', () => {
     const store = makePurchasable(approved().store);
-    const res = run(store, member, { type: 'checkout', treatmentId: 'trt-total-body-reset', quantity: 2, address });
-    expectError(() => run(res.store, admin, { type: 'stockAdjust', sku: 'PRK-TOTAL-BODY-RESET', onHand: 1 }), 'INVALID');
-    expect(run(res.store, ops, { type: 'stockAdjust', sku: 'PRK-TOTAL-BODY-RESET', onHand: 2 }).store.inventory['PRK-TOTAL-BODY-RESET'].onHand).toBe(2);
-    expectError(() => run(res.store, member, { type: 'stockAdjust', sku: 'PRK-TOTAL-BODY-RESET', onHand: 50 }), 'FORBIDDEN');
+    const res = run(store, member, { type: 'checkout', treatmentId: 'trt-craving-control', quantity: 2, address });
+    expectError(() => run(res.store, admin, { type: 'stockAdjust', sku: 'PRK-CRAVING-CONTROL', onHand: 1 }), 'INVALID');
+    expect(run(res.store, ops, { type: 'stockAdjust', sku: 'PRK-CRAVING-CONTROL', onHand: 2 }).store.inventory['PRK-CRAVING-CONTROL'].onHand).toBe(2);
+    expectError(() => run(res.store, member, { type: 'stockAdjust', sku: 'PRK-CRAVING-CONTROL', onHand: 50 }), 'FORBIDDEN');
   });
 });
 
@@ -673,7 +673,7 @@ describe('visibility projection', () => {
   const { store } = approved();
   const withOrder = (() => {
     const s = makePurchasable(store);
-    return run(s, member, { type: 'checkout', treatmentId: 'trt-total-body-reset', quantity: 1, address }).store;
+    return run(s, member, { type: 'checkout', treatmentId: 'trt-craving-control', quantity: 1, address }).store;
   })();
 
   it('members see only their own records', () => {
@@ -780,10 +780,10 @@ describe('On repeat', () => {
     const a = approved();
     let store = makePurchasable(a.store);
     store = run(store, member, { type: 'deliveryAddress', address }).store;
-    store = run(store, member, { type: 'checkout', treatmentId: 'trt-total-body-reset', quantity: 1 }).store;
+    store = run(store, member, { type: 'checkout', treatmentId: 'trt-craving-control', quantity: 1 }).store;
     return { store, approvalId: a.approvalId };
   }
-  const start = (store: Store) => run(store, member, { type: 'repeat', action: 'start', treatmentId: 'trt-total-body-reset' });
+  const start = (store: Store) => run(store, member, { type: 'repeat', action: 'start', treatmentId: 'trt-craving-control' });
   const ordersFor = (store: Store) => Object.values(store.orders).filter((o) => o.memberId === NEW).length;
 
   it('starts only after a first order, once per pen, with the check-in ten days before the pen runs out', () => {
@@ -924,5 +924,49 @@ describe('preparatory questionnaire', () => {
     expectError(bad({ medications: [{ name: '', dose: '', frequency: '', reason: '' }] }), 'INVALID', /name/);
     expectError(bad({ stressResponse: ['1', '1', '2', '3', '4', '5'] }), 'INVALID', /each number once/);
     expectError(bad({ heightCm: '20' }), 'INVALID', /Height/);
+  });
+});
+
+describe('approval releases the pen to the team', () => {
+  it('creates a dispatch record with pen, quantity and dose, and nothing from the screening', () => {
+    const { store, approvalId } = approved();
+    const releases = Object.values(store.penReleases);
+    expect(releases).toHaveLength(1);
+    const r = releases[0];
+    expect(r).toMatchObject({ approvalId, treatmentName: 'Craving Control', quantity: 2, status: 'TO_SEND', memberId: NEW });
+    expect(r.dose).toMatch(/every day/i);
+    expect(JSON.stringify(r)).not.toMatch(/conditions|medications|allergies|intake/i);
+  });
+
+  it('admin and operations see releases but never health records', () => {
+    const { store } = approved();
+    for (const who of [admin, ops]) {
+      const v = visible(store, who);
+      expect(Object.keys(v.penReleases)).toHaveLength(1);
+      expect(v.healthAssessments).toEqual({});
+      expect(v.medicalHistories).toEqual({});
+      expect(v.treatmentRequests).toEqual({});
+      expect(v.clinicalNotes).toEqual({});
+    }
+  });
+
+  it('only admin or operations mark it sent, once, and the member is told', () => {
+    const { store } = approved();
+    const r = Object.values(store.penReleases)[0];
+    const cmd = { type: 'releaseSent' as const, memberId: NEW, releaseId: r.id, courierReference: 'TRK-1' };
+    expectError(() => run(store, member, cmd), 'FORBIDDEN');
+    expectError(() => run(store, clinician, cmd), 'FORBIDDEN');
+    const sent = run(store, admin, cmd).store;
+    expect(sent.penReleases[r.id]).toMatchObject({ status: 'SENT', courierReference: 'TRK-1', sentBy: admin.uid });
+    expect(Object.values(sent.notifications).some((n) => n.memberId === NEW && /on its way/.test(n.title))).toBe(true);
+    expectError(() => run(sent, ops, cmd), 'CONFLICT');
+  });
+
+  it('the repeat-script route skips lifestyle and still onboards', () => {
+    const base = onboardCommand() as Record<string, unknown>;
+    const { lifestyle: _lifestyle, ...withoutLifestyle } = base;
+    const store = run(createFixtureStore(NOW), member, withoutLifestyle as CommandInput).store;
+    expect(store.members[NEW].onboardedAt).toBeDefined();
+    expect(store.lifestyleProfiles[NEW]).toBeUndefined();
   });
 });

@@ -19,7 +19,9 @@ export function FitMoment({
   flagged = [],
   needsLook,
   tooYoung,
+  repeat = false,
 }: {
+  repeat?: boolean;
   pens: Treatment[];
   goal?: Goal;
   firstName?: string;
@@ -36,11 +38,22 @@ export function FitMoment({
       style={first ? worldStyle(first.colours) : ({ '--accent': goal?.colour ?? 'var(--pink)' } as React.CSSProperties)}
       aria-labelledby="fit-title"
     >
-      <p className="eyebrow">{goal ? `Your route to ${goal.destination}` : 'Before you send it'}</p>
+      <p className="eyebrow">{repeat ? 'Repeat your script' : goal ? `Your route to ${goal.destination}` : 'Before you send it'}</p>
       {tooYoung ? (
         <>
           <h2 id="fit-title" className="display">We can&apos;t send this one.</h2>
           <p className="fit__lead">PRICK is only for adults aged 18 and over. Check your date of birth under About you.</p>
+        </>
+      ) : repeat ? (
+        <>
+          <h2 id="fit-title" className="display">
+            Your script is ready to send{you}.
+            <span className="serif-i">Your clinician verifies it before anything is released.</span>
+          </h2>
+          <p className="fit__lead">
+            They&apos;ll check your protocol and safety answers, and usually give you a quick call. Have a copy of your script
+            handy: they&apos;ll ask for it.
+          </p>
         </>
       ) : needsLook ? (
         <>

@@ -3,6 +3,7 @@ import { isNontrivialReference } from '@/domain/commands';
 import { type Treatment, REGULATORY_STATUSES, formatRand } from '@/domain/model';
 import { Badge, Card, Notice, fmtDateTime, formValues, humanise } from '../ui';
 import { useWorkspace } from '../workspace-context';
+import { PenReleases, TeamActivity } from './PenReleases';
 import { StockTable } from './StockTable';
 
 export function AdminHome() {
@@ -15,6 +16,9 @@ export function AdminHome() {
   return (
     <div className="stack">
       <h1>Administration</h1>
+      <p className="muted">You see who is where and what to send. Screening answers and clinical notes are only visible to the clinician.</p>
+      <PenReleases />
+      <TeamActivity />
       <Notice tone="warn">
         Only mark a treatment verified with a real registration reference you have checked. Purchasable requires
         verification, and the server enforces it.

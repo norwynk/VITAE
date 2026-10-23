@@ -15,10 +15,10 @@ test('home shows colour cards that flip to outcome, feeling and transformation',
   await page.goto('/');
   await expect(page.getByRole('heading', { name: /Not all pricks\s*are created equal\./i })).toBeVisible();
   await expect(page.getByText("Pens shown are fictional demo products and can't be bought yet.")).toBeVisible();
-  for (const name of ['Total Body Reset', 'Craving Control', 'Body Sculpt', 'The Glow Up', 'Skin Rewind', 'Skin Rewind Reserve']) {
+  for (const name of ['Slow & Steady', 'Craving Control', 'Body Sculpt', 'The Glow Up', 'Skin Rewind', 'Skin Rewind Reserve']) {
     await expect(page.getByRole('heading', { name, exact: true }).first()).toBeVisible();
   }
-  await expect(page.getByRole('link', { name: 'Meet all 18' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Meet all 17' })).toBeVisible();
   await expect(page.getByText('Designed for women.').first()).toBeVisible();
   await expect(page.getByRole('heading', { name: /A prick that\s*gets her\./ })).toBeVisible();
   await expect(page.getByRole('img', { name: 'Dr Kylee Montgomerie' })).toBeVisible();
@@ -59,9 +59,12 @@ test('home shows colour cards that flip to outcome, feeling and transformation',
 
 test('shop filters by category and the expanded view keeps the clinical gate', async ({ page }) => {
   await page.goto('/shop');
-  await expect(page.getByRole('button', { name: 'All (18)' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'All (17)' })).toBeVisible();
   await page.getByRole('button', { name: 'Weight & Body' }).click();
-  for (const name of ['Total Body Reset', 'Slow & Steady', 'Momentum']) await expect(page.getByRole('article', { name })).toBeVisible();
+  for (const name of ['Craving Control', 'Slow & Steady', 'Momentum']) await expect(page.getByRole('article', { name })).toBeVisible();
+  // Other weight options are a conversation, never a named product.
+  await expect(page.getByRole('article', { name: 'Speak to us about other options' })).toBeVisible();
+  await expect(page.getByText(/retatrutide/i)).toHaveCount(0);
   await page.getByRole('article', { name: 'Slow & Steady' }).getByRole('link', { name: 'View the pen' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Slow & Steady' })).toBeVisible();
   await expect(page.getByText(/This is Ozempic®: a once-a-week injection/)).toBeVisible();
@@ -156,10 +159,66 @@ test('quiz asks enough to match, and matches build "My pens"', async ({ page }) 
   // The questionnaire comes first, before any account, with the chosen pens.
   await page.getByRole('link', { name: 'Start your screening' }).click();
   await expect(page).toHaveURL(/\/start\?pen=deep-sleep-rebuild$/);
-  // It starts with the destination, already pointed at the pen's goal.
-  await expect(page.getByRole('heading', { name: /Where are you heading\?/ })).toBeVisible();
-  await expect(page.getByRole('radio', { name: /Sleep\. Recover\. Repeat\./ })).toHaveAttribute('aria-checked', 'true');
+  // First the fork (new, or repeating a script); the goal is known from the pens, so it isn't asked again.
+  await expect(page.getByRole('heading', { name: /first time with peptides/ })).toBeVisible();
+  await page.getByRole('radio', { name: 'I’m new to peptides' }).click();
+  await expect(page.getByRole('heading', { name: /Picture it\./ })).toBeVisible();
   await expect(page.getByText('Heading for: Sleep. Recover. Repeat.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Where are you heading\?/ })).toHaveCount(0);
+});
+
+test('without an account, My pens is their shortlist, and starting over really clears it', async ({ page }) => {
+  page.on('dialog', (d) => void d.accept());
+  await page.goto('/pens/the-glow-up');
+  await page.getByRole('button', { name: 'Add The Glow Up to my pens' }).first().click();
+  // My pens opens the shortlist, not a sign-in page.
+  await page.getByRole('link', { name: 'My pens (1)' }).first().click();
+  await expect(page).toHaveURL(/\/my-pens$/);
+  await expect(page.getByRole('heading', { name: 'Your shortlist.' })).toBeVisible();
+  await expect(page.getByText('The Glow Up', { exact: true })).toBeVisible();
+  // Into screening: the pen is confirmed, never sold to ("add more").
+  await page.getByRole('link', { name: 'Start my screening' }).click();
+  await page.getByRole('radio', { name: 'I’m new to peptides' }).click();
+  await expect(page.getByRole('heading', { name: /Picture it\./ })).toBeVisible();
+  await page.locator('[data-q="vision"] textarea').fill('Glowing.');
+  await page.getByRole('button', { name: 'Next' }).click();
+  // Starting over clears the answers and the pens.
+  await page.getByRole('button', { name: 'Clear my answers' }).click();
+  await expect(page.getByRole('link', { name: 'Account' }).first()).toBeAttached();
+  await expect(page.getByRole('link', { name: /My pens/ })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: /first time with peptides/ })).toBeVisible();
+  expect(await page.evaluate(() => [localStorage.getItem('prick:shortlist'), localStorage.getItem('prick:screening')])).toEqual(['[]', null]);
+});
+
+test('a pen chosen up front is confirmed in screening, not sold to', async ({ page }) => {
+  await page.goto('/start?pen=rapid-recovery');
+  await page.getByRole('radio', { name: 'I’m new to peptides' }).click();
+  await expect(page.getByRole('heading', { name: /Picture it\./ })).toBeVisible();
+  for (let i = 0; i < 5 && !(await page.getByRole('heading', { name: 'The pen you’re bringing.' }).isVisible()); i++) {
+    await page.getByRole('button', { name: 'Next' }).click().catch(() => {});
+    if (await page.getByText(/What would you like help with|What made you reach out/).first().isVisible()) {
+      const reason = page.locator('[data-q="reason"] textarea');
+      if (await reason.isVisible()) await reason.fill('Back to running.');
+    }
+  }
+  await expect(page.getByRole('heading', { name: 'The pen you’re bringing.' })).toBeVisible();
+  await expect(page.getByText('Rapid Recovery', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^All-Day Energy/ })).toHaveCount(0);
+  await expect(page.getByText(/Choose up to/)).toHaveCount(0);
+});
+
+test('people already on a protocol take the shorter repeat-script route', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Repeat my script' }).click();
+  await expect(page).toHaveURL(/\/start\?route=repeat$/);
+  await expect(page.getByRole('radio', { name: 'I already have a script' })).toHaveAttribute('aria-checked', 'true');
+  await page.getByRole('button', { name: 'Next' }).click();
+  // Straight to their script: no goal, no "picture it", no lifestyle or sleep stops.
+  await expect(page.getByRole('heading', { name: 'Your current script.' })).toBeVisible();
+  await expect(page.getByText(/Stop 1 of \d+ · Your script/)).toBeVisible();
+  const stops = Number((await page.locator('.route__meta').innerText()).match(/of (\d+)/)![1]);
+  expect(stops).toBeLessThanOrEqual(6);
+  await expect(page.getByLabel('Who prescribed it?')).toBeVisible();
 });
 
 test('full journey across roles', async ({ page }) => {
@@ -169,7 +228,8 @@ test('full journey across roles', async ({ page }) => {
   const pick = (q: string, option: string) => page.locator(`[data-q="${q}"]`).getByRole('button', { name: option, exact: true }).or(page.locator(`[data-q="${q}"]`).getByRole('radio', { name: option, exact: true })).click();
   const next = () => page.getByRole('button', { name: /^(Next|See where I stand)$/ }).click();
   await page.goto('/start');
-  // Stop 0: the destination. One tap, and the journey moves on.
+  // The fork: new to peptides. Then the destination. One tap each, and the journey moves on.
+  await page.getByRole('radio', { name: 'I’m new to peptides' }).click();
   await page.getByRole('radio', { name: /Lose the weight\./ }).click();
   await expect(page.getByRole('heading', { name: /Picture it\./ })).toBeVisible();
   await expect(page.getByText(/Why this matters:.*your goal weight/)).toBeVisible();
@@ -180,7 +240,12 @@ test('full journey across roles', async ({ page }) => {
     vision: () => page.locator('[data-q="vision"] textarea').fill('My jeans fit again.'),
     reason: () => page.locator('[data-q="reason"] textarea').fill('I want my energy back.'),
     firstName: () => page.getByLabel('First name').fill('Alex'),
-    dateOfBirth: () => page.getByLabel('Date of birth').fill('1990-01-15'),
+    dateOfBirth: async () => {
+      await page.getByLabel('Day').fill('15');
+      await page.getByLabel('Month').selectOption('1');
+      await page.getByLabel('Year').fill('1990');
+      await expect(page.getByText(/You’re \d+\./)).toBeVisible();
+    },
     sex: () => pick('sex', 'Female'),
     province: () => page.getByLabel('Province').selectOption('Western Cape'),
     city: () => page.getByLabel('City or town').fill('Cape Town'),
@@ -225,11 +290,11 @@ test('full journey across roles', async ({ page }) => {
       }
     }
     // The pen picker: nothing chosen is an error, then pick one.
-    if (!seen.has('pens') && (await page.getByRole('heading', { name: 'Now, pack for the trip.' }).isVisible())) {
+    if (!seen.has('pens') && (await page.getByRole('heading', { name: 'Which pen brings you here?' }).isVisible())) {
       seen.add('pens');
       await next();
       await expect(page.getByText('Choose at least one pen, or let your clinician suggest one.')).toBeVisible();
-      await page.getByRole('button', { name: /^Total Body Reset/ }).click();
+      await page.getByRole('button', { name: /^Craving Control/ }).click();
     }
     // Health lists need an answer, even if that answer is "none".
     if (await page.locator('[data-q="conditions"]').isVisible() && !seen.has('checked-conditions')) {
@@ -266,7 +331,7 @@ test('full journey across roles', async ({ page }) => {
 
   // --- The chosen pen went to the clinician; save address; nothing orderable yet --
   const myPens = page.locator('section', { has: page.getByRole('heading', { name: 'My pens' }) });
-  await expect(myPens.getByText('Total Body Reset')).toBeVisible();
+  await expect(myPens.getByText('Craving Control')).toBeVisible();
   await expect(myPens.getByText('Waiting for your clinician')).toBeVisible();
 
   await page.getByRole('tab', { name: 'Orders' }).click();
@@ -295,28 +360,40 @@ test('full journey across roles', async ({ page }) => {
   const questionnaire = page.locator('section', { has: page.getByRole('heading', { name: 'Questionnaire' }) });
   await expect(questionnaire.getByText('I want my energy back.')).toBeVisible();
   await expect(questionnaire.getByText('Vitamin D')).toBeVisible();
-  const review = page.getByRole('form', { name: /Review Total Body Reset/ });
+  const review = page.getByRole('form', { name: /Review Craving Control/ });
   await review.getByLabel('Packs approved').fill('2');
   await review.getByLabel('Frequency').selectOption('DAILY');
   await review.getByLabel('Decision note').fill('Suitable for the fictional demo plan.');
-  await review.getByRole('button', { name: 'Record decision' }).click();
+  await review.getByRole('button', { name: 'Approve and release the pen' }).click();
   await expectToast(page, 'Decision recorded: Approved');
   await expect(page.getByText(/2\/2 packs left/)).toBeVisible();
 
-  // --- Super admin: verification gate, then demo catalogue setup -----------------
+  // --- Super admin: the approved pen is ready to send; the screening stays private --
   await switchRole(page, 'Super admin');
+  const release = page.getByRole('article', { name: /Release Craving Control for Alex Newby/ });
+  await expect(release.getByText('Craving Control × 2')).toBeVisible();
+  await expect(release.getByText(/every day/i)).toBeVisible();
+  await expect(page.getByText('I want my energy back.')).toHaveCount(0);
+  await expect(page.getByText('Vitamin D')).toHaveCount(0);
+  await expect(page.getByText(/sent a screening to the clinician/).first()).toBeVisible();
+  await release.getByLabel('Courier reference').fill('DEMO-COURIER-7');
+  await release.getByRole('button', { name: 'Mark as sent' }).click();
+  await expectToast(page, /Craving Control marked as sent/);
+  await expect(page.getByRole('article', { name: /Release Craving Control for Alex Newby/ })).toHaveCount(0);
+
+  // --- Super admin: verification gate, then demo catalogue setup -----------------
   const recovery = page.getByRole('form', { name: /Edit The Glow Up/ });
   await recovery.getByLabel('Purchasable').check();
   await recovery.getByRole('button', { name: /^Save/ }).click();
   await expectToast(page, /regulatorily verified/);
 
-  const metabolic = page.getByRole('form', { name: /Edit Total Body Reset/ });
+  const metabolic = page.getByRole('form', { name: /Edit Craving Control/ });
   await metabolic.getByLabel('Regulatory status').selectOption('VERIFIED');
   await metabolic.getByLabel('Registration reference').fill('DEMO-REG-0001');
   await metabolic.getByLabel('Purchasable').check();
   await metabolic.getByRole('button', { name: /^Save/ }).click();
   await expectToast(page, /updated/);
-  await expect(page.getByRole('form', { name: /Edit Total Body Reset/ }).locator('.badge', { hasText: /^Purchasable$/ })).toBeVisible();
+  await expect(page.getByRole('form', { name: /Edit Craving Control/ }).locator('.badge', { hasText: /^Purchasable$/ })).toBeVisible();
 
   // --- Member: adherence and simulated checkout ----------------------------------
   await switchRole(page, 'New member');
@@ -343,7 +420,7 @@ test('full journey across roles', async ({ page }) => {
   // --- On repeat after the first pen; stopping offers a pause first ---------------
   const repeat = page.locator('section', { has: page.getByRole('heading', { name: 'On repeat' }) });
   await repeat.getByRole('button', { name: 'Put on repeat' }).click();
-  await expectToast(page, 'Total Body Reset is on repeat');
+  await expectToast(page, 'Craving Control is on repeat');
   await expect(repeat.getByText(/Your check-in opens on/)).toBeVisible();
   await repeat.getByRole('button', { name: 'Stop repeat' }).click();
   await expect(repeat.getByText('Would a pause help instead?')).toBeVisible();
@@ -402,7 +479,7 @@ test('established member dashboard and blocked checkout', async ({ page }) => {
   await expect(page.locator('section', { has: page.getByRole('heading', { name: 'My pens' }) }).getByText('Approved').first()).toBeVisible();
   await page.getByRole('tab', { name: 'Plan' }).click();
   await expect(page.getByText(/Every day · valid until/)).toBeVisible();
-  // Total Body Reset was made purchasable in the journey above, but Sam has no saved address yet.
+  // Craving Control was made purchasable in the journey above, but Sam has no saved address yet.
   await page.getByRole('tab', { name: 'Orders' }).click();
   await expect(page.getByText('Save a delivery address before ordering.')).toBeVisible();
 });

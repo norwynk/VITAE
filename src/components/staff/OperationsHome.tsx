@@ -4,6 +4,7 @@ import { Thread } from '../member/MemberHome';
 import { Badge, Card, Empty, fmtDateTime, formValues, humanise } from '../ui';
 import { useWorkspace } from '../workspace-context';
 import { OrderTable } from './OrderTable';
+import { PenReleases } from './PenReleases';
 import { StockTable } from './StockTable';
 
 export function OperationsHome() {
@@ -18,6 +19,7 @@ export function OperationsHome() {
     <div className="stack">
       <h1>Operations</h1>
       <p className="muted">Workflow and order information only. Medical histories and clinical notes are not shown here.</p>
+      <PenReleases />
       <Card title="Members">
         <div className="table-wrap">
           <table>

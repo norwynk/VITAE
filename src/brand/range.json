@@ -9,28 +9,6 @@
   },
   "products": [
     {
-      "id": "total-body-reset",
-      "name": "Total Body Reset",
-      "category": "Weight & Body",
-      "hero_colour": "#FF6A21",
-      "active_ingredient": "Retatrutide",
-      "supplier_strength": "30 mg pen",
-      "front_hook": "A different chapter with your weight.",
-      "one_line_outcome": "A lighter, more in-control relationship with your body and weight goals.",
-      "feeling": [
-        "More capable",
-        "More in control",
-        "Less stuck"
-      ],
-      "transformation": "From feeling trapped in the same cycle to feeling like your body is finally moving in the direction you want.",
-      "product_class": "Investigational GIP/GLP-1/glucagon receptor agonist.",
-      "mechanism_summary": "Retatrutide is a single molecule designed to activate GIP, GLP-1 and glucagon receptors, pathways involved in appetite, glucose regulation and energy balance.",
-      "evidence_status": "Phase 3 clinical development. Public Phase 3 data report substantial weight loss in studied populations, but the molecule remains investigational.",
-      "regulatory_note": "Not currently approved by FDA and described by Lilly as investigational. Local South African legal and regulatory status must be checked before any public marketing or supply.",
-      "product_detail_copy": "A doctor-led weight-management pathway built around retatrutide. The customer-facing story should lead with control, momentum and a new chapter with weight, while the detail view explains the active ingredient, triple-agonist mechanism, investigational status and clinician-led screening.",
-      "clinical_content_status": "Ingredient and mechanism supported by public sources. Exact pen formulation, route, dosing and local legality require clinical/regulatory sign-off."
-    },
-    {
       "id": "craving-control",
       "name": "Craving Control",
       "category": "Weight & Body",

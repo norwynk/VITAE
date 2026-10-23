@@ -87,6 +87,7 @@ export async function loadWorkspace(db: Firestore, actor: Actor): Promise<Store>
     case 'OPERATIONS': {
       const opsTopics = [...OPERATIONS_TOPICS];
       await Promise.all([
+        r.get(db.collection('penReleases').orderBy('approvedAt', 'desc').limit(OPERATIONAL_LIMIT)).then((s) => put(store, 'penReleases', s)),
         loadAll(db, r, store, 'operationalProfiles', OPERATIONAL_LIMIT),
         loadAll(db, r, store, 'treatments'),
         loadAll(db, r, store, 'inventory'),
@@ -117,6 +118,7 @@ export async function loadWorkspace(db: Firestore, actor: Actor): Promise<Store>
     }
     case 'SUPER_ADMIN': {
       await Promise.all([
+        r.get(db.collection('penReleases').orderBy('approvedAt', 'desc').limit(OPERATIONAL_LIMIT)).then((s) => put(store, 'penReleases', s)),
         loadAll(db, r, store, 'treatments'),
         loadAll(db, r, store, 'inventory'),
         loadAll(db, r, store, 'operationalProfiles', OPERATIONAL_LIMIT),

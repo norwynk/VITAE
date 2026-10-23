@@ -226,6 +226,10 @@ function NextStep({ onGo }: { onGo: (tab: Tab) => void }) {
     title = "Today's dose.";
     body = `Log your ${treatmentName(store, approval.treatmentId)} dose once you've taken it.`;
     action = { label: 'Log it', tab: 'Plan' };
+  } else if (approval && !hasOrder && !salesOpen() && Object.values(store.penReleases).some((r) => r.approvalId === approval.id && r.status === 'SENT')) {
+    title = 'Your pen is on its way.';
+    body = `Your care team has sent your ${treatmentName(store, approval.treatmentId)}. Your plan and reminders are ready in the Plan tab.`;
+    action = { label: 'See your plan', tab: 'Plan' };
   } else if (approval && !hasOrder && !salesOpen()) {
     title = "You're approved.";
     body = `Your clinician approved ${treatmentName(store, approval.treatmentId)}. Your care team will be in touch to arrange your first pen.`;

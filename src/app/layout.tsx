@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
-import { Anton, Caveat, DM_Sans, Instrument_Serif } from 'next/font/google';
+import { Anton, Caveat, DM_Sans, Fraunces } from 'next/font/google';
 import { SERVICE_NAME, publicDataMode } from '@/config';
 import './globals.css';
 
 const display = Anton({ weight: '400', subsets: ['latin'], variable: '--font-display-loaded', display: 'swap' });
-const serif = Instrument_Serif({ weight: '400', style: ['normal', 'italic'], subsets: ['latin'], variable: '--font-serif-loaded', display: 'swap' });
+// Easy to read at any size, with a soft, characterful italic.
+const serif = Fraunces({ style: ['normal', 'italic'], subsets: ['latin'], variable: '--font-serif-loaded', display: 'swap' });
 const sans = DM_Sans({ subsets: ['latin'], variable: '--font-sans-loaded', display: 'swap' });
 const hand = Caveat({ subsets: ['latin'], variable: '--font-hand-loaded', display: 'swap' });
 

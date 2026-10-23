@@ -35,6 +35,7 @@ import {
   THREAD_TOPICS,
   activeAssignedMemberIds,
   addDays,
+  describeSchedule,
   ageOn,
   isApprovalCurrent,
   isScheduledOn,
@@ -164,7 +165,7 @@ const onboardSchema = z.object({
     smoking: z.boolean(),
     alcoholUnitsPerWeek: z.number().int().min(0).max(200),
     diet: text(500),
-  }),
+  }).optional(),
   testingInterest: z.boolean(),
   consents: consentFlags,
   /** The preparatory questionnaire; validated against domain/intake. */
@@ -373,6 +374,7 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('readNotification'), notificationId: id }),
   screeningDraftSchema,
   repeatSchema,
+  z.object({ type: z.literal('releaseSent'), memberId: id, releaseId: id, courierReference: text(80).optional() }),
 ]);
 
 export type Command = z.infer<typeof commandSchema>;
@@ -415,6 +417,7 @@ const COMMAND_ROLES: Record<CommandType, readonly Role[]> = {
   readNotification: ['MEMBER'],
   screeningDraft: ['MEMBER'],
   repeat: ['MEMBER'],
+  releaseSent: ['SUPER_ADMIN', 'OPERATIONS'],
 };
 
 export function allowedRoles(type: CommandType): readonly Role[] {
@@ -443,6 +446,7 @@ export const ORDER_TRANSITIONS: Record<OrderStatus, Partial<Record<OrderStatus, 
 export function commandMemberId(command: Command, actor: Actor): string | undefined {
   switch (command.type) {
     case 'review':
+    case 'releaseSent':
     case 'note':
     case 'nutrition':
     case 'followup':
@@ -866,7 +870,7 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
       const pregnancyOrBreastfeeding =
         health.pregnancyOrBreastfeeding || Boolean(health.reproductiveHealth?.pregnant || health.reproductiveHealth?.breastfeeding);
       store.medicalHistories[member.id] = { id: member.id, memberId: member.id, ...health, pregnancyOrBreastfeeding, updatedAt: at };
-      store.lifestyleProfiles[member.id] = { id: member.id, memberId: member.id, ...lifestyle, updatedAt: at };
+      if (lifestyle) store.lifestyleProfiles[member.id] = { id: member.id, memberId: member.id, ...lifestyle, updatedAt: at };
       const weightId = ctx.newId('meas');
       store.measurements[weightId] = {
         id: weightId,
@@ -1032,7 +1036,29 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
           createdBy: actor.uid,
           createdAt: at,
         };
-        targets.push(approvalId, regimenId, reminderId, followUpId);
+        // What the team needs to send the pen: never the screening answers.
+        const m = store.members[request.memberId];
+        const releaseId = ctx.newId('rel');
+        store.penReleases[releaseId] = {
+          id: releaseId,
+          memberId: request.memberId,
+          approvalId,
+          treatmentId: treatment.id,
+          treatmentName: treatment.name,
+          memberName: m ? `${m.firstName} ${m.lastName}`.trim() : 'Member',
+          ...(m?.phone ? { phone: m.phone } : {}),
+          ...(m?.email ? { email: m.email } : {}),
+          ...(m?.deliveryAddress ? { deliveryAddress: m.deliveryAddress } : {}),
+          quantity: plan.quantity,
+          dose: `${plan.dose} ${plan.doseUnit}, ${describeSchedule(plan.schedule).toLowerCase()}`,
+          instructions: plan.instructions,
+          startDate: plan.startDate,
+          approvedBy: actor.uid,
+          approvedByName: store.users[actor.uid]?.displayName || 'Your clinician',
+          approvedAt: at,
+          status: 'TO_SEND',
+        };
+        targets.push(approvalId, regimenId, reminderId, followUpId, releaseId);
         resultId = approvalId;
       } else if (command.approval) {
         fail('INVALID', 'Approval details are only accepted with an approval');
@@ -1048,6 +1074,23 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
       refreshOpenRequestCount(store, request.memberId);
       touchProfile(store, request.memberId, at);
       resultId ??= request.id;
+      break;
+    }
+
+    case 'releaseSent': {
+      const release = store.penReleases[command.releaseId];
+      if (!release || release.memberId !== command.memberId) fail('NOT_FOUND', 'Release not found');
+      if (release.status === 'SENT') fail('CONFLICT', 'This pen is already marked as sent');
+      Object.assign(release, {
+        status: 'SENT',
+        sentAt: at,
+        sentBy: actor.uid,
+        ...(command.courierReference ? { courierReference: command.courierReference } : {}),
+      });
+      targets.push(release.id);
+      targets.push(notify(store, ctx, release.memberId, 'ORDER', `Your ${release.treatmentName} is on its way`, 'Your care team has sent your pen. Open your dashboard for your plan.'));
+      touchProfile(store, release.memberId, at);
+      resultId = release.id;
       break;
     }
 

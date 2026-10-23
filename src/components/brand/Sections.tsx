@@ -5,7 +5,7 @@ import { PEN_BRANDS } from '@/brand/pens';
 import { Motif } from './Botanicals';
 import { PenStage } from './Pen';
 
-const FINALE = ['the-glow-up', 'total-body-reset', 'deep-sleep-rebuild', 'all-day-energy', 'sharp-mind', 'body-sculpt'].map((slug) => PEN_BRANDS[slug]);
+const FINALE = ['the-glow-up', 'slow-and-steady', 'deep-sleep-rebuild', 'all-day-energy', 'sharp-mind', 'body-sculpt'].map((slug) => PEN_BRANDS[slug]);
 
 export function EditorialStatement({ top, bottom, children }: { top: string; bottom: string; children?: ReactNode }) {
   return (
@@ -62,7 +62,7 @@ export function HowItWorks() {
 /** Decorative line-up for the "good days" band, fanned like a product shot. */
 const LINEUP = [
   { slug: 'the-glow-up', angle: -96, lift: '6%' },
-  { slug: 'total-body-reset', angle: -90, lift: '0%' },
+  { slug: 'slow-and-steady', angle: -90, lift: '0%' },
   { slug: 'body-sculpt', angle: -80, lift: '-6%' },
   { slug: 'all-day-energy', angle: -68, lift: '-2%' },
 ].map((p) => ({ ...p, brand: PEN_BRANDS[p.slug] }));
@@ -176,7 +176,7 @@ export function Reviews() {
 }
 
 export function SubscriptionPanel() {
-  const trio = [PEN_BRANDS['deep-sleep-rebuild'], PEN_BRANDS['the-glow-up'], PEN_BRANDS['total-body-reset']];
+  const trio = [PEN_BRANDS['deep-sleep-rebuild'], PEN_BRANDS['the-glow-up'], PEN_BRANDS['slow-and-steady']];
   const angles = [-72, -90, -108];
   return (
     <section className="section">

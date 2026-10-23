@@ -15,7 +15,7 @@ const DEEP_LINKS: Record<string, string> = {
   shop: '/shop',
   quiz: '/find-your-prick',
   'the-glow-up': '/pens/the-glow-up',
-  'total-body-reset': '/pens/total-body-reset',
+  'slow-and-steady': '/pens/slow-and-steady',
   'deep-sleep-rebuild': '/pens/deep-sleep-rebuild',
   'sharp-mind': '/pens/sharp-mind',
 };

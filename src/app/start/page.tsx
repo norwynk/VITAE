@@ -3,7 +3,10 @@ import { Questionnaire } from '@/components/screening/Questionnaire';
 
 export const metadata: Metadata = { title: 'Let’s get to know each other' };
 
-export default async function Start({ searchParams }: { searchParams: Promise<{ pen?: string | string[]; goal?: string | string[] }> }) {
-  const { pen, goal } = await searchParams;
-  return <Questionnaire initialPen={typeof pen === 'string' ? pen : undefined} initialGoal={typeof goal === 'string' ? goal : undefined} />;
+type Params = { pen?: string | string[]; goal?: string | string[]; route?: string | string[] };
+const one = (v: string | string[] | undefined) => (typeof v === 'string' ? v : undefined);
+
+export default async function Start({ searchParams }: { searchParams: Promise<Params> }) {
+  const { pen, goal, route } = await searchParams;
+  return <Questionnaire initialPen={one(pen)} initialGoal={one(goal)} initialRoute={one(route)} />;
 }

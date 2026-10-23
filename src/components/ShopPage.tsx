@@ -1,8 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
+
+const WEIGHT = 'Weight & Body';
 import { CATEGORIES } from '@/brand/pens';
 import { useCatalogue } from '@/hooks/useCatalogue';
+import { ConsultCard } from './brand/ConsultCard';
 import { PenCard } from './brand/PenCard';
+import { RepeatScriptBand } from './brand/RepeatScriptBand';
 import { BrandPage } from './site/BrandPage';
 
 export function ShopPage() {
@@ -37,11 +41,16 @@ export function ShopPage() {
           {shown?.length === 0 && <p className="muted">Nothing here yet.</p>}
           <div className="cards-grid">
             {shown?.map((p, i) => (
-              <PenCard key={p.treatment.id} pen={p} index={i} />
+              <Fragment key={p.treatment.id}>
+                <PenCard pen={p} index={i} />
+                {/* After the last weight pen: other options are a conversation, not a product. */}
+                {p.treatment.category === WEIGHT && shown[i + 1]?.treatment.category !== WEIGHT && <ConsultCard />}
+              </Fragment>
             ))}
           </div>
         </div>
       </section>
+      <RepeatScriptBand />
     </BrandPage>
   );
 }
