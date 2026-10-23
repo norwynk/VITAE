@@ -38,7 +38,7 @@ import {
 import { SIGNED_URL_TTL_MS, assertDocumentAccess, validateDocumentRegistration } from '../../src/domain/documents';
 import { loadCatalogueScope, loadMemberScope, loadWorkspace } from './store';
 import { runReminderSweep } from './reminders';
-import { MAIL_LOGIN, notifyTeam } from './mail';
+import { MAIL_LOGIN, notifyTeam, sendTestEmail } from './mail';
 
 initializeApp();
 const db = getFirestore();
@@ -181,6 +181,25 @@ export const executeCommand = onCall({ ...callableOptions, secrets: [MAIL_LOGIN]
     // Emails to the clinician and the team (never health details). Best effort.
     await notifyTeam(db, command, memberId, result.resultId);
     return { ok: true, ...result };
+  } catch (e) {
+    throw toHttpsError(e);
+  }
+});
+
+/** Admin only: send a clearly labelled test email to the clinician and the admins. */
+export const sendTeamTestEmail = onCall({ ...callableOptions, secrets: [MAIL_LOGIN] }, async (request) => {
+  try {
+    const who = actor(request);
+    if (who.role !== 'SUPER_ADMIN') throw new HttpsError('permission-denied', 'Only an admin can send a test email');
+    const email = request.auth?.token.email ?? 'An admin';
+    let result;
+    try {
+      result = await sendTestEmail(db, email);
+    } catch (e) {
+      throw new HttpsError('failed-precondition', `The email could not be sent: ${(e as Error).message}`);
+    }
+    await audit({ actorId: who.uid, actorRole: who.role, action: 'test_email_sent', targets: [] });
+    return result;
   } catch (e) {
     throw toHttpsError(e);
   }
