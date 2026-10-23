@@ -8,6 +8,7 @@
  *   npm run staff -- invite <email> <ROLE> [name]          create a staff account; prints a set-your-password link
  *   npm run staff -- default-clinician <clinicianEmail>   new members (and any unassigned ones) go to them
  *   npm run staff -- enable-totp                          let staff use an authenticator app as their second step
+ *   npm run staff -- status                               who new members go to, and who gets which emails (read-only)
  *   npm run staff -- catalogue                            add missing PRICK pens; refresh their product facts
  *
  * Uses GOOGLE_APPLICATION_CREDENTIALS (or emulator env vars). Role changes
@@ -155,6 +156,34 @@ async function catalogue() {
   }
 }
 
+/** Read-only: who new members go to, and who the team emails reach. */
+async function status() {
+  const care = await db.doc('config/care').get();
+  const clinicianId = care.get('defaultClinicianId') as string | undefined;
+  if (clinicianId) {
+    const user = await db.doc(`users/${clinicianId}`).get();
+    const auth_ = await auth.getUser(clinicianId).catch(() => null);
+    console.log(`New members go to: ${user.get('displayName') || '(no name)'} <${user.get('email') || 'NO EMAIL ON FILE'}>`);
+    console.log(`  Sign-in email: ${auth_?.email ?? 'account not found'} · role: ${auth_?.customClaims?.role ?? 'none'}`);
+  } else {
+    console.log('New members go to: NOBODY. Run default-clinician <email>.');
+  }
+  const staff = await db.collection('users').where('role', 'in', ['CLINICIAN', 'SUPER_ADMIN', 'OPERATIONS', 'FULFILMENT']).get();
+  console.log('\nStaff accounts (who gets which emails):');
+  for (const d of staff.docs) {
+    const role = d.get('role') as string;
+    const gets = role === 'CLINICIAN' ? 'new screenings for their members' : role === 'SUPER_ADMIN' ? 'screening sent + approvals' : role === 'OPERATIONS' ? 'approvals' : 'none';
+    console.log(`  ${role.padEnd(12)} ${d.get('email') || 'NO EMAIL ON FILE'}  ->  ${gets}`);
+  }
+  const [members, active] = await Promise.all([
+    db.collection('members').get(),
+    db.collection('providerAssignments').where('active', '==', true).get(),
+  ]);
+  const covered = new Set(active.docs.map((d) => d.get('memberId') as string));
+  const unassigned = members.docs.filter((m) => !covered.has(m.id)).length;
+  console.log(`\nMembers: ${members.size} · without a clinician: ${unassigned}`);
+}
+
 const [cmd, a, b] = process.argv.slice(2);
 const run =
   cmd === 'set-role' && a && b
@@ -169,9 +198,11 @@ const run =
           ? enableTotp()
           : cmd === 'catalogue'
             ? catalogue()
+            : cmd === 'status'
+              ? status()
             : Promise.reject(
                 new Error(
-                  'Usage: set-role <email> <ROLE> | assign <clinicianEmail> <memberEmail> | unassign <clinicianEmail> <memberEmail> | invite <email> <ROLE> [name] | default-clinician <clinicianEmail> | enable-totp | catalogue',
+                  'Usage: set-role <email> <ROLE> | assign <clinicianEmail> <memberEmail> | unassign <clinicianEmail> <memberEmail> | invite <email> <ROLE> [name] | default-clinician <clinicianEmail> | enable-totp | catalogue | status',
                 ),
               );
 
