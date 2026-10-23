@@ -397,8 +397,9 @@ test('full journey across roles', async ({ page }) => {
 
   // --- Member: adherence and simulated checkout ----------------------------------
   await switchRole(page, 'New member');
-  await expect(page.getByRole('heading', { name: "Today's dose." })).toBeVisible();
-  await page.getByRole('button', { name: 'Log it' }).click();
+  // Just sent: the pen is on its way; doses are logged from the plan.
+  await expect(page.getByRole('heading', { name: 'Your pen is on its way.' })).toBeVisible();
+  await page.getByRole('button', { name: 'See your plan' }).click();
   await page.getByRole('button', { name: 'Taken' }).click();
   await expectToast(page, 'Dose recorded as taken');
   await expect(page.getByText(/Nothing to record/)).toBeVisible();

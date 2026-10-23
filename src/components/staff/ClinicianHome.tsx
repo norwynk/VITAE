@@ -110,6 +110,17 @@ function MemberChart({ memberId }: { memberId: string }) {
             <Empty>Onboarding not complete yet.</Empty>
           ) : (
             <ul className="plain small">
+              {/* The clinician calls every member before deciding. */}
+              {m.phone && (
+                <li>
+                  Phone: <a href={`tel:${m.phone.replace(/\s/g, '')}`}>{m.phone}</a>
+                </li>
+              )}
+              {m.email && (
+                <li>
+                  Email: <a href={`mailto:${m.email}`}>{m.email}</a>
+                </li>
+              )}
               <li>Date of birth: {m.dateOfBirth}</li>
               <li>
                 Location: {m.city}, {m.province}
