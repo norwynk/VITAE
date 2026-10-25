@@ -157,10 +157,9 @@ test('quiz asks enough to match, and the match leads straight into screening', a
   // The questionnaire comes first, before any account, and brings the matched pen.
   await page.getByRole('link', { name: 'Start my screening' }).click();
   await expect(page).toHaveURL(/\/start\?pen=deep-sleep-rebuild$/);
-  // First the fork (new, or repeating a script); the goal is known from the pens, so it isn't asked again.
-  await expect(page.getByRole('heading', { name: /first time with peptides/ })).toBeVisible();
-  await page.getByRole('radio', { name: 'I’m new to peptides' }).click();
+  // Coming from the quiz means new to peptides, and the goal is known from the pen: neither is asked.
   await expect(page.getByRole('heading', { name: /Picture it\./ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /first time with peptides/ })).toHaveCount(0);
   await expect(page.getByText('Heading for: Sleep. Recover. Repeat.')).toBeVisible();
   await expect(page.getByRole('heading', { name: /Where are you heading\?/ })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'My pens (1)' }).first()).toBeAttached();
@@ -191,7 +190,6 @@ test('without an account, My pens is their shortlist, and starting over really c
 
 test('a pen chosen up front is confirmed in screening, not sold to', async ({ page }) => {
   await page.goto('/start?pen=rapid-recovery');
-  await page.getByRole('radio', { name: 'I’m new to peptides' }).click();
   await expect(page.getByRole('heading', { name: /Picture it\./ })).toBeVisible();
   for (let i = 0; i < 5 && !(await page.getByRole('heading', { name: 'The pen you’re bringing.' }).isVisible()); i++) {
     await page.getByRole('button', { name: 'Next' }).click().catch(() => {});
@@ -210,14 +208,20 @@ test('people already on a protocol take the shorter repeat-script route', async 
   await page.goto('/');
   await page.getByRole('link', { name: 'Repeat my script' }).click();
   await expect(page).toHaveURL(/\/start\?route=repeat$/);
-  await expect(page.getByRole('radio', { name: 'I already have a script' })).toHaveAttribute('aria-checked', 'true');
-  await page.getByRole('button', { name: 'Next' }).click();
   // Straight to their script: no goal, no "picture it", no lifestyle or sleep stops.
   await expect(page.getByRole('heading', { name: 'Your current script.' })).toBeVisible();
   await expect(page.getByText(/Stop 1 of \d+ · Your script/)).toBeVisible();
   const stops = Number((await page.locator('.route__meta').innerText()).match(/of (\d+)/)![1]);
   expect(stops).toBeLessThanOrEqual(6);
   await expect(page.getByLabel('Who prescribed it?')).toBeVisible();
+});
+
+test('a script answer left on this device never sends someone from Find yours down the script route', async ({ page }) => {
+  await page.goto('/start?route=repeat');
+  await expect(page.getByRole('heading', { name: 'Your current script.' })).toBeVisible();
+  await page.goto('/start?pen=the-glow-up');
+  await expect(page.getByRole('heading', { name: /Picture it\./ })).toBeVisible();
+  await expect(page.getByLabel('Who prescribed it?')).toHaveCount(0);
 });
 
 test('full journey across roles', async ({ page }) => {

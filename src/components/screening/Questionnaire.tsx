@@ -10,6 +10,7 @@ import {
   type IntakeQuestion,
   type IntakeSection,
   type IntakeValue,
+  ROUTE_NEW,
   ROUTE_REPEAT,
   isNewRoute,
   isRepeatRoute,
@@ -89,11 +90,20 @@ function chunk(questions: IntakeQuestion[]): IntakeQuestion[][] {
 }
 
 /** The route: why, pens, who you are, your health, safety for your pens, the rest of your life. */
-function buildRoute(sections: IntakeSection[], answers: IntakeAnswers, groups: PenQuestionGroup[], chosen: Treatment[], askDestination: boolean) {
+function buildRoute(
+  sections: IntakeSection[],
+  answers: IntakeAnswers,
+  groups: PenQuestionGroup[],
+  chosen: Treatment[],
+  askDestination: boolean,
+  askRoute: boolean,
+) {
   const stops: string[] = [];
   // Only asked when nothing upstream (home goal cards, the quiz, a pen page) already told us.
   const screens: Screen[] = [];
   const addSection = (s: IntakeSection) => {
+    // The way in already said new or repeat: don't ask again.
+    if (s.id === 'start' && !askRoute) return;
     // The opening question (new, or repeating a script) comes before the route itself.
     const stop = s.id === 'start' ? -1 : stops.push(s.label) - 1;
     // Chunk every question, then hide the ones that don't apply, so a follow-up appearing never moves another question.
@@ -145,9 +155,12 @@ export function Questionnaire({ initialPen, initialGoal, initialRoute }: { initi
   useEffect(() => {
     if (initialPen) add(initialPen);
   }, [initialPen, add]);
+  // The way in decides the route: "Repeat your script" means a script; Find yours, a pen or a goal means new.
+  // It replaces an answer left on this device by an earlier visit, and starts the route again if it changed.
+  const entryRoute = initialRoute === 'repeat' ? ROUTE_REPEAT : initialPen || initialGoal ? ROUTE_NEW : undefined;
   useEffect(() => {
-    if (initialRoute === 'repeat') update((s) => (s.answers.route ? {} : { answers: { ...s.answers, route: ROUTE_REPEAT } }));
-  }, [initialRoute, update]);
+    if (entryRoute) update((s) => (s.answers.route === entryRoute ? {} : { answers: { ...s.answers, route: entryRoute }, step: 0, completedAt: undefined }));
+  }, [entryRoute, update]);
 
   const available = (pens ?? []).map((p) => p.treatment);
   const chosen = shortlist.slugs.map((s) => available.find((t) => t.slug === s)).filter((t): t is Treatment => Boolean(t));
@@ -177,6 +190,7 @@ export function Questionnaire({ initialPen, initialGoal, initialRoute }: { initi
     chosen,
     // Once asked here it stays on the route, so picking pens later never shifts the steps.
     state.destinationFrom === 'asked' || (state.destinationFrom !== 'known' && !known),
+    !entryRoute,
   );
   const step = Math.min(state.step, screens.length - 1);
   const screen = screens[step];
@@ -403,6 +417,8 @@ export function Questionnaire({ initialPen, initialGoal, initialRoute }: { initi
                       clear();
                       shortlist.clear();
                       setProblem(null);
+                      // A clean start: forget the way they came in too, so the opening question is asked.
+                      router.replace('/start');
                     }
                   }}
                 >
