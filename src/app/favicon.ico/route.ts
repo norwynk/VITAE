@@ -1,8 +1,10 @@
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
+/**
+ * Browsers and Google ask for /favicon.ico. The 192px icon is embedded here
+ * rather than read from public/: reading public/ from a route makes the
+ * App Hosting build copy only that one file, and every other image 404s.
+ */
+const ICON = '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';
 
-/** Browsers and Google ask for /favicon.ico; serve the square PNG icon (a multiple of 48px, as Google prefers). */
-export async function GET() {
-  const png = await readFile(path.join(process.cwd(), 'public', 'icons', 'icon-192.png'));
-  return new Response(new Uint8Array(png), { headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' } });
+export function GET() {
+  return new Response(Buffer.from(ICON, 'base64'), { headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=86400' } });
 }
