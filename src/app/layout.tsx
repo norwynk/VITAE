@@ -17,7 +17,10 @@ export const metadata: Metadata = {
   title: { default: `${SERVICE_NAME}: not all pricks are created equal`, template: `%s · ${SERVICE_NAME}` },
   description: DESCRIPTION,
   applicationName: SERVICE_NAME,
-  icons: { apple: '/icons/apple-touch-icon.png' },
+  icons: {
+    icon: [{ url: '/icon.svg', type: 'image/svg+xml' }, { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }],
+    apple: '/icons/apple-touch-icon.png',
+  },
   appleWebApp: { capable: true, title: SERVICE_NAME, statusBarStyle: 'default' },
   // Only the live site is indexed; demo and preview builds stay out of search results.
   robots: indexable() ? { index: true, follow: true } : { index: false, follow: false },
