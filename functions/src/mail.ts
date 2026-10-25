@@ -24,11 +24,29 @@ async function send(to: string[], subject: string, text: string) {
     logger.info('Email skipped', { subject, reason: !recipients.length ? 'no recipients' : 'no sending account' });
     return;
   }
-  const space = login.indexOf(' ');
-  const user = login.slice(0, space);
-  const pass = login.slice(space + 1).replace(/\s/g, '');
+  const { user, pass } = parseLogin(login);
   const transport = createTransport({ service: 'gmail', auth: { user, pass } });
-  await transport.sendMail({ from: `PRICK <${user}>`, to: recipients, subject, text });
+  try {
+    await transport.sendMail({ from: `PRICK <${user}>`, to: recipients, subject, text });
+  } catch (e) {
+    // Say what Gmail was given (never the password itself), so a wrong format is obvious.
+    if ((e as { code?: string }).code === 'EAUTH') {
+      throw new Error(
+        `Gmail refused the login for "${user}" with a ${pass.length}-character password. An app password is exactly 16 letters. Check the address, then create a new app password and save it again.`,
+      );
+    }
+    throw e;
+  }
+}
+
+/** "address app-password", forgiving stray quotes, a colon instead of a space, and anything that isn't a letter in the password. */
+export function parseLogin(raw: string): { user: string; pass: string } {
+  const login = raw.trim().replace(/^["']|["']$/g, '').trim();
+  // A Gmail address can run straight into the password (a missed space); anything else needs a space or colon.
+  const match = /^(\S+@(?:gmail|googlemail)\.com)[\s:]*(.+)$/i.exec(login) ?? /^(\S+@\S+?)[\s:]+(.+)$/.exec(login);
+  if (!match) throw new Error('The sending account should be saved as the email address, a space, then the app password.');
+  // App passwords are letters only; drop anything pasted along with them (spaces, quotes, invisible characters).
+  return { user: match[1], pass: match[2].replace(/[^A-Za-z0-9]/g, '') };
 }
 
 async function emailsFor(db: Firestore, roles: Role[]): Promise<string[]> {
@@ -67,7 +85,7 @@ export async function sendTestEmail(db: Firestore, requestedBy: string): Promise
       `${SITE}/app`,
     ].join('\n'),
   );
-  return { from: login.slice(0, login.indexOf(' ')), to };
+  return { from: parseLogin(login).user, to };
 }
 
 /** After a command succeeds: tell the people who need to act. Never throws. */
