@@ -56,23 +56,33 @@ type Screen =
   | { kind: 'arrive'; stop: number }
   | { kind: 'fit'; stop: number };
 
-/** Questions that need room get a screen to themselves; quick ones share, up to three. */
-const SOLO = new Set(['long', 'multi', 'tags', 'meds', 'rank']);
+/**
+ * How much of a phone screen a question takes. A screen holds SCREEN_ROOM;
+ * quick taps share, tables and rankings get a screen to themselves, and
+ * optional "tell us more" boxes are folded (see OptionalLong), so they're light.
+ */
+const SCREEN_ROOM = 4;
+function room(q: IntakeQuestion): number {
+  if (q.id === 'vision' || q.kind === 'meds' || q.kind === 'rank') return SCREEN_ROOM;
+  if (q.kind === 'long') return q.required ? 2 : 1;
+  if (q.kind === 'multi' || q.kind === 'tags' || q.kind === 'date') return 2;
+  return 1;
+}
 function chunk(questions: IntakeQuestion[]): IntakeQuestion[][] {
   const out: IntakeQuestion[][] = [];
   let buf: IntakeQuestion[] = [];
+  let used = 0;
   const flush = () => {
     if (buf.length) out.push(buf);
     buf = [];
+    used = 0;
   };
   for (const q of questions) {
-    if (SOLO.has(q.kind)) {
-      flush();
-      out.push([q]);
-    } else {
-      buf.push(q);
-      if (buf.length === 3) flush();
-    }
+    const w = room(q);
+    if (used + w > SCREEN_ROOM) flush();
+    buf.push(q);
+    used += w;
+    if (used >= SCREEN_ROOM) flush();
   }
   flush();
   return out;

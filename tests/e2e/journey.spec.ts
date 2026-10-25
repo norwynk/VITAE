@@ -123,7 +123,7 @@ test('goal cards come first and open the quiz with that goal chosen', async ({ p
   await expect(page.getByRole('heading', { name: /Have you met\s*your prick\?/ })).toBeVisible();
 });
 
-test('quiz asks enough to match, and matches build "My pens"', async ({ page }) => {
+test('quiz asks enough to match, and the match leads straight into screening', async ({ page }) => {
   await page.goto('/find-your-prick');
   await page.getByRole('button', { name: "Let's go" }).click();
   await page.getByRole('button', { name: 'I want more energy, sleep or recovery' }).click();
@@ -142,7 +142,8 @@ test('quiz asks enough to match, and matches build "My pens"', async ({ page }) 
   await page.getByRole('button', { name: 'Skip and show my match' }).click();
   await expect(page.getByRole('heading', { name: /Your match:\s*The Glow Up\./ })).toBeVisible();
   await expect(page.getByText('Also worth asking your clinician about')).toBeVisible();
-  await page.getByRole('button', { name: 'Add The Glow Up to my pens' }).click();
+  // One clear next step; other matches are links to read, not more "add" buttons.
+  await expect(page.getByRole('button', { name: /to my pens/ })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Start over' }).click();
   await page.getByRole('button', { name: 'I want more energy, sleep or recovery' }).click();
@@ -152,12 +153,9 @@ test('quiz asks enough to match, and matches build "My pens"', async ({ page }) 
   await page.getByRole('button', { name: 'Show my match' }).click();
   await expect(page.getByRole('heading', { name: /Your match:\s*Deep Sleep Rebuild\./ })).toBeVisible();
   await expect(page.getByText('This is a match, not a prescription.')).toBeVisible();
-  await page.getByRole('button', { name: 'Add Deep Sleep Rebuild to my pens' }).click();
-  // Adding a second pen keeps the first.
-  await expect(page.getByRole('link', { name: 'My pens (2)' }).first()).toBeAttached();
 
-  // The questionnaire comes first, before any account, with the chosen pens.
-  await page.getByRole('link', { name: 'Start your screening' }).click();
+  // The questionnaire comes first, before any account, and brings the matched pen.
+  await page.getByRole('link', { name: 'Start my screening' }).click();
   await expect(page).toHaveURL(/\/start\?pen=deep-sleep-rebuild$/);
   // First the fork (new, or repeating a script); the goal is known from the pens, so it isn't asked again.
   await expect(page.getByRole('heading', { name: /first time with peptides/ })).toBeVisible();
@@ -165,6 +163,7 @@ test('quiz asks enough to match, and matches build "My pens"', async ({ page }) 
   await expect(page.getByRole('heading', { name: /Picture it\./ })).toBeVisible();
   await expect(page.getByText('Heading for: Sleep. Recover. Repeat.')).toBeVisible();
   await expect(page.getByRole('heading', { name: /Where are you heading\?/ })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'My pens (1)' }).first()).toBeAttached();
 });
 
 test('without an account, My pens is their shortlist, and starting over really clears it', async ({ page }) => {

@@ -178,18 +178,25 @@ export function FinishScreening() {
       <fieldset>
         <legend>Consent</legend>
         <label className="check">
-          <input type="checkbox" name="consentPrivacy" required /> I have read the{' '}
-          <a href="/privacy" target="_blank" rel="noopener">
-            privacy notice
-          </a>{' '}
-          (required)
+          {/* One span per sentence: the label is a flex row, so loose text and links would become columns. */}
+          <input type="checkbox" name="consentPrivacy" required />
+          <span>
+            I have read the{' '}
+            <a href="/privacy" target="_blank" rel="noopener">
+              privacy notice
+            </a>{' '}
+            (required)
+          </span>
         </label>
         <label className="check">
-          <input type="checkbox" name="consentTerms" required /> I accept the{' '}
-          <a href="/terms" target="_blank" rel="noopener">
-            terms of use
-          </a>{' '}
-          (required)
+          <input type="checkbox" name="consentTerms" required />
+          <span>
+            I accept the{' '}
+            <a href="/terms" target="_blank" rel="noopener">
+              terms of use
+            </a>{' '}
+            (required)
+          </span>
         </label>
         <label className="check">
           <input type="checkbox" name="consentHealthData" required /> I consent to my health information being processed for my care
