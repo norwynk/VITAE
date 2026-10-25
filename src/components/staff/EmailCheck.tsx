@@ -13,8 +13,8 @@ export function EmailCheck() {
   return (
     <Card title="Email check">
       <p className="muted small" style={{ marginTop: 0 }}>
-        Sends a short email marked <strong>[TEST]</strong> to the clinician and the admins, the same way real alerts are sent.
-        Use it to check alerts are reaching your inboxes.
+        Sends a short email marked <strong>[TEST]</strong> to you only, the same way real alerts are sent. Use it to check alerts are
+        reaching your inbox. The clinician doesn&apos;t receive it.
       </p>
       {result && <Notice tone={result.tone}>{result.text}</Notice>}
       {live ? (

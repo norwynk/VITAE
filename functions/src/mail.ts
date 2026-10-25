@@ -62,23 +62,21 @@ async function clinicianEmailsFor(db: Firestore, memberId: string): Promise<stri
 
 /**
  * The admin's email check: same sending account and route as the real
- * alerts, to the default clinician and the admins, clearly marked as a
- * test. Throws with the reason if it can't send.
+ * alerts, sent only to the admin who clicked (never the clinician), clearly
+ * marked as a test. Throws with the reason if it can't send.
  */
-export async function sendTestEmail(db: Firestore, requestedBy: string): Promise<{ from: string; to: string[] }> {
+export async function sendTestEmail(requestedBy: string): Promise<{ from: string; to: string[] }> {
   const login = MAIL_LOGIN.value().trim();
   if (!login || login === 'none') throw new Error('No sending account is set up yet (the MAIL_LOGIN secret).');
-  const clinicianId = (await db.doc('config/care').get()).get('defaultClinicianId');
-  const clinician = clinicianId ? ((await db.doc(`users/${clinicianId}`).get()).get('email') as string | undefined) : undefined;
-  const to = [...new Set([clinician, ...(await emailsFor(db, ['SUPER_ADMIN']))].filter((e): e is string => Boolean(e)))];
-  if (!to.length) throw new Error('No staff email addresses were found.');
+  if (!requestedBy.includes('@')) throw new Error('Your account has no email address to send the test to.');
+  const to = [requestedBy];
   await send(
     to,
     '[TEST] PRICK email check: please ignore',
     [
       'This is a test. Please ignore it.',
       '',
-      `${requestedBy} sent this from the admin page to check that PRICK alerts reach your inbox.`,
+      'You sent this from the admin page to check that PRICK alerts reach your inbox.',
       '',
       'If you can read this, emails are working. Real alerts look like "New screening: [name]" and never contain health details.',
       '',

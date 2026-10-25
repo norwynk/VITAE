@@ -191,10 +191,10 @@ export const sendTeamTestEmail = onCall({ ...callableOptions, secrets: [MAIL_LOG
   try {
     const who = actor(request);
     if (who.role !== 'SUPER_ADMIN') throw new HttpsError('permission-denied', 'Only an admin can send a test email');
-    const email = request.auth?.token.email ?? 'An admin';
+    const email = request.auth?.token.email ?? '';
     let result;
     try {
-      result = await sendTestEmail(db, email);
+      result = await sendTestEmail(email);
     } catch (e) {
       throw new HttpsError('failed-precondition', `The email could not be sent: ${(e as Error).message}`);
     }
