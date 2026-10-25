@@ -19,6 +19,10 @@ env:
   - variable: NEXT_PUBLIC_SALES_ENABLED
     value: "false"
     availability: [BUILD, RUNTIME]
+  # The public address: canonical links, sitemap, share cards. Change it here when the domain is linked.
+  - variable: NEXT_PUBLIC_SITE_URL
+    value: https://prick-site--prick-c3c43.europe-west4.hosted.app
+    availability: [BUILD, RUNTIME]
   # Public web config (safe to publish; access is controlled by Auth, App Check and the rules).
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
     value: AIzaSyD4Cx0yAZEVrnq-7uqd1WSXQMAuVTIHr4c

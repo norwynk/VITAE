@@ -42,3 +42,18 @@ export const SERVICE_NAME = 'PRICK';
 export function salesOpen(): boolean {
   return publicDataMode() === 'demo' || process.env.NEXT_PUBLIC_SALES_ENABLED === 'true';
 }
+
+/** The public address of the site: canonical links, the sitemap and share previews. Set it once when the domain changes. */
+export const DEFAULT_SITE_URL = 'https://prick-site--prick-c3c43.europe-west4.hosted.app';
+export function siteUrl(): string {
+  return (process.env.NEXT_PUBLIC_SITE_URL || DEFAULT_SITE_URL).replace(/\/+$/, '');
+}
+
+/**
+ * Search engines index the live site once it has its own domain. Until then
+ * (the temporary App Hosting address) and in demo or preview builds, the site
+ * asks not to be indexed, so Google never files a second copy of it.
+ */
+export function indexable(): boolean {
+  return publicDataMode() === 'live' && siteUrl() !== DEFAULT_SITE_URL;
+}

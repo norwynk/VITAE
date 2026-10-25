@@ -1,4 +1,5 @@
 'use client';
+import type { Treatment } from '@/domain/model';
 import { BrandHero } from './brand/BrandHero';
 import { GoalCards } from './brand/GoalCards';
 import { Range } from './brand/Range';
@@ -11,8 +12,8 @@ import { useCatalogue } from '@/hooks/useCatalogue';
 /** Pens that lead the homepage, across categories, whatever order the shop uses. */
 const HOME_PENS = ['slow-and-steady', 'craving-control', 'body-sculpt', 'the-glow-up', 'skin-rewind', 'skin-rewind-reserve'];
 
-export function HomePage() {
-  const { pens, error } = useCatalogue();
+export function HomePage({ initialPens }: { initialPens?: Treatment[] }) {
+  const { pens, error } = useCatalogue(initialPens);
   return (
     <BrandPage revealKey={pens}>
       <BrandHero />

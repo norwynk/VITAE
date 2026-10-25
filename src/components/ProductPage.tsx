@@ -1,4 +1,5 @@
 'use client';
+import type { Treatment } from '@/domain/model';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { feelingLine } from '@/brand/pens';
@@ -28,8 +29,8 @@ function Truth({ label, children }: { label: string; children: React.ReactNode }
  * notes and clinical truth stay in the back-end catalogue and are not shown
  * to customers. Layers 1 and 2 never stand in for missing product facts.
  */
-export function ProductPage({ slug }: { slug: string }) {
-  const { pens, error } = useCatalogue();
+export function ProductPage({ slug, initialPens }: { slug: string; initialPens?: Treatment[] }) {
+  const { pens, error } = useCatalogue(initialPens);
   const pen = pens?.find((p) => p.treatment.slug === slug);
   const [stuck, setStuck] = useState(false);
 
