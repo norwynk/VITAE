@@ -11,6 +11,16 @@ Peptide pens with a personality, on top of an assessment-led, clinician-reviewed
 3. With `GOOGLE_APPLICATION_CREDENTIALS` pointing at a service-account key: `npm run staff -- catalogue`, `npm run staff -- enable-totp`, `set-role` for each staff member, then `default-clinician <email>`.
 4. Merge to `main`. A live build without its Firebase settings refuses to build, so the last good version stays up.
 
+## Linking the domain (and switching on Google)
+
+Search engines stay out until the site has its own address (`indexable()` in `src/config.ts`). Then:
+
+1. Firebase console → App Hosting → prick-site → Settings → Domains → **Add custom domain** (the bare domain and `www`). Add the DNS records it shows at the registrar and wait for the certificate.
+2. Set `NEXT_PUBLIC_SITE_URL` in `apphosting.yaml` and `SITE_URL` in `functions/.env` to `https://<domain>`; run `npm run deploy:functions`, then merge to `main`. This switches on indexing, the canonical links, the sitemap and the email links.
+3. Firebase console → Authentication → Settings → **Authorised domains**: add the domain.
+4. Google Cloud → Security → reCAPTCHA → the PRICK website key → add the domain.
+5. Google Search Console: add the domain property, verify with the DNS TXT record, and submit `https://<domain>/sitemap.xml`.
+
 ## Stack
 
 Next.js 16, React 19, TypeScript, Zod 4, Firebase (Auth, Firestore, Cloud Functions v2, Storage, Cloud Messaging, App Check, Cloud Scheduler).

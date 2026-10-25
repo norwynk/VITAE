@@ -951,3 +951,9 @@ label.pen-questions__q { font-size: var(--step-0); }
 .qf--fold { grid-template-columns: 1fr auto; align-items: center; gap: 0.8rem; padding: 0.7rem 0; border-bottom: 1px solid var(--line); }
 .qf--fold .qf__label { font-weight: 600; }
 .match__restart { background: none; border: 0; border-bottom: 2px solid currentColor; border-radius: 0; min-height: 0; padding: 0 0 2px; color: inherit; }
+/* Phones: all five account tabs fit without scrolling, and "Add another pen" stacks. */
+@media (max-width: 640px) {
+  .member-tabs { gap: 0; justify-content: space-between; }
+  .member-tabs button { padding: 0.7rem 0.4rem; font-size: 0.72rem; letter-spacing: 0.04em; }
+  .my-pens__add { flex-direction: column; align-items: stretch; }
+}

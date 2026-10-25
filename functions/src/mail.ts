@@ -14,7 +14,8 @@ import { isRepeatRoute } from '../../src/domain/intake';
 import type { HealthAssessment, MemberRecord, PenRelease, Role } from '../../src/domain/model';
 
 export const MAIL_LOGIN = defineSecret('MAIL_LOGIN');
-const SITE = 'https://prick-site--prick-c3c43.europe-west4.hosted.app';
+// The public site address (functions/.env SITE_URL); the App Hosting address until the domain is linked.
+const SITE = (process.env.SITE_URL || 'https://prick-site--prick-c3c43.europe-west4.hosted.app').replace(/\/+$/, '');
 
 async function send(to: string[], subject: string, text: string) {
   const login = MAIL_LOGIN.value().trim();

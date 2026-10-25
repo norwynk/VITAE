@@ -1,4 +1,5 @@
 'use client';
+import type { Treatment } from '@/domain/model';
 import { Fragment, useState } from 'react';
 
 const WEIGHT = 'Weight & Body';
@@ -9,8 +10,8 @@ import { PenCard } from './brand/PenCard';
 import { RepeatScriptBand } from './brand/RepeatScriptBand';
 import { BrandPage } from './site/BrandPage';
 
-export function ShopPage() {
-  const { pens, error } = useCatalogue();
+export function ShopPage({ initialPens }: { initialPens?: Treatment[] }) {
+  const { pens, error } = useCatalogue(initialPens);
   const [category, setCategory] = useState<string | null>(null);
   const shown = pens?.filter((p) => !category || p.treatment.category === category);
   return (

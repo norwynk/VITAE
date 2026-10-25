@@ -2,7 +2,7 @@
  * Reminder sweep, run every 15 minutes by `sendTreatmentReminders`.
  * Separated from the trigger so the emulator journey can exercise it.
  */
-import type { Firestore } from 'firebase-admin/firestore';
+import { FieldValue, type Firestore } from 'firebase-admin/firestore';
 import type { Messaging } from 'firebase-admin/messaging';
 import {
   type AdherenceEvent,
@@ -18,6 +18,8 @@ import {
 } from '../../src/domain/model';
 
 const ALREADY_EXISTS = 6;
+// The public site address (functions/.env SITE_URL); reminders open the member's account there.
+const SITE = (process.env.SITE_URL || 'https://prick-site--prick-c3c43.europe-west4.hosted.app').replace(/\/+$/, '');
 
 export const REMINDER_TITLE = NEUTRAL_SENDER_LABEL;
 /** Generic lock-screen text: never names the treatment or dose. */
@@ -82,12 +84,20 @@ export async function runReminderSweep(
 
     const tokens = ((await db.doc(`users/${reminder.memberId}`).get()).get('pushTokens') as string[] | undefined) ?? [];
     if (messaging && tokens.length) {
-      await messaging.sendEachForMulticast({
+      const sent = await messaging.sendEachForMulticast({
         tokens,
         notification: { title: REMINDER_TITLE, body: REMINDER_BODY },
         data: { kind: 'REMINDER', notificationId: decision.notificationId },
+        // Tapping the reminder opens the member's account.
+        webpush: { fcmOptions: { link: `${SITE}/app` } },
       });
       result.pushed += 1;
+      // Phones that have uninstalled or turned notifications off: stop sending to them.
+      const dead = tokens.filter((_, i) => {
+        const code = sent?.responses?.[i]?.error?.code ?? '';
+        return /registration-token-not-registered|invalid-registration-token|invalid-argument/.test(code);
+      });
+      if (dead.length) await db.doc(`users/${reminder.memberId}`).update({ pushTokens: FieldValue.arrayRemove(...dead) });
     }
   }
 

@@ -9,15 +9,22 @@ export interface BrandedPen {
   brand: PenBrand;
 }
 
-/** Public catalogue from the repository, in range order, with brand presentation attached. */
-export function useCatalogue(): { pens: BrandedPen[] | null; error: string | null } {
-  const [pens, setPens] = useState<BrandedPen[] | null>(null);
+const branded = (items: Treatment[]): BrandedPen[] => sortRange(items).map((t) => ({ treatment: t, brand: penBrand(t) }));
+
+/**
+ * Public catalogue from the repository, in range order, with brand
+ * presentation attached. `initial` (from the server) renders straight away,
+ * so the pens are in the HTML for search engines; the live catalogue then
+ * replaces it.
+ */
+export function useCatalogue(initial?: Treatment[]): { pens: BrandedPen[] | null; error: string | null } {
+  const [pens, setPens] = useState<BrandedPen[] | null>(() => (initial ? branded(initial) : null));
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     let live = true;
     repository()
       .publicCatalogue()
-      .then((items) => live && setPens(sortRange(items).map((t) => ({ treatment: t, brand: penBrand(t) }))))
+      .then((items) => live && setPens(branded(items)))
       .catch((e: Error) => live && setError(e.message));
     return () => {
       live = false;

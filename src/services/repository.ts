@@ -85,6 +85,7 @@ async function callable<T>(name: string, data: unknown): Promise<T> {
 export const firebaseRepository: Repository & {
   provisionMember(): Promise<{ created: boolean; refreshToken: boolean }>;
   sendTeamTestEmail(): Promise<{ from: string; to: string[] }>;
+  registerPushToken(token: string): Promise<{ ok: boolean }>;
 } = {
   mode: 'live',
   publicCatalogue: async () => {
@@ -99,6 +100,7 @@ export const firebaseRepository: Repository & {
   execute: (command) => callable<CommandOutcome>('executeCommand', command),
   provisionMember: () => callable('provisionMember', {}),
   sendTeamTestEmail: () => callable('sendTeamTestEmail', {}),
+  registerPushToken: (token) => callable('registerPushToken', { token }),
 };
 
 export function repository(): Repository {
