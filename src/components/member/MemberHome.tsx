@@ -33,6 +33,7 @@ import { useWorkspace } from '../workspace-context';
 import { FinishScreening } from './FinishScreening';
 import { useScreening } from '@/hooks/useScreening';
 import { OnRepeat, renewalsDue } from './OnRepeat';
+import { PushReminders } from './PushReminders';
 
 const TABS = ['Overview', 'Plan', 'Orders', 'Messages', 'My health'] as const;
 type Tab = (typeof TABS)[number];
@@ -414,6 +415,7 @@ function Plans() {
   return (
     <Card title="Your treatment plans">
       {!plans.length && <Empty>No active plans. Plans appear here after a clinician approves one.</Empty>}
+      {plans.length > 0 && <PushReminders />}
       {plans.map((a) => {
         const regimen = Object.values(store.regimens).find((r) => r.approvalId === a.id && r.active);
         const reminder = Object.values(store.reminders).find((r) => r.approvalId === a.id && r.active);

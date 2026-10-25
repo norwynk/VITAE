@@ -108,12 +108,14 @@ async function defaultClinician(clinicianEmail: string) {
   console.log(`New members now go to ${clinicianEmail}. Assigned ${assigned} existing member(s) who had no clinician.`);
 }
 
+/** Staff second step: a texted code (the easy default) or an authenticator app. Texts go to South African numbers only. */
 async function enableTotp() {
   await auth.projectConfigManager().updateProjectConfig({
-    multiFactorConfig: { state: 'ENABLED', factorIds: [], providerConfigs: [{ state: 'ENABLED', totpProviderConfig: { adjacentIntervals: 5 } }] },
+    multiFactorConfig: { state: 'ENABLED', factorIds: ['phone'], providerConfigs: [{ state: 'ENABLED', totpProviderConfig: { adjacentIntervals: 5 } }] },
+    smsRegionConfig: { allowlistOnly: { allowedRegions: ['ZA'] } },
   });
-  await audit('totp_enabled', []);
-  console.log('Authenticator-app sign-in is on. Staff set it up the first time they sign in.');
+  await audit('second_step_enabled', []);
+  console.log('Staff second step is on: a texted code (South African numbers) or an authenticator app. They choose the first time they sign in.');
 }
 
 /** Pens taken out of the range. Retatrutide (Total Body Reset): consultation only, not on the site. */

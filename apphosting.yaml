@@ -42,6 +42,10 @@ env:
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
     value: 1:922416529637:web:b9f3b54b686650e9a0940c
     availability: [BUILD, RUNTIME]
+  # Web push certificate (public key) from Firebase console > Project settings > Cloud Messaging. Empty = reminders stay in-app only.
+  - variable: NEXT_PUBLIC_FIREBASE_VAPID_KEY
+    value: ""
+    availability: [BUILD, RUNTIME]
   - variable: NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY
     value: 6LcH0PItAAAAAER-Qwq9PxnUliRUzVl2rprl1I_p
     availability: [BUILD, RUNTIME]

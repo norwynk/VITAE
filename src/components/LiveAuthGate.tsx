@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { MultiFactorResolver, TotpSecret, User } from 'firebase/auth';
 import { MFA_REQUIRED_ROLES, type Role } from '@/domain/model';
 import { firebaseRepository } from '@/services/repository';
@@ -81,28 +81,7 @@ export function LiveAuthGate({ onReady, error }: { onReady: () => Promise<void>;
   const shown = message ?? (error ? { tone: 'error' as const, text: error } : null);
   const note = shown && <Notice tone={shown.tone === 'ok' ? 'ok' : 'error'}>{shown.text}</Notice>;
 
-  if (resolver) {
-    return (
-      <AuthCard title="Enter your code" lead="Open your authenticator app and type the 6-digit code for PRICK.">
-        {note}
-        <CodeForm
-          busy={busy}
-          label="Sign in"
-          onCode={(code) =>
-            act(async () => {
-              const { TotpMultiFactorGenerator } = await import('firebase/auth');
-              const hint = resolver.hints.find((h) => h.factorId === TotpMultiFactorGenerator.FACTOR_ID) ?? resolver.hints[0];
-              await resolver.resolveSignIn(TotpMultiFactorGenerator.assertionForSignIn(hint.uid, code));
-              setResolver(null);
-            })
-          }
-        />
-        <button type="button" className="link-arrow" onClick={() => setResolver(null)}>
-          Back
-        </button>
-      </AuthCard>
-    );
-  }
+  if (resolver) return <SecondStepSignIn resolver={resolver} onDone={() => setResolver(null)} />;
 
   if (user && !user.emailVerified) {
     return (
@@ -145,7 +124,7 @@ export function LiveAuthGate({ onReady, error }: { onReady: () => Promise<void>;
     );
   }
 
-  if (user && enrol) return <EnrolTotp user={user} onDone={signOut} />;
+  if (user && enrol) return <SecondStepSetup user={user} onDone={signOut} />;
 
   if (user) {
     return (
@@ -326,6 +305,191 @@ function CodeForm({ busy, label, onCode }: { busy: boolean; label: string; onCod
   );
 }
 
+/** "082 457 1926" or "+27 82 457 1926" -> "+27824571926". */
+export function toInternational(phone: string): string {
+  const digits = phone.replace(/[^\d+]/g, '');
+  if (digits.startsWith('+')) return digits;
+  if (digits.startsWith('27')) return `+${digits}`;
+  if (digits.startsWith('0')) return `+27${digits.slice(1)}`;
+  return `+${digits}`;
+}
+
+/** Invisible reCAPTCHA that Firebase needs before it sends a text message. */
+async function smsVerifier(container: HTMLElement) {
+  const [{ RecaptchaVerifier }, { firebase }] = await Promise.all([import('firebase/auth'), import('@/services/firebase')]);
+  return new RecaptchaVerifier(firebase().auth, container, { size: 'invisible' });
+}
+
+/** The second step at sign-in: a texted code, or the authenticator app for staff who chose that. */
+function SecondStepSignIn({ resolver, onDone }: { resolver: MultiFactorResolver; onDone: () => void }) {
+  const phoneHint = resolver.hints.find((h) => h.factorId === 'phone');
+  const hint = phoneHint ?? resolver.hints[0];
+  const [verificationId, setVerificationId] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+
+  const sendText = async () => {
+    if (!phoneHint || !box.current) return;
+    setMessage(null);
+    try {
+      const [{ PhoneAuthProvider }, { firebase }] = await Promise.all([import('firebase/auth'), import('@/services/firebase')]);
+      const verifier = await smsVerifier(box.current);
+      setVerificationId(await new PhoneAuthProvider(firebase().auth).verifyPhoneNumber({ multiFactorHint: phoneHint, session: resolver.session }, verifier));
+      verifier.clear();
+    } catch (e) {
+      setMessage(friendly(e));
+    }
+  };
+  // Text the code straight away: one less tap.
+  const sent = useRef(false);
+  useEffect(() => {
+    if (phoneHint && !sent.current) {
+      sent.current = true;
+      void sendText();
+    }
+  });
+
+  const number = phoneHint && 'phoneNumber' in phoneHint ? String((phoneHint as { phoneNumber?: string }).phoneNumber ?? '') : '';
+  return (
+    <AuthCard
+      title="Enter your code"
+      lead={phoneHint ? `We've texted a 6-digit code to your phone${number ? ` (${number})` : ''}.` : 'Open your authenticator app and type the 6-digit code for PRICK.'}
+    >
+      {message && <Notice tone="error">{message}</Notice>}
+      <div ref={box} />
+      <CodeForm
+        busy={busy || Boolean(phoneHint && !verificationId)}
+        label="Sign in"
+        onCode={async (code) => {
+          setBusy(true);
+          setMessage(null);
+          try {
+            const { PhoneAuthProvider, PhoneMultiFactorGenerator, TotpMultiFactorGenerator } = await import('firebase/auth');
+            const assertion = phoneHint
+              ? PhoneMultiFactorGenerator.assertion(PhoneAuthProvider.credential(verificationId!, code))
+              : TotpMultiFactorGenerator.assertionForSignIn(hint.uid, code);
+            await resolver.resolveSignIn(assertion);
+            onDone();
+          } catch (e) {
+            setMessage(friendly(e));
+          } finally {
+            setBusy(false);
+          }
+        }}
+      />
+      <div className="row">
+        {phoneHint && (
+          <button type="button" className="link-arrow" onClick={() => void sendText()}>
+            Text me a new code
+          </button>
+        )}
+        <button type="button" className="link-arrow" onClick={onDone}>
+          Back
+        </button>
+      </div>
+    </AuthCard>
+  );
+}
+
+/**
+ * First sign-in for staff: they can see health information, so a second
+ * step is required. A texted code is the easy default; an authenticator app
+ * is there for anyone who prefers one. After this they stay signed in on
+ * that device, so codes are only needed when they sign in somewhere new.
+ */
+function SecondStepSetup({ user, onDone }: { user: User; onDone: () => Promise<void> }) {
+  const [way, setWay] = useState<'sms' | 'app'>('sms');
+  if (way === 'app') return <EnrolTotp user={user} onDone={onDone} />;
+  return <EnrolSms user={user} onDone={onDone} onApp={() => setWay('app')} />;
+}
+
+function EnrolSms({ user, onDone, onApp }: { user: User; onDone: () => Promise<void>; onApp: () => void }) {
+  const [verificationId, setVerificationId] = useState<string | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+
+  if (done) {
+    return (
+      <AuthCard title="You're set up." lead="When you sign in on a new device, we'll text you a code. On this device you'll stay signed in.">
+        <div>
+          <button type="button" onClick={() => void onDone()}>
+            Sign in again
+          </button>
+        </div>
+      </AuthCard>
+    );
+  }
+
+  return (
+    <AuthCard
+      title="One more lock on the door."
+      lead="Staff accounts can see health information, so signing in needs a code we text to your phone. You only do this on a new device."
+    >
+      {problem && <Notice tone="error">{problem}</Notice>}
+      <div ref={box} />
+      {!verificationId ? (
+        <form
+          className="row"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const phone = toInternational(formValues(e.currentTarget).phone);
+            setBusy(true);
+            setProblem(null);
+            try {
+              const [{ PhoneAuthProvider, multiFactor }, { firebase }] = await Promise.all([import('firebase/auth'), import('@/services/firebase')]);
+              const verifier = await smsVerifier(box.current!);
+              const session = await multiFactor(user).getSession();
+              setVerificationId(await new PhoneAuthProvider(firebase().auth).verifyPhoneNumber({ phoneNumber: phone, session }, verifier));
+              verifier.clear();
+            } catch (err) {
+              setProblem(friendly(err));
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          <label>
+            Your mobile number
+            <input name="phone" type="tel" autoComplete="tel" placeholder="082 000 0000" required style={{ width: '13rem' }} />
+          </label>
+          <button type="submit" disabled={busy}>
+            Text me a code
+          </button>
+        </form>
+      ) : (
+        <CodeForm
+          busy={busy}
+          label="Turn it on"
+          onCode={async (code) => {
+            setBusy(true);
+            setProblem(null);
+            try {
+              const { PhoneAuthProvider, PhoneMultiFactorGenerator, multiFactor } = await import('firebase/auth');
+              await multiFactor(user).enroll(PhoneMultiFactorGenerator.assertion(PhoneAuthProvider.credential(verificationId, code)), 'Mobile');
+              setDone(true);
+            } catch (err) {
+              setProblem(friendly(err));
+            } finally {
+              setBusy(false);
+            }
+          }}
+        />
+      )}
+      <div className="row">
+        <button type="button" className="link-arrow" onClick={onApp}>
+          Use an authenticator app instead
+        </button>
+        <button type="button" className="link-arrow" onClick={() => void onDone()}>
+          Sign out
+        </button>
+      </div>
+    </AuthCard>
+  );
+}
+
 /** First sign-in for staff: link an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password…). */
 function EnrolTotp({ user, onDone }: { user: User; onDone: () => Promise<void> }) {
   const [secret, setSecret] = useState<TotpSecret | null>(null);
@@ -431,6 +595,11 @@ const AUTH_MESSAGES: Record<string, string> = {
   'auth/too-many-requests': 'Too many attempts. Wait a few minutes, then try again.',
   'auth/network-request-failed': "We couldn't reach the server. Check your connection and try again.",
   'auth/invalid-verification-code': "That code didn't work. Check the app and try the newest code.",
+  'auth/invalid-phone-number': "That mobile number doesn't look right. Try it like 082 457 1926.",
+  'auth/code-expired': 'That code has expired. Tap "Text me a new code".',
+  'auth/missing-phone-number': 'Enter your mobile number.',
+  'auth/quota-exceeded': 'Too many texts were sent just now. Try again in a little while.',
+  'auth/operation-not-allowed': "Text-message codes aren't switched on yet. Ask the admin to turn them on.",
   'auth/requires-recent-login': 'For your security, sign out and sign in again, then try once more.',
 };
 
