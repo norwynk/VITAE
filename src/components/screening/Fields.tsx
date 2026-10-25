@@ -44,6 +44,8 @@ export function Field({ q, value, onChange, options }: { q: IntakeQuestion; valu
         </label>
       );
     case 'long':
+      // Optional "tell us more" boxes fold away until someone has something to add.
+      if (!q.required && q.id !== 'vision') return <OptionalLong q={q} text={text} onChange={onChange} label={label} />;
       return (
         <label className="qf" data-q={q.id}>
           {label}
@@ -341,5 +343,25 @@ function DateParts({ id, value, onChange, showAge }: { id: string; value: string
       {age !== null && age >= 0 && <span className="date-parts__age">You’re {age}.</span>}
       {day && month && year.length === 4 && !complete && <span className="date-parts__age date-parts__age--bad">That date doesn’t exist. Check the day.</span>}
     </div>
+  );
+}
+
+function OptionalLong({ q, text, onChange, label }: { q: IntakeQuestion; text: string; onChange: (v: IntakeValue | undefined) => void; label: React.ReactNode }) {
+  const [open, setOpen] = useState(Boolean(text));
+  if (!open) {
+    return (
+      <div className="qf qf--fold" data-q={q.id}>
+        <span className="qf__label">{q.label}</span>
+        <button type="button" className="secondary small" aria-expanded={false} aria-label={`Add: ${q.label}`} onClick={() => setOpen(true)}>
+          + Add
+        </button>
+      </div>
+    );
+  }
+  return (
+    <label className="qf" data-q={q.id}>
+      {label}
+      <textarea autoFocus value={text} maxLength={q.maxLength} placeholder={q.placeholder} onChange={(e) => onChange(e.target.value || undefined)} />
+    </label>
   );
 }

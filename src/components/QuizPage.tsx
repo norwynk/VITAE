@@ -6,7 +6,6 @@ import { CATEGORIES, PEN_BRANDS } from '@/brand/pens';
 import { CLINICIAN_MAY_SUGGEST, MAX_GOALS, type QuizAnswers, feelingChoices, pensIn, results, tiebreakPair } from '@/brand/quiz';
 import { type BrandedPen, useCatalogue } from '@/hooks/useCatalogue';
 import { PenStage } from './brand/Pen';
-import { ShortlistButton } from './brand/ShortlistButton';
 import { worldStyle } from './brand/worldStyle';
 import { SiteNav } from './site/SiteNav';
 
@@ -285,10 +284,9 @@ export function MatchReveal({ pen, others = [], onRestart }: { pen: BrandedPen; 
                   Your clinician may suggest {titleCase(suggestName)} instead.
                 </p>
               )}
-              <div className="row" style={{ gap: 'var(--space-3)', marginTop: 'var(--space-3)' }}>
-                <ShortlistButton slug={t.slug} name={t.name} className="btn light" />
-                <Link href={`/start?pen=${t.slug}`} className="btn ghost" style={{ color: 'inherit' }}>
-                  Start your screening
+              <div style={{ marginTop: 'var(--space-3)' }}>
+                <Link href={`/start?pen=${t.slug}`} className="btn light">
+                  Start my screening
                 </Link>
               </div>
               {t.category === 'Weight & Body' && <ConsultCard variant="inline" />}
@@ -302,7 +300,6 @@ export function MatchReveal({ pen, others = [], onRestart }: { pen: BrandedPen; 
                         <Link href={`/pens/${o.treatment.slug}`} className="match__other-name">
                           {o.treatment.name}
                         </Link>
-                        <ShortlistButton slug={o.treatment.slug} name={o.treatment.name} className="btn small light" />
                       </li>
                     ))}
                   </ul>
@@ -312,7 +309,7 @@ export function MatchReveal({ pen, others = [], onRestart }: { pen: BrandedPen; 
                 <Link href={`/pens/${t.slug}`} className="link-arrow">
                   Meet {t.name}
                 </Link>
-                <button type="button" className="secondary small" style={{ color: 'inherit' }} onClick={onRestart}>
+                <button type="button" className="link-arrow match__restart" onClick={onRestart}>
                   Start over
                 </button>
               </div>
