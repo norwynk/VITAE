@@ -1,6 +1,7 @@
 'use client';
 import type { Treatment } from '@/domain/model';
 import { BrandHero } from './brand/BrandHero';
+import { Explainer } from './brand/Explainer';
 import { GoalCards } from './brand/GoalCards';
 import { Range } from './brand/Range';
 import { RepeatScriptBand } from './brand/RepeatScriptBand';
@@ -22,6 +23,7 @@ export function HomePage({ initialPens }: { initialPens?: Treatment[] }) {
     <BrandPage revealKey={pens}>
       <BrandHero />
       <Marquee items={MARQUEE} />
+      <Explainer />
       <GoalCards />
       <SourceSection />
       <Range

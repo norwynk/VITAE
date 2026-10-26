@@ -1076,3 +1076,31 @@ html.door-through .side-door::after { opacity: 1; }
 .goal-card--pen:hover .goal-card__pen { transform: scale(1.05) rotate(-3deg); }
 @media (max-width: 1000px) { .goals__grid--three { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 700px) { .goals__grid--three { grid-template-columns: 1fr; } .goal-card--pen { aspect-ratio: 16 / 10; } .goal-card--pen .goal-card__pen { inset: 4% 4% 4% 40%; } }
+
+/* =========================================================================
+   The explainer film, under the hero
+   ========================================================================= */
+.explainer__grid { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: var(--space-5); align-items: center; }
+.explainer__title { font-size: var(--step-4); line-height: 0.9; margin: 0; }
+.explainer__lead { font-size: var(--step-2); line-height: 1.15; max-width: 26ch; margin: var(--space-3) 0 var(--space-2); }
+.explainer__note { margin: 0 0 var(--space-3); font-size: var(--step-1); color: var(--pink); transform: rotate(-2deg); }
+/* A phone: rounded, dark bezel, a little tilt that straightens on hover. */
+.explainer__phone {
+  position: relative; justify-self: center; width: min(100%, 340px); aspect-ratio: 9 / 16; border-radius: 34px; padding: 10px;
+  background: var(--black); box-shadow: var(--shadow-m); transform: rotate(2.5deg); transition: transform var(--dur) var(--ease-out);
+}
+.explainer__phone:hover, .explainer__phone:focus-within { transform: rotate(0deg); }
+.explainer__video { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 25px; background: #f6e9ef; }
+.explainer__play {
+  /* Between the pens and the caption on the cover, so it hides neither. */
+  position: absolute; left: 50%; top: 70.5%; transform: translate(-50%, -50%); display: inline-flex; align-items: center; gap: 0.6rem; white-space: nowrap;
+  padding: 0.85rem 1.4rem 0.85rem 1.1rem; border-radius: 999px; border: 0; background: var(--pink); color: #fff; box-shadow: 0 10px 30px rgb(0 0 0 / 0.25);
+}
+.explainer__play:hover { transform: translate(-50%, -50%) scale(1.05); }
+.explainer__play svg { flex: none; width: 1.4rem; height: 1.4rem; fill: currentColor; }
+@media (max-width: 860px) {
+  .explainer__grid { grid-template-columns: 1fr; gap: var(--space-4); }
+  .explainer__phone { width: min(78%, 320px); }
+  .explainer__play { padding: 0.55rem 1rem 0.55rem 0.8rem; font-size: 0.72rem; }
+  .explainer__play svg { width: 1.1rem; height: 1.1rem; }
+}
