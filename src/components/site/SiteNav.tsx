@@ -1,6 +1,9 @@
 'use client';
 import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import type { Side } from '@/brand/sides';
+import { walkThrough } from '@/hooks/useSide';
 import { useShortlist } from '@/hooks/useShortlist';
 import { Logo } from './Logo';
 
@@ -9,6 +12,29 @@ const LINKS = [
   { href: '/find-your-prick', label: 'Find yours' },
   { href: '/#how-it-works', label: 'How it works' },
 ];
+
+/**
+ * Switch sides. Both links are always rendered and CSS shows the right one
+ * (html[data-side]), so the label is right from the first paint.
+ */
+function SideSwitch({ className, onDone }: { className?: string; onDone?: () => void }) {
+  const router = useRouter();
+  const path = usePathname();
+  const to = (side: Side) => () => {
+    walkThrough(side, path, router.push);
+    onDone?.();
+  };
+  return (
+    <>
+      <button type="button" className={`side-switch only-women${className ? ` ${className}` : ''}`} onClick={to('men')}>
+        For men
+      </button>
+      <button type="button" className={`side-switch only-men${className ? ` ${className}` : ''}`} onClick={to('women')}>
+        For women
+      </button>
+    </>
+  );
+}
 
 export function SiteNav({ cta = true }: { cta?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
@@ -32,6 +58,7 @@ export function SiteNav({ cta = true }: { cta?: boolean }) {
         </nav>
         <Logo />
         <div className="site-nav__end">
+          <SideSwitch />
           <Link href={slugs.length ? '/my-pens' : '/app'} className="link-arrow site-nav__pens">
             {slugs.length ? `My pens (${slugs.length})` : 'Account'}
           </Link>
@@ -54,6 +81,7 @@ export function SiteNav({ cta = true }: { cta?: boolean }) {
         <Link href={slugs.length ? '/my-pens' : '/app'} onClick={() => setOpen(false)}>
           {slugs.length ? `My pens (${slugs.length})` : 'Account'}
         </Link>
+        <SideSwitch className="mobile-menu__switch" onDone={() => setOpen(false)} />
       </nav>
     </header>
   );

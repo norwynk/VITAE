@@ -3,7 +3,9 @@ import Link from 'next/link';
 import { ConsultCard } from './brand/ConsultCard';
 import { useState } from 'react';
 import { CATEGORIES, PEN_BRANDS } from '@/brand/pens';
-import { CLINICIAN_MAY_SUGGEST, MAX_GOALS, type QuizAnswers, feelingChoices, pensIn, results, tiebreakPair } from '@/brand/quiz';
+import { CLINICIAN_MAY_SUGGEST, MAX_GOALS, QUIZ_PENS, type QuizAnswers, feelingChoices, pensIn, results, tiebreakPair } from '@/brand/quiz';
+import { forSide } from '@/brand/sides';
+import { useSide } from '@/hooks/useSide';
 import { type BrandedPen, useCatalogue } from '@/hooks/useCatalogue';
 import { PenStage } from './brand/Pen';
 import { worldStyle } from './brand/worldStyle';
@@ -25,6 +27,10 @@ const EMPTY_ANSWERS: QuizAnswers = { goals: [], hooks: {}, feelings: [] };
  */
 export function QuizPage({ initialGoal }: { initialGoal?: string } = {}) {
   const { pens, error } = useCatalogue();
+  // The men's side is matched to the men's range only, and only offers goals it has pens for.
+  const { side } = useSide();
+  const pool = forSide(QUIZ_PENS, side, (p) => p.id);
+  const categories = CATEGORIES.filter((c) => pool.some((p) => p.category === c.name));
   // Arriving from a homepage goal card: that goal is chosen, so start at the next question.
   const [step, setStep] = useState<Step>(initialGoal ? { kind: 'hook', index: 0 } : { kind: 'intro' });
   const [answers, setAnswers] = useState<QuizAnswers>(initialGoal ? { ...EMPTY_ANSWERS, goals: [initialGoal] } : EMPTY_ANSWERS);
@@ -39,10 +45,10 @@ export function QuizPage({ initialGoal }: { initialGoal?: string } = {}) {
     setAnswers(EMPTY_ANSWERS);
     setStep({ kind: 'goals' });
   };
-  const afterFeelings = (a: QuizAnswers) => setStep(tiebreakPair(a) ? { kind: 'tiebreak' } : { kind: 'result' });
+  const afterFeelings = (a: QuizAnswers) => setStep(tiebreakPair(a, pool) ? { kind: 'tiebreak' } : { kind: 'result' });
 
   if (step.kind === 'result') {
-    const found = results(answers)
+    const found = results(answers, pool)
       .map((p) => bySlug(p.id))
       .filter((p): p is BrandedPen => p !== null);
     if (found.length) return <MatchReveal pen={found[0]} others={found.slice(1)} onRestart={restart} />;
@@ -87,7 +93,7 @@ export function QuizPage({ initialGoal }: { initialGoal?: string } = {}) {
                 you after?
               </h1>
               <div className="quiz__choices">
-                {CATEGORIES.map((c) => {
+                {categories.map((c) => {
                   const on = answers.goals.includes(c.name);
                   const blocked = !on && answers.goals.length >= MAX_GOALS;
                   return (
@@ -143,7 +149,7 @@ export function QuizPage({ initialGoal }: { initialGoal?: string } = {}) {
                   most like you?
                 </h1>
                 <div className="quiz__choices">
-                  {pensIn(goal).map((qp) => {
+                  {pensIn(goal, pool).map((qp) => {
                     const pen = bySlug(qp.id);
                     const colour = pen?.brand.colours.main ?? 'var(--ink)';
                     return (
@@ -184,7 +190,7 @@ export function QuizPage({ initialGoal }: { initialGoal?: string } = {}) {
                 want to feel?
               </h1>
               <div className="quiz__chips">
-                {feelingChoices(answers.goals).map((f) => {
+                {feelingChoices(answers.goals, pool).map((f) => {
                   const on = answers.feelings.includes(f);
                   return (
                     <button
@@ -211,7 +217,7 @@ export function QuizPage({ initialGoal }: { initialGoal?: string } = {}) {
           )}
 
           {step.kind === 'tiebreak' && (() => {
-            const pair = tiebreakPair(answers);
+            const pair = tiebreakPair(answers, pool);
             if (!pair) return null;
             return (
               <section className="quiz-step" key="tiebreak" aria-labelledby="q-tie">

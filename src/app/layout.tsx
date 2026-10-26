@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { Anton, Caveat, DM_Sans, Fraunces } from 'next/font/google';
+import { SIDE_KEY } from '@/brand/sides';
 import { SERVICE_NAME, indexable, publicDataMode, siteUrl } from '@/config';
 import './globals.css';
 
@@ -10,7 +11,13 @@ const serif = Fraunces({ style: ['normal', 'italic'], subsets: ['latin'], variab
 const sans = DM_Sans({ subsets: ['latin'], variable: '--font-sans-loaded', display: 'swap' });
 const hand = Caveat({ subsets: ['latin'], variable: '--font-hand-loaded', display: 'swap' });
 
-const DESCRIPTION = 'Peptide pens designed for women, with a clinician behind every one. Screening first, always.';
+const DESCRIPTION = 'Peptide pens for women and men from a SAHPRA-licensed, batch-tested source, with a clinician behind every one. Screening first, always.';
+
+/**
+ * Before first paint: the side they chose (the theme), the doors if they
+ * haven't chosen, and the men's homepage for men who come back to "/".
+ */
+const SIDE_SCRIPT = `try{var h=document.documentElement,p=location.pathname,s=localStorage.getItem('${SIDE_KEY}');if(p==='/men')s='men';if(s==='men'&&p==='/'){location.replace('/men'+location.search)}if(s==='men'||s==='women')h.dataset.side=s;else h.classList.add('choose-side')}catch(e){}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
@@ -57,6 +64,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <head>
         {/* Scroll reveals only hide content once JavaScript is running. */}
         <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
+        <script dangerouslySetInnerHTML={{ __html: SIDE_SCRIPT }} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION) }} />
       </head>
       <body>

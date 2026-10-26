@@ -12,6 +12,8 @@ export default defineConfig({
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,
     trace: 'retain-on-failure',
+    // Most tests start on the women's side, as if the door was already chosen; the doors have their own tests.
+    storageState: { cookies: [], origins: [{ origin: `http://127.0.0.1:${PORT}`, localStorage: [{ name: 'prick:side', value: 'women' }] }] },
     launchOptions: process.env.PLAYWRIGHT_CHROMIUM_PATH ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH } : undefined,
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],

@@ -3,10 +3,13 @@ import type { Treatment } from '@/domain/model';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { feelingLine } from '@/brand/pens';
+import { forSide } from '@/brand/sides';
+import { SOURCE, SOURCE_LINE } from '@/brand/source';
 import { RENEWAL_LEAD_DAYS, formatRand } from '@/domain/model';
 import { salesOpen } from '@/config';
 import { penSafety } from '@/domain/penSafety';
 import { useCatalogue } from '@/hooks/useCatalogue';
+import { useSide } from '@/hooks/useSide';
 import { NeedsVerification } from './brand/NeedsVerification';
 import { PenStage } from './brand/Pen';
 import { PenCard } from './brand/PenCard';
@@ -31,6 +34,7 @@ function Truth({ label, children }: { label: string; children: React.ReactNode }
  */
 export function ProductPage({ slug, initialPens }: { slug: string; initialPens?: Treatment[] }) {
   const { pens, error } = useCatalogue(initialPens);
+  const { side } = useSide();
   const pen = pens?.find((p) => p.treatment.slug === slug);
   const [stuck, setStuck] = useState(false);
 
@@ -59,7 +63,7 @@ export function ProductPage({ slug, initialPens }: { slug: string; initialPens?:
   const startHref = `/start?pen=${t.slug}`;
   const truth = t.productTruth ?? {};
   const safety = penSafety(t.slug);
-  const related = pens.filter((p) => p.treatment.id !== t.id && p.treatment.category === t.category);
+  const related = forSide(pens, side, (p) => p.treatment.slug).filter((p) => p.treatment.id !== t.id && p.treatment.category === t.category);
 
   return (
     <BrandPage revealKey={t.id}>
@@ -71,7 +75,7 @@ export function ProductPage({ slug, initialPens }: { slug: string; initialPens?:
           </div>
           <div className="product-hero__info">
             <span className="tag dark">{brand.category}</span>
-            {brand.forHim && <span className="tag">For him</span>}
+            {brand.forHim && <span className="tag only-women">For him</span>}
             <h1 className="display product-hero__name">{t.name}</h1>
             <p className="serif-i product-hero__statement">{brand.hook}</p>
             <p style={{ margin: 0, maxWidth: '46ch' }}>{brand.outcome}</p>
@@ -107,6 +111,11 @@ export function ProductPage({ slug, initialPens }: { slug: string; initialPens?:
                 Not sure? Take the quiz
               </Link>
             </div>
+            <ul className="source-strip" aria-label="Where it comes from">
+              <li>{SOURCE.licensed}</li>
+              <li>{SOURCE.tested}</li>
+              <li>{SOURCE.cold}</li>
+            </ul>
             {needsApproval && (
               <p className="gate-note">
                 Every pen starts with a private health screening and a clinician&apos;s review. You can only get it if
@@ -282,6 +291,10 @@ export function ProductPage({ slug, initialPens }: { slug: string; initialPens?:
               <h2 className="display">Go on, ask.</h2>
             </div>
             <div className="faq">
+              <details>
+                <summary>Where does it come from?</summary>
+                <div>{SOURCE_LINE} Nothing ships until a clinician has approved it for you.</div>
+              </details>
               <details>
                 <summary>Can I order it straight away?</summary>
                 <div>No. You complete a health screening first, then a clinician reviews it. Ordering opens only if you&apos;re approved.</div>

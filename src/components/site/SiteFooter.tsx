@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { SOURCE_LINE } from '@/brand/source';
 import { publicDataMode } from '@/config';
 import { Logo } from './Logo';
 
@@ -31,12 +32,15 @@ export function SiteFooter() {
           <div>
             <p className="eyebrow">The serious bit</p>
             <p className="small" style={{ opacity: 0.75 }}>
-              Every pen starts with a health screening and a clinician&apos;s review. If a pen isn&apos;t right for you,
-              we&apos;ll say so.
+              {SOURCE_LINE} Every pen starts with a health screening and a clinician&apos;s review. If a pen isn&apos;t
+              right for you, we&apos;ll say so.
             </p>
           </div>
         </div>
-        <p className="site-footer__women">Designed for women.</p>
+        <p className="site-footer__women">
+          <span className="only-women">Designed for women.</span>
+          <span className="only-men">Built for men.</span>
+        </p>
         <div className="site-footer__legal">
           © {new Date().getFullYear()} PRICK.{' '}
           {publicDataMode() === 'demo'

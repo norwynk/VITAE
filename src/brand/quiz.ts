@@ -44,14 +44,16 @@ export interface QuizAnswers {
   tiebreak?: string;
 }
 
-export function pensIn(category: string): QuizPen[] {
-  return QUIZ_PENS.filter((p) => p.category === category);
+// `pool` is the pens this side can be matched to (all of them unless the men's side narrows it).
+
+export function pensIn(category: string, pool: QuizPen[] = QUIZ_PENS): QuizPen[] {
+  return pool.filter((p) => p.category === category);
 }
 
 /** Feeling chips for the chosen goals, de-duplicated, in pen order. */
-export function feelingChoices(goals: string[]): string[] {
+export function feelingChoices(goals: string[], pool: QuizPen[] = QUIZ_PENS): string[] {
   const seen = new Set<string>();
-  for (const p of QUIZ_PENS) if (goals.includes(p.category)) for (const f of p.feeling) seen.add(f);
+  for (const p of pool) if (goals.includes(p.category)) for (const f of p.feeling) seen.add(f);
   return [...seen];
 }
 
@@ -60,10 +62,10 @@ export interface Scored {
   score: number;
 }
 
-export function score(answers: QuizAnswers): Scored[] {
+export function score(answers: QuizAnswers, pool: QuizPen[] = QUIZ_PENS): Scored[] {
   const hooks = new Set(Object.values(answers.hooks));
   const feelings = new Set(answers.feelings);
-  return QUIZ_PENS.map((pen, order) => {
+  return pool.map((pen, order) => {
     let s = 0;
     if (answers.goals.includes(pen.category)) s += WEIGHT.goal;
     if (hooks.has(pen.id)) s += WEIGHT.hook;
@@ -77,15 +79,15 @@ export function score(answers: QuizAnswers): Scored[] {
 }
 
 /** The two pens to compare when the top of the ranking is too close to call. */
-export function tiebreakPair(answers: QuizAnswers): [QuizPen, QuizPen] | null {
+export function tiebreakPair(answers: QuizAnswers, pool: QuizPen[] = QUIZ_PENS): [QuizPen, QuizPen] | null {
   if (answers.tiebreak) return null;
-  const [a, b] = score(answers);
+  const [a, b] = score(answers, pool);
   return a && b && a.score - b.score <= TIE_MARGIN ? [a.pen, b.pen] : null;
 }
 
 /** Top match first, then up to two more worth asking the clinician about. */
-export function results(answers: QuizAnswers): QuizPen[] {
-  return score(answers)
+export function results(answers: QuizAnswers, pool: QuizPen[] = QUIZ_PENS): QuizPen[] {
+  return score(answers, pool)
     .slice(0, MAX_RESULTS)
     .map((x) => x.pen);
 }

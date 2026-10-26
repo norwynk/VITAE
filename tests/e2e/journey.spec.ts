@@ -535,3 +535,48 @@ test('reset clears the demo and this browser, and a vanished account starts afre
   await expect(page.getByText('That demo account no longer exists.', { exact: false })).toBeVisible();
   await expect(page.getByText('Your member record could not be found.')).toHaveCount(0);
 });
+
+test.describe('the doors', () => {
+  // A first visit: nothing chosen yet.
+  test.use({ storageState: { cookies: [], origins: [] } });
+
+  test('men push their door, get only the men’s range, and come straight back to it next time', async ({ page }) => {
+    await page.goto('/');
+    const doors = page.getByRole('dialog', { name: 'Which way?' });
+    await expect(doors).toBeVisible();
+    await page.getByRole('button', { name: /^Men:/ }).click();
+    await expect(page).toHaveURL(/\/men$/);
+    await expect(doors).toBeHidden();
+    await expect(page.locator('html')).toHaveAttribute('data-side', 'men');
+    await expect(page.getByRole('heading', { name: /gets\s*him\./ })).toBeAttached();
+    await expect(page.getByRole('heading', { name: /all about\s*the source\./ })).toBeAttached();
+
+    await page.goto('/shop');
+    await expect(page.getByRole('button', { name: 'All (8)' })).toBeVisible();
+    await expect(page.getByRole('article', { name: 'Full Throttle' })).toBeVisible();
+    await expect(page.getByRole('article', { name: 'The Glow Up' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Appearance & Skin' })).toHaveCount(0);
+
+    // Remembered: the homepage is the men's homepage, no doors.
+    await page.goto('/');
+    await expect(page).toHaveURL(/\/men$/);
+    await expect(doors).toBeHidden();
+
+    // Switch sides from the menu.
+    await page.getByRole('button', { name: 'For women' }).first().click();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.locator('html')).toHaveAttribute('data-side', 'women');
+    await expect(page.getByRole('heading', { name: /gets\s*her\./ })).toBeAttached();
+  });
+
+  test('women push their door and the site is as it was, every pen included', async ({ page }) => {
+    await page.goto('/shop');
+    await page.getByRole('button', { name: /^Women:/ }).click();
+    await expect(page.getByRole('dialog', { name: 'Which way?' })).toBeHidden();
+    await expect(page).toHaveURL(/\/shop$/);
+    await expect(page.getByRole('button', { name: 'All (17)' })).toBeVisible();
+    await expect(page.getByRole('article', { name: 'The Glow Up' })).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole('dialog', { name: 'Which way?' })).toBeHidden();
+  });
+});
