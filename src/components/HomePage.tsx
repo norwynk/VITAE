@@ -12,8 +12,8 @@ import { useCatalogue } from '@/hooks/useCatalogue';
 /** Pens that lead the homepage, across categories, whatever order the shop uses. */
 const HOME_PENS = ['slow-and-steady', 'craving-control', 'body-sculpt', 'the-glow-up', 'skin-rewind', 'skin-rewind-reserve'];
 
-/** The brand band: the source first, then the standards. */
-export const SOURCE_MARQUEE = ['Licensed source', 'Every batch tested', 'Cold chain to your door', 'Months of doses in one pen', 'A clinician in your corner', 'A prick with standards'];
+/** The brand band: standards, with the source story slipped in. */
+export const SOURCE_MARQUEE = ['A prick with standards', 'Months of doses in one pen', 'Know where your prick has been', 'Tested. Every. Batch.', 'A clinician in your corner'];
 const MARQUEE = [...SOURCE_MARQUEE, 'Designed for women'];
 
 export function HomePage({ initialPens }: { initialPens?: Treatment[] }) {

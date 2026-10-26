@@ -2,7 +2,8 @@
 import Link from 'next/link';
 import { ConsultCard } from './brand/ConsultCard';
 import { useState } from 'react';
-import { CATEGORIES, PEN_BRANDS } from '@/brand/pens';
+import type { Treatment } from '@/domain/model';
+import { CATEGORIES, PEN_BRANDS, feelingLine } from '@/brand/pens';
 import { CLINICIAN_MAY_SUGGEST, MAX_GOALS, QUIZ_PENS, type QuizAnswers, feelingChoices, pensIn, results, tiebreakPair } from '@/brand/quiz';
 import { forSide } from '@/brand/sides';
 import { useSide } from '@/hooks/useSide';
@@ -25,8 +26,8 @@ const EMPTY_ANSWERS: QuizAnswers = { goals: [], hooks: {}, feelings: [] };
  * Consumer recommendation only. The match is a starting point for screening;
  * clinical eligibility is decided by the clinician, never here.
  */
-export function QuizPage({ initialGoal }: { initialGoal?: string } = {}) {
-  const { pens, error } = useCatalogue();
+export function QuizPage({ initialGoal, initialPens }: { initialGoal?: string; initialPens?: Treatment[] } = {}) {
+  const { pens, error } = useCatalogue(initialPens);
   // The men's side is matched to the men's range only, and only offers goals it has pens for.
   const { side } = useSide();
   const pool = forSide(QUIZ_PENS, side, (p) => p.id);
@@ -270,10 +271,11 @@ export function MatchReveal({ pen, others = [], onRestart }: { pen: BrandedPen; 
       <main className="match" aria-live="polite">
         <div className="match__flood" />
         <div className="container match__grid">
-          <div className="match__stage">
+          {/* The pen itself opens its page: look first, screening when ready. */}
+          <Link href={`/pens/${t.slug}`} className="match__stage" aria-label={`See ${t.name}`}>
             <span className="flip-card__glow" style={{ opacity: 1 }} />
             <PenStage colours={brand.colours} label={brand.penLabel} botanical={brand.botanical} angle={-55} fit={0.92} title={`PRICK ${t.name} pen`} />
-          </div>
+          </Link>
           <div>
             <h1 className="match__title">
               <span className="match__kicker">Your match:</span>
@@ -281,6 +283,8 @@ export function MatchReveal({ pen, others = [], onRestart }: { pen: BrandedPen; 
             </h1>
             <div className="match__body">
               <p className="serif-i" style={{ fontSize: 'var(--step-2)', lineHeight: 1.15 }}>{brand.hook}</p>
+              <p style={{ maxWidth: '42ch', fontWeight: 600 }}>{brand.outcome}</p>
+              <p className="match__feeling">{feelingLine(brand)}</p>
               <p style={{ opacity: 0.85, maxWidth: '42ch' }}>
                 This is a match, not a prescription. Next comes a private health screening, then a clinician decides
                 whether it&apos;s right for you.
@@ -290,9 +294,12 @@ export function MatchReveal({ pen, others = [], onRestart }: { pen: BrandedPen; 
                   Your clinician may suggest {titleCase(suggestName)} instead.
                 </p>
               )}
-              <div style={{ marginTop: 'var(--space-3)' }}>
+              <div className="row" style={{ marginTop: 'var(--space-3)', gap: 'var(--space-2)' }}>
                 <Link href={`/start?pen=${t.slug}`} className="btn light">
                   Start my screening
+                </Link>
+                <Link href={`/pens/${t.slug}`} className="btn ghost">
+                  See the pen
                 </Link>
               </div>
               {t.category === 'Weight & Body' && <ConsultCard variant="inline" />}
@@ -312,9 +319,6 @@ export function MatchReveal({ pen, others = [], onRestart }: { pen: BrandedPen; 
                 </div>
               )}
               <div className="row" style={{ gap: 'var(--space-3)', marginTop: 'var(--space-3)' }}>
-                <Link href={`/pens/${t.slug}`} className="link-arrow">
-                  Meet {t.name}
-                </Link>
                 <button type="button" className="link-arrow match__restart" onClick={onRestart}>
                   Start over
                 </button>
