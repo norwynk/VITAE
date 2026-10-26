@@ -144,8 +144,18 @@ function because(text: string | undefined, goal: Goal | undefined) {
  * why it matters. Saved on this device as they go. At the end: a short
  * "arriving" moment, the good-fit result, then an account to send it.
  */
-export function Questionnaire({ initialPen, initialGoal, initialRoute }: { initialPen?: string; initialGoal?: string; initialRoute?: string }) {
-  const { pens } = useCatalogue();
+export function Questionnaire({
+  initialPen,
+  initialGoal,
+  initialRoute,
+  initialPens,
+}: {
+  initialPen?: string;
+  initialGoal?: string;
+  initialRoute?: string;
+  initialPens?: Treatment[];
+}) {
+  const { pens } = useCatalogue(initialPens);
   const shortlist = useShortlist();
   const { state, update, clear } = useScreening();
   const [problem, setProblem] = useState<string | null>(null);

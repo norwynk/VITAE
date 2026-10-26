@@ -549,7 +549,7 @@ test.describe('the doors', () => {
     await expect(doors).toBeHidden();
     await expect(page.locator('html')).toHaveAttribute('data-side', 'men');
     await expect(page.getByRole('heading', { name: /gets\s*him\./ })).toBeAttached();
-    await expect(page.getByRole('heading', { name: /all about\s*the source\./ })).toBeAttached();
+    await expect(page.getByRole('heading', { name: /Know where it.s been\./ })).toBeAttached();
 
     await page.goto('/shop');
     await expect(page.getByRole('button', { name: 'All (8)' })).toBeVisible();

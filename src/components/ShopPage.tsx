@@ -28,8 +28,8 @@ export function ShopPage({ initialPens }: { initialPens?: Treatment[] }) {
           <span className="split-line is-in"><span style={{ color: 'var(--pink)', '--delay': '120ms' } as React.CSSProperties}>pricks.</span></span>
         </h1>
         <p className="serif-i page-hero__sub" data-reveal>
-          Different goals. Different colours. Same source: a SAHPRA-licensed supplier, every batch tested, cold chain to your
-          door. Clinician always.
+          Different goals. Different colours. Same standards: a good source, every batch tested, and a clinician&apos;s yes
+          first.
         </p>
       </section>
       <section className="range range--pink" style={{ padding: 'var(--space-5) 0 var(--section)' }}>

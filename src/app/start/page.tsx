@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Questionnaire } from '@/components/screening/Questionnaire';
+import { initialPens } from '@/server/catalogue';
 
 export const metadata: Metadata = { title: 'Let’s get to know each other', robots: { index: false, follow: false } };
 
@@ -8,5 +9,5 @@ const one = (v: string | string[] | undefined) => (typeof v === 'string' ? v : u
 
 export default async function Start({ searchParams }: { searchParams: Promise<Params> }) {
   const { pen, goal, route } = await searchParams;
-  return <Questionnaire initialPen={one(pen)} initialGoal={one(goal)} initialRoute={one(route)} />;
+  return <Questionnaire initialPen={one(pen)} initialGoal={one(goal)} initialRoute={one(route)} initialPens={initialPens()} />;
 }

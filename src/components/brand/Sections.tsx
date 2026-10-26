@@ -305,13 +305,13 @@ export function SourceSection() {
         <div className="source__head" data-reveal>
           <p className="eyebrow">Know your source</p>
           <h2 id="source-title" className="display source__title">
-            It&apos;s all about
+            Know your prick.
             <br />
-            the source.
+            Know where it&apos;s been.
           </h2>
           <p className="serif-i source__lead">
-            You don&apos;t need to know your peptides. You need to know where they came from. Ours come from a licensed
-            supplier, and we&apos;ll always tell you so.
+            Knowing your peptides matters. Knowing where they came from matters just as much. So here&apos;s exactly where
+            ours have been, before they ever get near you.
           </p>
         </div>
         <ol className="source__grid">

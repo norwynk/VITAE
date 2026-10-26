@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { penBrand } from '@/brand/pens';
+import type { Treatment } from '@/domain/model';
 import { penSafety } from '@/domain/penSafety';
 import { useCatalogue } from '@/hooks/useCatalogue';
 import { useScreening } from '@/hooks/useScreening';
@@ -12,8 +13,8 @@ import { BrandPage } from './site/BrandPage';
  * "My pens" before there is an account: the pens picked on this device,
  * with a way to remove them, clear them, or take them into screening.
  */
-export function MyPensPage() {
-  const { pens } = useCatalogue();
+export function MyPensPage({ initialPens }: { initialPens?: Treatment[] }) {
+  const { pens } = useCatalogue(initialPens);
   const shortlist = useShortlist();
   const screening = useScreening();
   const chosen = shortlist.slugs.map((s) => pens?.find((p) => p.treatment.slug === s)).filter((p) => p !== undefined);

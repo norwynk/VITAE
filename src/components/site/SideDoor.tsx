@@ -60,7 +60,7 @@ export function SideDoor() {
         <h2 id="side-door-title" className="display side-door__title">
           Which way?
         </h2>
-        <p className="side-door__lead">Pick your door. Every pen behind both comes from a licensed source, with a clinician&apos;s yes first.</p>
+        <p className="side-door__lead">Pick your door. Same high standards behind both. Different pricks.</p>
         <div className="side-door__doors">
           {(['women', 'men'] as const).map((side) => (
             <button

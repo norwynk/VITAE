@@ -2,7 +2,6 @@
 import Link from 'next/link';
 import { useRef } from 'react';
 import { PEN_BRANDS } from '@/brand/pens';
-import { SOURCE } from '@/brand/source';
 import { useParallax } from '@/hooks/useReveal';
 import { PenStage } from './Pen';
 
@@ -20,7 +19,7 @@ export function BrandHero({ pen = 'the-glow-up', who = 'Designed for women.' }: 
             <span className="split-line pop"><span style={{ '--delay': '140ms' } as React.CSSProperties}>are created equal.</span></span>
           </h1>
           <p className="serif-i hero__sub" data-reveal style={{ '--delay': '300ms' } as React.CSSProperties}>
-            Peptide pens from a licensed source, with a clinician behind every single one.
+            Peptide pens with a clinician behind every single one.
           </p>
           <div className="hero__ctas" data-reveal style={{ '--delay': '420ms' } as React.CSSProperties}>
             <Link href="/find-your-prick" className="btn">
@@ -31,9 +30,9 @@ export function BrandHero({ pen = 'the-glow-up', who = 'Designed for women.' }: 
             </Link>
           </div>
           <div className="hero__trust" data-reveal style={{ '--delay': '540ms' } as React.CSSProperties}>
-            <span>{SOURCE.licensed}</span>
-            <span>{SOURCE.tested}</span>
+            <span>Screened first</span>
             <span>Clinician-reviewed</span>
+            <span>Personal, never generic</span>
           </div>
           <p className="hero__women" data-reveal style={{ '--delay': '640ms' } as React.CSSProperties}>
             {who}

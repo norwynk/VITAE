@@ -89,11 +89,12 @@ export const firebaseRepository: Repository & {
 } = {
   mode: 'live',
   publicCatalogue: async () => {
-    const [{ collection, getDocs, query, where }, { firebase }] = await Promise.all([
+    const [{ collection, getDocsFromServer, query, where }, { firebase }] = await Promise.all([
       import('firebase/firestore'),
       import('./firebase'),
     ]);
-    const snap = await getDocs(query(collection(firebase().db, 'treatments'), where('public', '==', true), where('active', '==', true)));
+    // From the server only: an unreachable backend is an error (the page keeps its own list), never an empty cache.
+    const snap = await getDocsFromServer(query(collection(firebase().db, 'treatments'), where('public', '==', true), where('active', '==', true)));
     return snap.docs.map((d) => ({ ...(d.data() as Treatment), id: d.id }));
   },
   getWorkspace: () => callable<Workspace>('getWorkspace', {}),
