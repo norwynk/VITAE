@@ -53,8 +53,9 @@ test('home shows colour cards that flip to outcome, feeling and transformation',
   await expect(card.getByText('A feeling, not a medical claim.', { exact: false })).toBeVisible();
   await card.getByRole('button', { name: 'Flip back' }).click();
   await expect(feeling).toBeHidden();
-  // Placeholders, never invented testimonials.
-  await expect(page.getByText('Real reviews from real members will live here.').first()).toBeVisible();
+  // No reviews yet: the heading only, never placeholders or invented testimonials.
+  await expect(page.getByRole('heading', { name: /Good pricks get\s*people talking\./ })).toBeVisible();
+  await expect(page.getByText(/Review placeholder|Real reviews from real members/)).toHaveCount(0);
 });
 
 test('shop filters by category and the expanded view keeps the clinical gate', async ({ page }) => {
