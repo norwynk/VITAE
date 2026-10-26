@@ -138,19 +138,7 @@ export function ClinicalTrustPanel() {
   );
 }
 
-/** PLACEHOLDER: no real reviews exist yet. Never replace with invented quotes. */
-export function ReviewCard({ colour }: { colour: string }) {
-  return (
-    <article className="review-card" data-placeholder="review">
-      <p className="serif-i">Real reviews from real members will live here.</p>
-      <div className="row" style={{ justifyContent: 'space-between' }}>
-        <span className="eyebrow muted">Review placeholder</span>
-        <span style={{ width: 18, height: 18, borderRadius: '50%', background: colour }} />
-      </div>
-    </article>
-  );
-}
-
+/** Heading only until real reviews exist. Never fill it with invented quotes. */
 export function Reviews() {
   return (
     <section className="section">
@@ -162,13 +150,6 @@ export function Reviews() {
             people talking.
           </h2>
           <p className="hand" style={{ margin: 0 }}>coming soon, honestly</p>
-        </div>
-        <div className="reviews__grid">
-          {['var(--pink)', 'var(--blue)', 'var(--lime)'].map((c, i) => (
-            <div key={c} data-reveal style={{ '--delay': `${i * 100}ms` } as React.CSSProperties}>
-              <ReviewCard colour={c} />
-            </div>
-          ))}
         </div>
       </div>
     </section>
