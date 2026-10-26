@@ -562,7 +562,8 @@ fieldset.nested { background: var(--off-white); }
 
 /* Made by women */
 .hero__women { margin: var(--space-3) 0 0; font-family: var(--font-serif); font-style: italic; font-size: var(--step-1); color: var(--pink); }
-.women { background: var(--blush); }
+/* The fanned pens overhang their column; clip them so phones never scroll sideways. */
+.women { background: var(--blush); overflow-x: clip; }
 .women__grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: var(--space-5); align-items: center; }
 .women__title { font-size: var(--step-5); line-height: 0.88; }
 .women__title .serif-i { text-transform: none; color: var(--pink); display: block; font-size: 0.42em; line-height: 1.15; margin-top: var(--space-2); }
@@ -953,3 +954,124 @@ label.pen-questions__q { font-size: var(--step-0); }
   .member-tabs button { padding: 0.7rem 0.4rem; font-size: 0.72rem; letter-spacing: 0.04em; }
   .my-pens__add { flex-direction: column; align-items: stretch; }
 }
+
+/* =========================================================================
+   Two sides: the doors, the men's palette, the switch
+   ========================================================================= */
+/* Shown per side from the first paint (html[data-side] is set before render). */
+.only-men { display: none !important; }
+html[data-side="men"] .only-men { display: revert !important; }
+html[data-side="men"] .only-women { display: none !important; }
+
+/* PRICK for men: the same brand, cooler and darker. Pens keep their own colours. */
+html[data-side="men"] {
+  --pink: #1f6fff;
+  --pink-deep: #0d1b2e;
+  --cream: #eceef1;
+  --off-white: #f7f8fa;
+  --blush: #dde4ec;
+  --sand: #d4dae2;
+  --sky: #c9d8ea;
+  --cream-ink: #f2f5f9;
+  --ink-soft: #4a515b;
+  --line: #d1d7df;
+}
+html[data-side="men"] .site-nav.scrolled { background: rgb(236 238 241 / 0.92); }
+html[data-side="men"] .hero__disc { background: #c3d2e4; }
+html[data-side="men"] .range--pink { background: #9fb3ca; }
+html[data-side="men"] .good-days { background: linear-gradient(170deg, #e3e9f1 0%, #d3dde9 55%, #e6ebf1 100%); }
+
+.side-switch { min-height: 0; padding: 0 0 2px; background: none; border: 0; border-bottom: 2px solid currentColor; border-radius: 0; color: var(--ink); }
+.side-switch:hover { transform: none; color: var(--pink); }
+.mobile-menu .side-switch { align-self: flex-start; font-size: var(--step-0); margin-top: 0.5rem; }
+/* On phones the switch lives in the menu (specific enough to beat .only-men). */
+@media (max-width: 860px) { html .site-nav__end .side-switch.side-switch { display: none !important; } }
+
+/* The doors. Only while no side is chosen (html.choose-side), or while walking
+   through to the other homepage (html.door-through: just the light). */
+.side-door { display: none; }
+html.choose-side .side-door, html.door-through .side-door {
+  display: grid; position: fixed; inset: 0; z-index: 100; place-items: center; overflow: auto;
+  background: radial-gradient(120% 90% at 50% 0%, #2a2a2e 0%, #111 60%); color: #fff;
+  animation: page-in 500ms var(--ease-out);
+}
+html.choose-side body:has(.side-door) { overflow: hidden; }
+.side-door__inner { width: 100%; max-width: 880px; padding: var(--space-4) var(--gutter); text-align: center; }
+.side-door__logo { height: 34px; width: auto; margin: 0 auto var(--space-3); }
+.side-door__title { font-size: var(--step-4); line-height: 0.9; margin: 0; }
+.side-door__lead { max-width: 46ch; margin: var(--space-2) auto var(--space-4); opacity: 0.8; }
+.side-door__small { margin: var(--space-3) 0 0; font-size: var(--step--1); opacity: 0.6; }
+/* Sized by the screen's height too, so both doors and the note below fit without scrolling. */
+.side-door__doors { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(1rem, 4vw, 3.5rem); width: 100%; max-width: min(620px, calc(52svh + 3rem)); margin: 0 auto; }
+
+/* A door: the frame holds the light; the leaf swings open on its left hinge. */
+.side-door__door {
+  position: relative; display: block; aspect-ratio: 5 / 9; padding: 0; min-height: 0; border: 10px solid #2b2b30; border-bottom-width: 0;
+  border-radius: 14px 14px 0 0; background: #fff6d8; perspective: 1400px; overflow: visible; color: #fff; text-transform: none; letter-spacing: 0;
+}
+.side-door__door:hover { transform: none; }
+.side-door__door:focus-visible { outline: 3px solid #fff; outline-offset: 6px; }
+.side-door__light { position: absolute; inset: 0; background: radial-gradient(80% 60% at 50% 50%, #fffbe9 0%, #ffe9a8 60%, #f6c96b 100%); }
+.side-door__leaf {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-2);
+  border-radius: 6px 6px 0 0; transform-origin: left center; transition: transform 700ms cubic-bezier(0.55, 0, 0.2, 1), box-shadow 300ms;
+  background: linear-gradient(90deg, rgb(0 0 0 / 0.14), transparent 18%), var(--door);
+  box-shadow: inset 0 0 0 6px rgb(255 255 255 / 0.06), inset 0 0 0 7px rgb(0 0 0 / 0.12);
+}
+.side-door__door--women { --door: #ff2d8a; }
+.side-door__door--men { --door: #1f6fff; }
+.side-door__door:hover .side-door__leaf, .side-door__door:focus-visible .side-door__leaf { transform: rotateY(-14deg); box-shadow: 18px 0 30px rgb(0 0 0 / 0.35); }
+.side-door__plate { display: grid; place-items: center; width: 52%; aspect-ratio: 1; border-radius: 50%; background: rgb(255 255 255 / 0.95); color: var(--door); box-shadow: 0 6px 18px rgb(0 0 0 / 0.2); }
+.side-door__figure { width: 46%; height: auto; fill: currentColor; }
+.side-door__word { font-family: var(--font-display); font-size: var(--step-2); text-transform: uppercase; line-height: 1; }
+.side-door__push { font-size: var(--step--1); font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; padding: 0.25rem 0.7rem; border: 2px solid rgb(255 255 255 / 0.7); border-radius: 4px; }
+.side-door__handle { position: absolute; right: 9%; top: 52%; width: 8px; height: 22%; border-radius: 6px; background: linear-gradient(90deg, #e9e9ee, #9a9aa3); box-shadow: 0 3px 8px rgb(0 0 0 / 0.3); }
+
+/* Opening: the chosen door swings wide, the other dims, then the light fills the screen. */
+.side-door.is-opening .side-door__door { pointer-events: none; }
+.side-door__door.is-open .side-door__leaf { transform: rotateY(-108deg); box-shadow: 30px 0 50px rgb(0 0 0 / 0.45); }
+.side-door.is-opening .side-door__door:not(.is-open) { opacity: 0.25; transition: opacity 400ms; }
+.side-door::after { content: ""; position: fixed; inset: 0; pointer-events: none; opacity: 0; background: var(--cream); }
+html.door-through .side-door::after { opacity: 1; }
+.side-door.is-opening::after { animation: door-light 950ms ease-in forwards; }
+.side-door.is-opening--women::after { background: #fbf6ee; }
+.side-door.is-opening--men::after { background: #eceef1; }
+@keyframes door-light { 0%, 50% { opacity: 0; } 100% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .side-door__leaf { transition: none; }
+  .side-door.is-opening::after { animation: none; }
+}
+@media (max-width: 560px) {
+  .side-door__inner { padding-top: var(--space-3); }
+  .side-door__doors { gap: 0.9rem; }
+  .side-door__door { border-width: 6px; }
+  .side-door__lead { margin-bottom: var(--space-3); font-size: var(--step--1); }
+}
+
+/* =========================================================================
+   Know your source
+   ========================================================================= */
+.source { background: var(--pink-deep); color: var(--cream-ink); }
+.source__head { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: var(--space-4); align-items: end; margin-bottom: var(--space-5); }
+.source__head .eyebrow { grid-column: 1 / -1; margin: 0; opacity: 0.8; }
+.source__title { font-size: var(--step-5); line-height: 0.88; margin: 0; }
+.source__lead { font-size: var(--step-2); line-height: 1.12; margin: 0; }
+.source__grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); }
+.source__item { border-top: 2px solid rgb(255 255 255 / 0.35); padding-top: var(--space-2); }
+.source__num { font-family: var(--font-display); font-size: var(--step-2); line-height: 1; color: var(--lime); }
+.source__item h3 { font-family: var(--font-display); text-transform: uppercase; font-size: var(--step-1); line-height: 1; margin: var(--space-2) 0 var(--space-1); }
+.source__item p { margin: 0; opacity: 0.85; }
+@media (max-width: 1000px) { .source__head { grid-template-columns: 1fr; } .source__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .source__grid { grid-template-columns: 1fr; } }
+
+.source-strip { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem; margin: var(--space-3) 0 0; padding: 0; }
+.source-strip li { font-size: var(--step--1); font-weight: 700; padding: 0.35rem 0.75rem; border-radius: 999px; background: var(--off-white); border: 1px solid var(--line); }
+.source-strip li::before { content: "✓ "; color: var(--ok-text); }
+
+/* The men's goal cards: a pen on a colour field instead of a photo. */
+.goals__grid--three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.goal-card--pen { background: radial-gradient(90% 70% at 50% 35%, color-mix(in srgb, var(--goal) 70%, #fff) 0%, var(--goal) 70%); }
+.goal-card__pen { position: absolute; inset: 4% 8% 30%; display: grid; place-items: center; transition: transform 700ms var(--ease-out); z-index: -2; }
+.goal-card--pen:hover .goal-card__pen { transform: scale(1.05) rotate(-3deg); }
+@media (max-width: 1000px) { .goals__grid--three { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 700px) { .goals__grid--three { grid-template-columns: 1fr; } .goal-card--pen { aspect-ratio: 16 / 10; } .goal-card--pen .goal-card__pen { inset: 4% 4% 4% 40%; } }

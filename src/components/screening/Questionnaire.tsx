@@ -24,6 +24,8 @@ import { type PenSafety, penSafety } from '@/domain/penSafety';
 import { useCatalogue } from '@/hooks/useCatalogue';
 import { useScreening } from '@/hooks/useScreening';
 import { MAX_SHORTLIST, useShortlist } from '@/hooks/useShortlist';
+import { useSide } from '@/hooks/useSide';
+import { forSide } from '@/brand/sides';
 import { demoRepository } from '@/services/repository';
 import { worldStyle } from '../brand/worldStyle';
 import { ConsultCard } from '../brand/ConsultCard';
@@ -162,7 +164,9 @@ export function Questionnaire({ initialPen, initialGoal, initialRoute }: { initi
     if (entryRoute) update((s) => (s.answers.route === entryRoute ? {} : { answers: { ...s.answers, route: entryRoute }, step: 0, completedAt: undefined }));
   }, [entryRoute, update]);
 
-  const available = (pens ?? []).map((p) => p.treatment);
+  // The men's side only offers the men's range.
+  const { side } = useSide();
+  const available = forSide((pens ?? []).map((p) => p.treatment), side, (t) => t.slug);
   const chosen = shortlist.slugs.map((s) => available.find((t) => t.slug === s)).filter((t): t is Treatment => Boolean(t));
   // Where they're heading is already known if they came with a goal or with pens: never ask twice.
   const known =
@@ -300,7 +304,9 @@ export function Questionnaire({ initialPen, initialGoal, initialRoute }: { initi
           <Route stops={stops} current={stopIndex} progress={progress} goal={goal} />
 
           <section className="intake__screen" key={step}>
-            {screen.kind === 'destination' && <Destination chosen={destination} onChoose={chooseDestination} />}
+            {screen.kind === 'destination' && (
+              <Destination chosen={destination} onChoose={chooseDestination} goals={GOALS.filter((g) => available.some((t) => t.category === g.category))} men={side === 'men'} />
+            )}
 
             {screen.kind === 'section' && (
               <>
@@ -467,7 +473,8 @@ function StopHead({ eyebrow, title, lead, why }: { eyebrow: string; title: strin
 }
 
 /** First stop: where they want to end up. One tap, and it colours everything after it. */
-function Destination({ chosen, onChoose }: { chosen?: string; onChoose: (slug: string) => void }) {
+/** The goals this side has pens for; the men's side shows colour instead of the photos. */
+function Destination({ chosen, onChoose, goals, men }: { chosen?: string; onChoose: (slug: string) => void; goals: Goal[]; men: boolean }) {
   return (
     <>
       <div className="stop-head">
@@ -478,14 +485,14 @@ function Destination({ chosen, onChoose }: { chosen?: string; onChoose: (slug: s
         </h1>
       </div>
       <div className="destinations" role="radiogroup" aria-label="Where are you heading?">
-        {GOALS.map((g) => (
+        {goals.map((g) => (
           <button
             key={g.slug}
             type="button"
             role="radio"
             aria-checked={chosen === g.slug}
             className="destination"
-            style={{ '--goal': g.colour, backgroundImage: `url(${g.image})` } as React.CSSProperties}
+            style={{ '--goal': g.colour, backgroundImage: men ? undefined : `url(${g.image})` } as React.CSSProperties}
             onClick={() => onChoose(g.slug)}
           >
             <span className="destination__title">{g.title}</span>

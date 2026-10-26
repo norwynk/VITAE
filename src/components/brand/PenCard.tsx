@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import type { BrandedPen } from '@/hooks/useCatalogue';
 import { feelingLine } from '@/brand/pens';
+import { isForMen } from '@/brand/sides';
 import { BotanicalSpill } from './Botanicals';
 import { NeedsVerification } from './NeedsVerification';
 import { ShortlistButton } from './ShortlistButton';
@@ -26,7 +27,8 @@ export function PenCard({ pen, index = 0 }: { pen: BrandedPen; index?: number })
   };
   return (
     <article
-      className="flip-card"
+      // Not in the men's range: hidden on the men's side from the first paint.
+      className={`flip-card${isForMen(t.slug) ? '' : ' only-women'}`}
       style={worldStyle(brand.colours, { '--delay': `${(index % 3) * 90}ms` })}
       data-reveal
       aria-label={t.name}
@@ -37,7 +39,7 @@ export function PenCard({ pen, index = 0 }: { pen: BrandedPen; index?: number })
           onClick={flipFromCard}
           style={brand.cardImage ? { backgroundImage: `url(${brand.cardImage})` } : undefined}
         >
-          {brand.forHim && <span className="tag dark">For him</span>}
+          {brand.forHim && <span className="tag dark only-women">For him</span>}
           <h3 className="flip-card__name flip-card__name--bloom">{t.name}</h3>
           <p className="flip-card__hook">{brand.hook}</p>
           <p className="flip-card__outcome">{brand.outcome}</p>

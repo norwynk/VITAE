@@ -2,10 +2,12 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { CO_FOUNDERS } from '@/brand/team';
 import { PEN_BRANDS } from '@/brand/pens';
+import { SOURCE_PILLARS } from '@/brand/source';
 import { Motif } from './Botanicals';
 import { PenStage } from './Pen';
 
-const FINALE = ['the-glow-up', 'slow-and-steady', 'deep-sleep-rebuild', 'all-day-energy', 'sharp-mind', 'body-sculpt'].map((slug) => PEN_BRANDS[slug]);
+const FINALE = ['the-glow-up', 'slow-and-steady', 'deep-sleep-rebuild', 'all-day-energy', 'sharp-mind', 'body-sculpt'];
+export const MEN_FINALE = ['full-throttle', 'rapid-recovery', 'body-sculpt', 'deep-sleep-rebuild', 'hormone-reset', 'age-defiance'];
 
 export function EditorialStatement({ top, bottom, children }: { top: string; bottom: string; children?: ReactNode }) {
   return (
@@ -26,7 +28,9 @@ const STEPS = [
   { title: 'Then the fun starts.', body: 'If you are approved, your plan, reminders and check-ins live in your account.' },
 ];
 
-export function HowItWorks() {
+/** `pick` replaces the first step's line (the men's side leads with recovery and drive). */
+export function HowItWorks({ pick, pens = FINALE }: { pick?: string; pens?: string[] }) {
+  const steps = pick ? [{ ...STEPS[0], body: pick }, ...STEPS.slice(1)] : STEPS;
   return (
     <section id="how-it-works" className="section">
       <div className="container">
@@ -40,8 +44,8 @@ export function HowItWorks() {
             </h2>
           </div>
           <ol className="steps__grid" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-            {STEPS.map((s, i) => (
-              <li key={s.title} className="step" data-reveal style={{ '--delay': `${i * 120}ms`, '--step-colour': FINALE[i]?.colours.main } as React.CSSProperties}>
+            {steps.map((s, i) => (
+              <li key={s.title} className="step" data-reveal style={{ '--delay': `${i * 120}ms`, '--step-colour': PEN_BRANDS[pens[i]]?.colours.main } as React.CSSProperties}>
                 <div className="step__num">0{i + 1}</div>
                 <h3>{s.title}</h3>
                 <p className="muted" style={{ margin: 0 }}>{s.body}</p>
@@ -101,16 +105,16 @@ export function LifestylePanel() {
 }
 
 /**
- * Only claims the platform actually supports today. Add "licensed providers"
- * and "quality-controlled supply" here only once they are verified and agreed.
+ * Only claims that are true today. The source claims (licensed supplier,
+ * batch testing, cold chain) are confirmed by the founders; see brand/source.
  */
 const TRUST = [
-  { title: "Don't take pricks from strangers.", body: 'Every request starts with a private health screening. Nothing is offered before that.', colour: 'var(--pink)' },
+  { title: "Don't take pricks from strangers.", body: 'Every pen comes from a SAHPRA-licensed supplier, every batch is tested, and a full cold chain brings it to your door.', colour: 'var(--pink)' },
   { title: 'A prick with standards.', body: 'A clinician assigned to you reads every answer and makes the call.', colour: 'var(--orange)' },
   { title: 'Made to measure.', body: 'If approved, your clinician sets your plan. It is personal, not a one-size pack.', colour: 'var(--blue)' },
   { title: "We don't ghost.", body: 'Reminders, check-ins and booked follow-ups. Flag a concern and it goes straight to your clinician.', colour: 'var(--lime)' },
   { title: 'What happens here stays here.', body: 'Your health details are seen by your clinician, not by delivery or support staff.', colour: 'var(--sky)' },
-  { title: 'No yes, no pen.', body: 'You cannot order a pen that a clinician has not approved for you.', colour: 'var(--blush)' },
+  { title: 'No yes, no pen.', body: 'Every request starts with a private health screening, and you cannot get a pen a clinician has not approved for you.', colour: 'var(--blush)' },
 ];
 
 export function ClinicalTrustPanel() {
@@ -156,8 +160,8 @@ export function Reviews() {
   );
 }
 
-export function SubscriptionPanel() {
-  const trio = [PEN_BRANDS['deep-sleep-rebuild'], PEN_BRANDS['the-glow-up'], PEN_BRANDS['slow-and-steady']];
+export function SubscriptionPanel({ pens = ['deep-sleep-rebuild', 'the-glow-up', 'slow-and-steady'] }: { pens?: string[] }) {
+  const trio = pens.map((slug) => PEN_BRANDS[slug]);
   const angles = [-72, -90, -108];
   return (
     <section className="section">
@@ -194,7 +198,7 @@ export function SubscriptionPanel() {
   );
 }
 
-export function FinalCta() {
+export function FinalCta({ pens = FINALE }: { pens?: string[] }) {
   return (
     <section className="final-cta section">
       <div className="container">
@@ -211,7 +215,7 @@ export function FinalCta() {
           </Link>
         </div>
         <div className="final-cta__pens" data-reveal>
-          {FINALE.map((b, i) => (
+          {pens.map((slug) => PEN_BRANDS[slug]).map((b, i) => (
             <PenStage key={b.slug} colours={b.colours} label={b.penLabel} botanical={b.botanical} angle={i % 2 ? -84 : -96} fit={0.95} />
           ))}
         </div>
@@ -250,6 +254,75 @@ export function DesignedForWomen() {
             ))}
           </div>
         </div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * The men's side: the same standards, the pens chosen for men. Mirrors
+ * DesignedForWomen so both sides feel like one brand.
+ */
+export function BuiltForMen() {
+  const trio = ['rapid-recovery', 'full-throttle', 'body-sculpt'].map((slug) => PEN_BRANDS[slug]);
+  return (
+    <section className="women section">
+      <div className="container women__grid">
+        <div data-reveal>
+          <p className="eyebrow">Who it&apos;s for</p>
+          <h2 className="display women__title">
+            A prick that
+            <br />
+            gets him.
+            <span className="serif-i">Built for men. Recovery, drive, body and sleep.</span>
+          </h2>
+          <p className="women__body">
+            Fewer pens, chosen for men. Your screening includes questions just for men, so your clinician gets the full
+            picture before anything is approved.
+          </p>
+        </div>
+        <div className="women__side" data-reveal style={{ '--delay': '150ms' } as React.CSSProperties}>
+          <div className="women__pens" aria-hidden="true">
+            {trio.map((b, i) => (
+              <PenStage key={b.slug} colours={b.colours} label={b.penLabel} botanical={b.botanical} angle={[-84, -90, -96][i]} fit={1} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * Know your source. Most people can't tell one peptide from another, but
+ * everyone understands where something comes from: that is what makes PRICK
+ * the safe choice. Only confirmed claims (brand/source).
+ */
+export function SourceSection() {
+  return (
+    <section className="source section" aria-labelledby="source-title">
+      <div className="container">
+        <div className="source__head" data-reveal>
+          <p className="eyebrow">Know your source</p>
+          <h2 id="source-title" className="display source__title">
+            It&apos;s all about
+            <br />
+            the source.
+          </h2>
+          <p className="serif-i source__lead">
+            You don&apos;t need to know your peptides. You need to know where they came from. Ours come from a licensed
+            supplier, and we&apos;ll always tell you so.
+          </p>
+        </div>
+        <ol className="source__grid">
+          {SOURCE_PILLARS.map((p, i) => (
+            <li key={p.title} className="source__item" data-reveal style={{ '--delay': `${i * 110}ms` } as React.CSSProperties}>
+              <span className="source__num">0{i + 1}</span>
+              <h3>{p.title}</h3>
+              <p>{p.body}</p>
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   );

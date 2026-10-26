@@ -52,7 +52,7 @@ export interface PenBrand {
   botanical: Botanical;
   /** Card photograph (public path). Falls back to the painted card when absent. */
   cardImage?: string;
-  /** The one pen made for men. */
+  /** Made only for men: tagged "For him" on the women's side (the men's side needs no tag). */
   forHim?: boolean;
 }
 

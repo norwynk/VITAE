@@ -38,6 +38,7 @@ describe('search engines', () => {
     const urls = sitemap().map((u) => u.url);
     for (const p of RANGE.products) expect(urls).toContain(`https://www.prick.co.za/pens/${p.id}`);
     expect(urls).toContain('https://www.prick.co.za/shop');
+    expect(urls).toContain('https://www.prick.co.za/men');
     expect(urls.some((u) => /\/(app|start|my-pens)/.test(u) || /total-body-reset/.test(u))).toBe(false);
   });
 });

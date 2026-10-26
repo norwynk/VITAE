@@ -5,7 +5,7 @@ import { BrandPage } from './site/BrandPage';
 /** Plain reading layout for the privacy notice and terms. */
 export function LegalPage({ eyebrow, title, updated, children }: { eyebrow: string; title: string; updated: string; children: ReactNode }) {
   return (
-    <BrandPage>
+    <BrandPage doors={false}>
       <article className="about container legal">
         <p className="eyebrow">{eyebrow}</p>
         <h1 className="display about__title">{title}</h1>
