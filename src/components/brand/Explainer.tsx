@@ -21,17 +21,12 @@ export function Explainer() {
     <section className="explainer section" aria-labelledby="explainer-title">
       <div className="container explainer__grid">
         <div className="explainer__copy" data-reveal>
-          <p className="eyebrow">PRICK in 40 seconds</p>
           <h2 id="explainer-title" className="display explainer__title">
             Don&apos;t take pricks
             <br />
             from strangers.
           </h2>
-          <p className="serif-i explainer__lead">
-            A tiny film about a big idea: know who you&apos;re getting your peptides from, and get a clinician&apos;s yes
-            before anything gets near you.
-          </p>
-          <p className="hand explainer__note">grab a coffee, it&apos;s short</p>
+          <p className="serif-i explainer__lead">Know where you&apos;re getting your peptides from.</p>
           <Link href="/find-your-prick" className="btn">
             Find your prick
           </Link>
