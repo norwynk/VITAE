@@ -18,7 +18,7 @@ import {
   sectionsFor,
   visibleQuestions,
 } from '@/domain/intake';
-import { SA_PROVINCES, type Treatment, ageOn, localDate } from '@/domain/model';
+import { SA_PROVINCES, type Treatment, ageOn, localDate, peptideLine } from '@/domain/model';
 import { type PenQuestion, type PenQuestionGroup, NONE_OF_THESE, groupsFor, invalidAnswer, isFlagged, splitMulti } from '@/domain/penQuestions';
 import { type PenSafety, penSafety } from '@/domain/penSafety';
 import { useCatalogue } from '@/hooks/useCatalogue';
@@ -689,6 +689,7 @@ function PensPicker({
         <span className="pen-pick__name">
           {t.name}
           {b.forHim && <span className="pen-pick__tag">For him</span>}
+          {peptideLine(t) && <span className="pen-pick__peptides">{peptideLine(t)}</span>}
         </span>
         <span className="pen-pick__hook">{b.hook}</span>
         {penSafety(t.slug) && <span className="pen-pick__safety">Includes a safety check</span>}

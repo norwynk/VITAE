@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import type { BrandedPen } from '@/hooks/useCatalogue';
 import { feelingLine } from '@/brand/pens';
+import { peptideLine } from '@/domain/model';
 import { isForMen } from '@/brand/sides';
 import { BotanicalSpill } from './Botanicals';
 import { NeedsVerification } from './NeedsVerification';
@@ -20,6 +21,7 @@ export function PenCard({ pen, index = 0 }: { pen: BrandedPen; index?: number })
   const { treatment: t, brand } = pen;
   const [flipped, setFlipped] = useState(false);
   const href = `/pens/${t.slug}`;
+  const peptides = peptideLine(t);
   // Clicking the card itself flips it; links and buttons keep their own job.
   const flipFromCard = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('a, button')) return;
@@ -41,6 +43,7 @@ export function PenCard({ pen, index = 0 }: { pen: BrandedPen; index?: number })
         >
           {brand.forHim && <span className="tag dark only-women">For him</span>}
           <h3 className="flip-card__name flip-card__name--bloom">{t.name}</h3>
+          {peptides && <p className="flip-card__peptides">{peptides}</p>}
           <p className="flip-card__hook">{brand.hook}</p>
           <p className="flip-card__outcome">{brand.outcome}</p>
           <div className="flip-card__stage" aria-hidden="true">

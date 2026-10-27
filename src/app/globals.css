@@ -1103,3 +1103,8 @@ html.door-through .side-door::after { opacity: 1; }
   .explainer__play { padding: 0.55rem 1rem 0.55rem 0.8rem; font-size: 0.72rem; }
   .explainer__play svg { width: 1.1rem; height: 1.1rem; }
 }
+
+/* The peptides inside, in small print under the pen's name. */
+.flip-card__peptides { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin: 0 auto var(--space-2); max-width: 30ch; opacity: 0.85; position: relative; z-index: 2; }
+.flip-card__front--bloom.has-photo .flip-card__peptides { text-shadow: 0 1px 2px rgb(0 0 0 / 0.28); }
+.pen-pick__peptides { display: block; font-family: var(--font-sans); text-transform: none; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.02em; margin-top: 0.25rem; opacity: 0.7; }
