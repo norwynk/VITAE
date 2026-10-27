@@ -41,7 +41,7 @@ test('home shows colour cards that flip to outcome, feeling and transformation',
     await expect(page.getByText(gone, { exact: false })).toHaveCount(0);
   }
   await expect(page.getByText('A clinician says yes. Or no.')).toBeVisible();
-  await expect(page.getByRole('heading', { name: "Don't take pricks from strangers." })).toBeVisible();
+  await expect(page.locator('.trust').getByRole('heading', { name: "Don't take pricks from strangers." })).toBeVisible();
   const card = page.getByRole('article', { name: 'Craving Control' });
   await expect(card.getByText('Stop letting food take up so much space in your head.')).toBeVisible();
   const feeling = card.getByText('Quieter. Calmer. Less preoccupied.');
@@ -579,4 +579,16 @@ test.describe('the doors', () => {
     await page.reload();
     await expect(page.getByRole('dialog', { name: 'Which way?' })).toBeHidden();
   });
+});
+
+test('the explainer film sits under the hero on both sides and plays', async ({ page }) => {
+  for (const path of ['/', '/men']) {
+    await page.goto(path);
+    const film = page.locator('.explainer');
+    await expect(film.getByRole('heading', { name: /Don.t take pricks\s*from strangers\./ })).toBeVisible();
+    // Straight after the hero and its banner.
+    expect(await page.evaluate(() => document.querySelector('.marquee')?.nextElementSibling?.classList.contains('explainer'))).toBe(true);
+  }
+  await page.locator('.explainer').getByRole('button', { name: /Play the film/ }).click();
+  await expect.poll(() => page.locator('.explainer__video').evaluate((v: HTMLVideoElement) => v.currentTime)).toBeGreaterThan(0.5);
 });

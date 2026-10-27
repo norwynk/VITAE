@@ -5,6 +5,7 @@ import type { Treatment } from '@/domain/model';
 import { useCatalogue } from '@/hooks/useCatalogue';
 import { rememberSide } from '@/hooks/useSide';
 import { BrandHero } from './brand/BrandHero';
+import { Explainer } from './brand/Explainer';
 import { MenGoalCards } from './brand/GoalCards';
 import { Range } from './brand/Range';
 import { RepeatScriptBand } from './brand/RepeatScriptBand';
@@ -26,6 +27,7 @@ export function MenHomePage({ initialPens }: { initialPens?: Treatment[] }) {
     <BrandPage revealKey={pens}>
       <BrandHero pen="full-throttle" who="Built for men." />
       <Marquee items={[...SOURCE_MARQUEE, 'Built for men']} />
+      <Explainer />
       <MenGoalCards />
       <SourceSection />
       <Range
