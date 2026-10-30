@@ -18,15 +18,16 @@ import {
   sectionsFor,
   visibleQuestions,
 } from '@/domain/intake';
-import { SA_PROVINCES, type Treatment, ageOn, localDate } from '@/domain/model';
+import { SA_PROVINCES, type Treatment, ageOn, localDate, peptideLine } from '@/domain/model';
 import { type PenQuestion, type PenQuestionGroup, NONE_OF_THESE, groupsFor, invalidAnswer, isFlagged, splitMulti } from '@/domain/penQuestions';
 import { type PenSafety, penSafety } from '@/domain/penSafety';
 import { useCatalogue } from '@/hooks/useCatalogue';
 import { useScreening } from '@/hooks/useScreening';
 import { MAX_SHORTLIST, useShortlist } from '@/hooks/useShortlist';
 import { useSide } from '@/hooks/useSide';
-import { forSide } from '@/brand/sides';
+import { MEN_ANGLES, forSide } from '@/brand/sides';
 import { demoRepository } from '@/services/repository';
+import { BySide } from '../brand/BySide';
 import { worldStyle } from '../brand/worldStyle';
 import { ConsultCard } from '../brand/ConsultCard';
 import { FitMoment } from '../member/FitMoment';
@@ -617,7 +618,7 @@ function PensStep({ repeat, ...props }: Parameters<typeof PensPicker>[0] & { rep
                 <span className="screening__pen-dot" />
                 <span className="screening__pen-name">{t.name}</span>
                 <span className="screening__pen-hook">
-                  {b.hook}
+                  <BySide women={b.hook} men={MEN_ANGLES[t.slug]?.hook} />
                   {penSafety(t.slug) && <span className="pen-pick__safety"> · Includes a safety check</span>}
                 </span>
                 <button type="button" className="secondary small" onClick={() => shortlist.remove(t.slug)} aria-label={`Remove ${t.name}`}>
@@ -689,8 +690,9 @@ function PensPicker({
         <span className="pen-pick__name">
           {t.name}
           {b.forHim && <span className="pen-pick__tag">For him</span>}
+          {peptideLine(t) && <span className="pen-pick__peptides">{peptideLine(t)}</span>}
         </span>
-        <span className="pen-pick__hook">{b.hook}</span>
+        <span className="pen-pick__hook"><BySide women={b.hook} men={MEN_ANGLES[t.slug]?.hook} /></span>
         {penSafety(t.slug) && <span className="pen-pick__safety">Includes a safety check</span>}
         <span className="pen-pick__tick" aria-hidden="true">
           {on ? '✓' : '+'}

@@ -3,8 +3,10 @@ import Link from 'next/link';
 import { useState } from 'react';
 import type { BrandedPen } from '@/hooks/useCatalogue';
 import { feelingLine } from '@/brand/pens';
-import { isForMen } from '@/brand/sides';
+import { peptideLine } from '@/domain/model';
+import { MEN_ANGLES, isForMen } from '@/brand/sides';
 import { BotanicalSpill } from './Botanicals';
+import { BySide } from './BySide';
 import { NeedsVerification } from './NeedsVerification';
 import { ShortlistButton } from './ShortlistButton';
 import { PenStage } from './Pen';
@@ -20,6 +22,7 @@ export function PenCard({ pen, index = 0 }: { pen: BrandedPen; index?: number })
   const { treatment: t, brand } = pen;
   const [flipped, setFlipped] = useState(false);
   const href = `/pens/${t.slug}`;
+  const peptides = peptideLine(t);
   // Clicking the card itself flips it; links and buttons keep their own job.
   const flipFromCard = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('a, button')) return;
@@ -41,8 +44,9 @@ export function PenCard({ pen, index = 0 }: { pen: BrandedPen; index?: number })
         >
           {brand.forHim && <span className="tag dark only-women">For him</span>}
           <h3 className="flip-card__name flip-card__name--bloom">{t.name}</h3>
-          <p className="flip-card__hook">{brand.hook}</p>
-          <p className="flip-card__outcome">{brand.outcome}</p>
+          {peptides && <p className="flip-card__peptides">{peptides}</p>}
+          <p className="flip-card__hook"><BySide women={brand.hook} men={MEN_ANGLES[t.slug]?.hook} /></p>
+          <p className="flip-card__outcome"><BySide women={brand.outcome} men={MEN_ANGLES[t.slug]?.outcome} /></p>
           <div className="flip-card__stage" aria-hidden="true">
             <span className="flip-card__glow" />
             <span className="flip-card__burst a" />
@@ -66,7 +70,7 @@ export function PenCard({ pen, index = 0 }: { pen: BrandedPen; index?: number })
           <dl className="flip-card__story">
             <div>
               <dt>Feeling</dt>
-              <dd className="flip-card__feeling">{feelingLine(brand)}</dd>
+              <dd className="flip-card__feeling"><BySide women={feelingLine(brand)} men={MEN_ANGLES[t.slug] && feelingLine(MEN_ANGLES[t.slug])} /></dd>
             </div>
             <div>
               <dt>Transformation</dt>

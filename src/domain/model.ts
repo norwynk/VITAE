@@ -409,6 +409,15 @@ export interface ClinicalTruth {
   contraindications?: string;
 }
 
+/**
+ * The peptides in a pen, short enough for a card: "BPC-157 + TB-500 · Wolverine Stack".
+ * Empty while the supplier has not disclosed the composition.
+ */
+export function peptideLine(t: Pick<Treatment, 'productTruth'>): string {
+  const a = t.productTruth?.activeIngredient?.trim();
+  return a ? a.replace(/\s*\(the ([^)]+)\)/i, ' · $1').replace(/ without DAC/i, ' (no DAC)') : '';
+}
+
 export const PRODUCT_TRUTH_FIELDS = ['activeIngredient', 'supplierStrength', 'productClass', 'mechanism', 'evidence'] as const;
 export const CLINICAL_TRUTH_FIELDS = ['approvalStatus', 'approvedIndication', 'eligibility', 'route', 'dosing', 'warnings', 'contraindications'] as const;
 
