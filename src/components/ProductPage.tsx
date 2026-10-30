@@ -3,13 +3,14 @@ import type { Treatment } from '@/domain/model';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { feelingLine } from '@/brand/pens';
-import { forSide } from '@/brand/sides';
+import { MEN_ANGLES, forSide } from '@/brand/sides';
 import { SOURCE, SOURCE_LINE } from '@/brand/source';
 import { RENEWAL_LEAD_DAYS, formatRand } from '@/domain/model';
 import { salesOpen } from '@/config';
 import { penSafety } from '@/domain/penSafety';
 import { useCatalogue } from '@/hooks/useCatalogue';
 import { useSide } from '@/hooks/useSide';
+import { BySide } from './brand/BySide';
 import { NeedsVerification } from './brand/NeedsVerification';
 import { PenStage } from './brand/Pen';
 import { PenCard } from './brand/PenCard';
@@ -77,8 +78,8 @@ export function ProductPage({ slug, initialPens }: { slug: string; initialPens?:
             <span className="tag dark">{brand.category}</span>
             {brand.forHim && <span className="tag only-women">For him</span>}
             <h1 className="display product-hero__name">{t.name}</h1>
-            <p className="serif-i product-hero__statement">{brand.hook}</p>
-            <p style={{ margin: 0, maxWidth: '46ch' }}>{brand.outcome}</p>
+            <p className="serif-i product-hero__statement"><BySide women={brand.hook} men={MEN_ANGLES[t.slug]?.hook} /></p>
+            <p style={{ margin: 0, maxWidth: '46ch' }}><BySide women={brand.outcome} men={MEN_ANGLES[t.slug]?.outcome} /></p>
             {salesOpen() && t.priceCents > 0 && (
               <p className="price" style={{ margin: 0 }}>
                 {formatRand(t.priceCents)} <span className="small muted">demo price{t.billing === 'MONTHLY' ? ' per month' : ''}</span>
@@ -132,11 +133,11 @@ export function ProductPage({ slug, initialPens }: { slug: string; initialPens?:
             <div className="story-band__grid">
               <div data-reveal>
                 <p className="eyebrow">What you want</p>
-                <p className="story-band__text">{brand.outcome}</p>
+                <p className="story-band__text"><BySide women={brand.outcome} men={MEN_ANGLES[t.slug]?.outcome} /></p>
               </div>
               <div data-reveal style={{ '--delay': '120ms' } as React.CSSProperties}>
                 <p className="eyebrow">Feeling</p>
-                <p className="story-band__feeling">{feelingLine(brand)}</p>
+                <p className="story-band__feeling"><BySide women={feelingLine(brand)} men={MEN_ANGLES[t.slug] && feelingLine(MEN_ANGLES[t.slug])} /></p>
               </div>
               <div data-reveal style={{ '--delay': '240ms' } as React.CSSProperties}>
                 <p className="eyebrow">Transformation</p>

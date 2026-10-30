@@ -25,8 +25,9 @@ import { useCatalogue } from '@/hooks/useCatalogue';
 import { useScreening } from '@/hooks/useScreening';
 import { MAX_SHORTLIST, useShortlist } from '@/hooks/useShortlist';
 import { useSide } from '@/hooks/useSide';
-import { forSide } from '@/brand/sides';
+import { MEN_ANGLES, forSide } from '@/brand/sides';
 import { demoRepository } from '@/services/repository';
+import { BySide } from '../brand/BySide';
 import { worldStyle } from '../brand/worldStyle';
 import { ConsultCard } from '../brand/ConsultCard';
 import { FitMoment } from '../member/FitMoment';
@@ -617,7 +618,7 @@ function PensStep({ repeat, ...props }: Parameters<typeof PensPicker>[0] & { rep
                 <span className="screening__pen-dot" />
                 <span className="screening__pen-name">{t.name}</span>
                 <span className="screening__pen-hook">
-                  {b.hook}
+                  <BySide women={b.hook} men={MEN_ANGLES[t.slug]?.hook} />
                   {penSafety(t.slug) && <span className="pen-pick__safety"> · Includes a safety check</span>}
                 </span>
                 <button type="button" className="secondary small" onClick={() => shortlist.remove(t.slug)} aria-label={`Remove ${t.name}`}>
@@ -691,7 +692,7 @@ function PensPicker({
           {b.forHim && <span className="pen-pick__tag">For him</span>}
           {peptideLine(t) && <span className="pen-pick__peptides">{peptideLine(t)}</span>}
         </span>
-        <span className="pen-pick__hook">{b.hook}</span>
+        <span className="pen-pick__hook"><BySide women={b.hook} men={MEN_ANGLES[t.slug]?.hook} /></span>
         {penSafety(t.slug) && <span className="pen-pick__safety">Includes a safety check</span>}
         <span className="pen-pick__tick" aria-hidden="true">
           {on ? '✓' : '+'}

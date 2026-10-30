@@ -1,11 +1,12 @@
 'use client';
 import Link from 'next/link';
+import { BySide } from './brand/BySide';
 import { ConsultCard } from './brand/ConsultCard';
 import { useState } from 'react';
 import type { Treatment } from '@/domain/model';
 import { CATEGORIES, PEN_BRANDS, feelingLine } from '@/brand/pens';
 import { CLINICIAN_MAY_SUGGEST, MAX_GOALS, QUIZ_PENS, type QuizAnswers, feelingChoices, pensIn, results, tiebreakPair } from '@/brand/quiz';
-import { forSide } from '@/brand/sides';
+import { MEN_ANGLES, forSide } from '@/brand/sides';
 import { useSide } from '@/hooks/useSide';
 import { type BrandedPen, useCatalogue } from '@/hooks/useCatalogue';
 import { PenStage } from './brand/Pen';
@@ -282,9 +283,9 @@ export function MatchReveal({ pen, others = [], onRestart }: { pen: BrandedPen; 
               <span className="display match__name">{t.name}.</span>
             </h1>
             <div className="match__body">
-              <p className="serif-i" style={{ fontSize: 'var(--step-2)', lineHeight: 1.15 }}>{brand.hook}</p>
-              <p style={{ maxWidth: '42ch', fontWeight: 600 }}>{brand.outcome}</p>
-              <p className="match__feeling">{feelingLine(brand)}</p>
+              <p className="serif-i" style={{ fontSize: 'var(--step-2)', lineHeight: 1.15 }}><BySide women={brand.hook} men={MEN_ANGLES[t.slug]?.hook} /></p>
+              <p style={{ maxWidth: '42ch', fontWeight: 600 }}><BySide women={brand.outcome} men={MEN_ANGLES[t.slug]?.outcome} /></p>
+              <p className="match__feeling"><BySide women={feelingLine(brand)} men={MEN_ANGLES[t.slug] && feelingLine(MEN_ANGLES[t.slug])} /></p>
               <p style={{ opacity: 0.85, maxWidth: '42ch' }}>
                 This is a match, not a prescription. Next comes a private health screening, then a clinician decides
                 whether it&apos;s right for you.
