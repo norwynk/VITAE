@@ -15,6 +15,8 @@ export interface ScreeningState {
   destination?: string;
   /** "known" when it came from the goal cards, the quiz or a pen page; "asked" when they chose it here. */
   destinationFrom?: 'known' | 'asked';
+  /** The pens (and side) "What would you like help with?" was last filled in from. */
+  helpFor?: string;
   /** Index of the screen they reached. */
   step: number;
   completedAt?: string;

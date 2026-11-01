@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest';
 import RANGE from '../src/brand/range.json';
 import { QUIZ_PENS, goalsToAsk, results, withOnlyPens } from '../src/brand/quiz';
 import { CATEGORIES, PEN_BRANDS } from '../src/brand/pens';
-import { MEN_ANGLES, MEN_CHOICES, MEN_GOALS, MEN_PENS, forMen, forSide, isForMen } from '../src/brand/sides';
-import { GOALS } from '../src/brand/goals';
+import { MEN_ANGLES, MEN_CHOICES, MEN_GOALS, MEN_PENS, forMen, forSide, goalForSide, isForMen } from '../src/brand/sides';
+import { GOALS, PEN_HELP, goalBySlug } from '../src/brand/goals';
+import { GOALS as HELP_ANSWERS, HELP_OPTIONS } from '../src/domain/intake';
 
 describe('the two sides', () => {
   it('the men’s range is real pens, led by TRT, the Wolverine Stack and tesamorelin', () => {
@@ -55,5 +56,22 @@ describe('the two sides', () => {
     expect(withOnlyPens({ goals: ['Weight & Body'], hooks: {}, feelings: [] }, men).hooks).toEqual({ 'Weight & Body': 'body-sculpt' });
     expect(results(withOnlyPens({ goals: ['Weight & Body'], hooks: {}, feelings: [] }, men), men)[0].id).toBe('body-sculpt');
     expect(goalsToAsk(['Weight & Body'], QUIZ_PENS)).toEqual(['Weight & Body']);
+  });
+
+  it('the screening asks each side in its own words, and every pen says what it helps with', () => {
+    for (const p of RANGE.products) for (const h of PEN_HELP[p.id] ?? []) expect(HELP_OPTIONS.women.concat(HELP_OPTIONS.men)).toContain(h);
+    for (const p of RANGE.products) expect(PEN_HELP[p.id]?.length).toBeTruthy();
+    for (const slug of MEN_PENS) for (const h of MEN_ANGLES[slug].help) expect(HELP_OPTIONS.men).toContain(h);
+    expect(MEN_ANGLES['deep-sleep-rebuild'].help).toContain('Muscle and strength');
+    for (const h of [...HELP_OPTIONS.women, ...HELP_OPTIONS.men]) expect(HELP_ANSWERS).toContain(h);
+  });
+
+  it('a man heading for his body hears about the body he is building, not the scale', () => {
+    const g = goalForSide(goalBySlug('weight')!, 'men');
+    expect(g.title).toBe('Get lean. Look built.');
+    expect(g.picture).not.toMatch(/scale/i);
+    expect(g.image).toBe('');
+    for (const h of g.intakeGoals) expect(HELP_OPTIONS.men).toContain(h);
+    expect(goalForSide(goalBySlug('weight')!, 'women')).toEqual(goalBySlug('weight'));
   });
 });
