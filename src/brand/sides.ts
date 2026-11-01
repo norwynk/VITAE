@@ -32,8 +32,8 @@ export function forSide<T>(items: T[], side: Side | null, slugOf: (item: T) => s
 
 /** The men's homepage goal cards: colour and a pen instead of a photo. Each opens the quiz like the women's cards. */
 export const MEN_GOALS = [
-  { slug: 'energy', title: 'Recover harder.', covers: 'Recovery, energy and deeper sleep', pen: 'rapid-recovery', colour: '#14365f' },
-  { slug: 'hormones', title: 'Get your drive back.', covers: 'Hormones, libido and drive', pen: 'hormone-reset', colour: '#2b2f36' },
+  { slug: 'energy', title: 'Recover harder. Train harder.', covers: 'Recovery, deeper sleep and energy for every session', pen: 'rapid-recovery', colour: '#14365f' },
+  { slug: 'hormones', title: 'Back in your prime.', covers: 'Hormones, drive and desire', pen: 'hormone-reset', colour: '#2b2f36' },
   { slug: 'weight', title: 'Get lean. Look built.', covers: 'Definition, shape and the body you train for', pen: 'body-sculpt', colour: '#1f6fff' },
 ];
 

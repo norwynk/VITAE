@@ -108,14 +108,14 @@ test('shop filters by category and the expanded view keeps the clinical gate', a
 test('goal cards come first and open the quiz with that goal chosen', async ({ page }) => {
   await page.goto('/');
   const goals = page.locator('section', { has: page.getByRole('heading', { name: /What are\s*you after\?/ }) });
-  for (const title of ['Lose the weight.', 'Get the glow.', 'Sleep. Recover. Repeat.', 'Feel like you again.']) {
+  for (const title of ['Feel hot in your jeans.', 'Glow like you mean it.', 'Up all day. Out like a light.', 'Bring back your spark.']) {
     await expect(goals.getByText(title, { exact: true })).toBeVisible();
   }
   // Goal cards sit above "Meet the pricks".
   const goalsTop = (await goals.boundingBox())!.y;
   const rangeTop = (await page.getByRole('heading', { name: /Meet the\s*pricks\./ }).boundingBox())!.y;
   expect(goalsTop).toBeLessThan(rangeTop);
-  await goals.getByRole('link', { name: /Get the glow\./ }).click();
+  await goals.getByRole('link', { name: /Glow like you mean it\./ }).click();
   await expect(page).toHaveURL(/\/find-your-prick\?goal=skin$/);
   await expect(page.getByText(/· Appearance & Skin/)).toBeVisible();
   await expect(page.getByRole('heading', { name: /Which sounds\s*most like you\?/ })).toBeVisible();
@@ -161,7 +161,7 @@ test('quiz asks enough to match, and the match leads straight into screening', a
   // Coming from the quiz means new to peptides, and the goal is known from the pen: neither is asked.
   await expect(page.getByRole('heading', { name: /Picture it\./ })).toBeVisible();
   await expect(page.getByRole('heading', { name: /first time with peptides/ })).toHaveCount(0);
-  await expect(page.getByText('Heading for: Sleep. Recover. Repeat.')).toBeVisible();
+  await expect(page.getByText('Heading for: Up all day. Out like a light.')).toBeVisible();
   await expect(page.getByRole('heading', { name: /Where are you heading\?/ })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'My pens (1)' }).first()).toBeAttached();
 });
@@ -234,10 +234,10 @@ test('full journey across roles', async ({ page }) => {
   await page.goto('/start');
   // The fork: new to peptides. Then the destination. One tap each, and the journey moves on.
   await page.getByRole('radio', { name: 'I’m new to peptides' }).click();
-  await page.getByRole('radio', { name: /Lose the weight\./ }).click();
+  await page.getByRole('radio', { name: /Feel hot in your jeans\./ }).click();
   await expect(page.getByRole('heading', { name: /Picture it\./ })).toBeVisible();
   await expect(page.getByText(/Why this matters:.*your goal weight/)).toBeVisible();
-  await expect(page.getByText('Heading for: Lose the weight.')).toBeVisible();
+  await expect(page.getByText('Heading for: Feel hot in your jeans.')).toBeVisible();
 
   // Then every screen: answer what's shown, move on. The answers each question gets:
   const answers: Record<string, () => Promise<unknown>> = {
