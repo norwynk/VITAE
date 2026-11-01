@@ -29,8 +29,8 @@ export const GOALS: Goal[] = [
   {
     slug: 'weight',
     category: 'Weight & Body',
-    title: 'Lose the weight.',
-    covers: 'Weight loss, cravings and body shape',
+    title: 'Feel hot in your jeans.',
+    covers: 'Weight loss, cravings and a shape you love',
     image: '/goals/weight.jpg',
     colour: '#FF6A21',
     destination: 'your goal weight',
@@ -41,8 +41,8 @@ export const GOALS: Goal[] = [
   {
     slug: 'skin',
     category: 'Appearance & Skin',
-    title: 'Get the glow.',
-    covers: 'Glass skin, glow and fresher-looking skin',
+    title: 'Glow like you mean it.',
+    covers: 'Glowing, fresher, younger-looking skin',
     image: '/goals/skin.jpg',
     colour: '#FF0F78',
     destination: 'your glow',
@@ -53,7 +53,7 @@ export const GOALS: Goal[] = [
   {
     slug: 'energy',
     category: 'Energy, Sleep & Recovery',
-    title: 'Sleep. Recover. Repeat.',
+    title: 'Up all day. Out like a light.',
     covers: 'Energy, deeper sleep and faster recovery',
     image: '/goals/energy.jpg',
     colour: '#1267E8',
@@ -65,8 +65,8 @@ export const GOALS: Goal[] = [
   {
     slug: 'hormones',
     category: 'Hormones, Intimacy & Mind',
-    title: 'Feel like you again.',
-    covers: 'Hormones, libido, mood and focus',
+    title: 'Bring back your spark.',
+    covers: 'Hormones, desire, mood and focus',
     image: '/goals/hormones.jpg',
     colour: '#8E1F5D',
     destination: 'feeling like you again',
