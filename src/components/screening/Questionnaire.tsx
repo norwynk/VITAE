@@ -24,7 +24,7 @@ import { type PenSafety, penSafety } from '@/domain/penSafety';
 import { useCatalogue } from '@/hooks/useCatalogue';
 import { useScreening } from '@/hooks/useScreening';
 import { MAX_SHORTLIST, useShortlist } from '@/hooks/useShortlist';
-import { useSide } from '@/hooks/useSide';
+import { useBrandForSide, useSide } from '@/hooks/useSide';
 import { MEN_ANGLES, forSide } from '@/brand/sides';
 import { demoRepository } from '@/services/repository';
 import { BySide } from '../brand/BySide';
@@ -177,6 +177,7 @@ export function Questionnaire({
 
   // The men's side only offers the men's range.
   const { side } = useSide();
+  const sideBrand = useBrandForSide();
   const available = forSide((pens ?? []).map((p) => p.treatment), side, (t) => t.slug);
   const chosen = shortlist.slugs.map((s) => available.find((t) => t.slug === s)).filter((t): t is Treatment => Boolean(t));
   // Where they're heading is already known if they came with a goal or with pens: never ask twice.
@@ -295,7 +296,7 @@ export function Questionnaire({
     }
   };
 
-  const accent = chosen[0] ? worldStyle(penBrand(chosen[0]).colours) : ({ '--accent': goal?.colour ?? 'var(--pink)' } as React.CSSProperties);
+  const accent = chosen[0] ? worldStyle(sideBrand(penBrand(chosen[0])).colours) : ({ '--accent': goal?.colour ?? 'var(--pink)' } as React.CSSProperties);
   const stopIndex = screen.stop;
   const firstOfStop = screens.findIndex((s) => s.stop === stopIndex) === step;
   const cheer =
@@ -601,6 +602,7 @@ function PensStep({ repeat, ...props }: Parameters<typeof PensPicker>[0] & { rep
   const { chosen, shortlist, goal } = props;
   // Decided when the step opens, so removing a pen doesn't turn this into a shop.
   const [arrivedWithPens] = useState(shortlist.slugs.length > 0);
+  const sideBrand = useBrandForSide();
   if (arrivedWithPens && shortlist.slugs.length > 0) {
     return (
       <>
@@ -612,7 +614,7 @@ function PensStep({ repeat, ...props }: Parameters<typeof PensPicker>[0] & { rep
         />
         <ul className="plain screening__pens">
           {chosen.map((t) => {
-            const b = penBrand(t);
+            const b = sideBrand(penBrand(t));
             return (
               <li key={t.id} className="screening__pen" style={worldStyle(b.colours)}>
                 <span className="screening__pen-dot" />
@@ -664,11 +666,12 @@ function PensPicker({
   letClinicianSuggest: boolean;
   onLet: (v: boolean) => void;
 }) {
+  const sideBrand = useBrandForSide();
   const open = available.filter((t) => t.active && t.public);
   const forGoal = goal ? open.filter((t) => t.category === goal.category) : open;
   const others = goal ? open.filter((t) => t.category !== goal.category) : [];
   const card = (t: Treatment) => {
-    const b = penBrand(t);
+    const b = sideBrand(penBrand(t));
     const on = shortlist.has(t.slug);
     return (
       <button

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import RANGE from '../src/brand/range.json';
-import { QUIZ_PENS, results } from '../src/brand/quiz';
-import { MEN_GOALS, MEN_PENS, forSide, isForMen } from '../src/brand/sides';
+import { QUIZ_PENS, goalsToAsk, results, withOnlyPens } from '../src/brand/quiz';
+import { CATEGORIES, PEN_BRANDS } from '../src/brand/pens';
+import { MEN_ANGLES, MEN_CHOICES, MEN_GOALS, MEN_PENS, forMen, forSide, isForMen } from '../src/brand/sides';
 import { GOALS } from '../src/brand/goals';
 
 describe('the two sides', () => {
@@ -32,5 +33,27 @@ describe('the two sides', () => {
       expect(GOALS.map((x) => x.slug)).toContain(g.slug);
       expect(isForMen(g.pen)).toBe(true);
     }
+  });
+
+  it('every men’s pen is told the men’s way, and only men’s pens are', () => {
+    for (const slug of MEN_PENS) expect(MEN_ANGLES[slug]?.transformation).toBeTruthy();
+    for (const slug of Object.keys(MEN_ANGLES)) expect(isForMen(slug)).toBe(true);
+    for (const c of CATEGORIES) if (forSide(QUIZ_PENS, 'men', (p) => p.id).some((p) => p.category === c.name)) expect(MEN_CHOICES[c.name]).toBeTruthy();
+  });
+
+  it('Body Sculpt is blue and painted on the men’s side, unchanged for women', () => {
+    const men = forMen(PEN_BRANDS['body-sculpt']);
+    expect(men.colours.main).toBe('#2B4C7E');
+    expect(men.cardImage).toBeUndefined();
+    expect(PEN_BRANDS['body-sculpt'].colours.main).toBe('#B874FF');
+    expect(forMen(PEN_BRANDS['full-throttle'])).toBe(PEN_BRANDS['full-throttle']);
+  });
+
+  it('the quiz never asks a question with only one answer', () => {
+    const men = forSide(QUIZ_PENS, 'men', (p) => p.id);
+    expect(goalsToAsk(['Weight & Body'], men)).toEqual([]);
+    expect(withOnlyPens({ goals: ['Weight & Body'], hooks: {}, feelings: [] }, men).hooks).toEqual({ 'Weight & Body': 'body-sculpt' });
+    expect(results(withOnlyPens({ goals: ['Weight & Body'], hooks: {}, feelings: [] }, men), men)[0].id).toBe('body-sculpt');
+    expect(goalsToAsk(['Weight & Body'], QUIZ_PENS)).toEqual(['Weight & Body']);
   });
 });
