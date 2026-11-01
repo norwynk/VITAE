@@ -46,10 +46,10 @@ test('home shows colour cards that flip to outcome, feeling and transformation',
   await expect(card.getByText('Finally, food stops running the show.')).toBeVisible();
   const feeling = card.getByText('Free. In control. Lighter.');
   await expect(feeling).toBeHidden();
-  await card.getByRole('button', { name: 'What you get' }).click();
+  await card.getByRole('button', { name: 'How it feels' }).click();
   await expect(feeling).toBeVisible();
   await expect(card.getByText('Transformation')).toBeVisible();
-  await expect(card.locator('[data-needs-verification="benefits"]')).toBeVisible();
+  await expect(card.getByText('What you get')).toHaveCount(0);
   await expect(card.getByText('A feeling, not a medical claim.', { exact: false })).toBeVisible();
   await card.getByRole('button', { name: 'Flip back' }).click();
   await expect(feeling).toBeHidden();

@@ -7,7 +7,6 @@ import { peptideLine } from '@/domain/model';
 import { MEN_ANGLES, isForMen } from '@/brand/sides';
 import { BotanicalSpill } from './Botanicals';
 import { BySide } from './BySide';
-import { NeedsVerification } from './NeedsVerification';
 import { ShortlistButton } from './ShortlistButton';
 import { PenStage } from './Pen';
 import { worldStyle } from './worldStyle';
@@ -15,7 +14,7 @@ import { worldStyle } from './worldStyle';
 /**
  * Product card. Front is Layer 1 (desire: colour world, name, hook,
  * one-line outcome; hover pops the pen). The flip is Layer 2
- * (transformation: feeling, transformation, benefits). Layers 3 and 4 live
+ * (transformation: feeling and transformation). Layers 3 and 4 live
  * on the product page behind "View the pen".
  */
 export function PenCard({ pen, index = 0 }: { pen: BrandedPen; index?: number }) {
@@ -57,7 +56,7 @@ export function PenCard({ pen, index = 0 }: { pen: BrandedPen; index?: number })
           {!brand.cardImage && <BotanicalSpill kind={brand.botanical} colours={brand.colours} className="flip-card__spill" />}
           <div className="flip-card__actions">
             <button type="button" className="btn small flip-card__btn-strong" onClick={() => setFlipped(true)} aria-expanded={flipped}>
-              What you get
+              How it feels
             </button>
             <Link href={href} className="btn small flip-card__btn-light">
               View the pen
@@ -76,20 +75,6 @@ export function PenCard({ pen, index = 0 }: { pen: BrandedPen; index?: number })
               <dt>Transformation</dt>
               <dd>
                 <BySide women={brand.transformation} men={MEN_ANGLES[t.slug]?.transformation} />
-              </dd>
-            </div>
-            <div>
-              <dt>What you get</dt>
-              <dd>
-                {brand.benefits.length ? (
-                  <ul className="flip-card__benefits">
-                    {brand.benefits.map((b) => (
-                      <li key={b}>{b}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <NeedsVerification what="benefits" />
-                )}
               </dd>
             </div>
           </dl>
