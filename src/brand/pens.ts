@@ -56,7 +56,7 @@ export interface PenBrand {
   forHim?: boolean;
 }
 
-/** "Quieter. Calmer. Less preoccupied." */
+/** "Free. In control. Lighter." */
 export function feelingLine(brand: Pick<PenBrand, 'feeling'>): string {
   return brand.feeling.map((f) => `${f}.`).join(' ');
 }
@@ -223,8 +223,8 @@ export function sortRange<T extends Pick<Treatment, 'slug' | 'name'>>(items: T[]
 
 /** Shop filters and quiz first step, in character-sheet order. */
 export const CATEGORIES: { name: string; choice: string; colour: string }[] = [
-  { name: 'Weight & Body', choice: 'I want to transform my body', colour: '#FF6A21' },
+  { name: 'Weight & Body', choice: 'I want to feel incredible in my body', colour: '#FF6A21' },
   { name: 'Appearance & Skin', choice: 'I want to love what I see', colour: PEN_BRANDS['the-glow-up'].colours.main },
-  { name: 'Energy, Sleep & Recovery', choice: 'I want more energy, sleep or recovery', colour: PEN_BRANDS['deep-sleep-rebuild'].colours.main },
-  { name: 'Hormones, Intimacy & Mind', choice: 'I want to feel more like me', colour: PEN_BRANDS['sharp-mind'].colours.main },
+  { name: 'Energy, Sleep & Recovery', choice: 'I want my energy and spark back', colour: PEN_BRANDS['deep-sleep-rebuild'].colours.main },
+  { name: 'Hormones, Intimacy & Mind', choice: 'I want to feel like me again', colour: PEN_BRANDS['sharp-mind'].colours.main },
 ];

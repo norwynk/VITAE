@@ -43,8 +43,8 @@ test('home shows colour cards that flip to outcome, feeling and transformation',
   await expect(page.getByText('A clinician says yes. Or no.')).toBeVisible();
   await expect(page.locator('.trust').getByRole('heading', { name: "Don't take pricks from strangers." })).toBeVisible();
   const card = page.getByRole('article', { name: 'Craving Control' });
-  await expect(card.getByText('Stop letting food take up so much space in your head.')).toBeVisible();
-  const feeling = card.getByText('Quieter. Calmer. Less preoccupied.');
+  await expect(card.getByText('Finally, food stops running the show.')).toBeVisible();
+  const feeling = card.getByText('Free. In control. Lighter.');
   await expect(feeling).toBeHidden();
   await card.getByRole('button', { name: 'What you get' }).click();
   await expect(feeling).toBeVisible();
@@ -127,10 +127,10 @@ test('goal cards come first and open the quiz with that goal chosen', async ({ p
 test('quiz asks enough to match, and the match leads straight into screening', async ({ page }) => {
   await page.goto('/find-your-prick');
   await page.getByRole('button', { name: "Let's go" }).click();
-  await page.getByRole('button', { name: 'I want more energy, sleep or recovery' }).click();
+  await page.getByRole('button', { name: 'I want my energy and spark back' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
-  await page.getByRole('button', { name: /Still have something left/ }).click();
-  await page.getByRole('button', { name: 'Switched on' }).click();
+  await page.getByRole('button', { name: /Still glowing at 9pm/ }).click();
+  await page.getByRole('button', { name: 'Energised' }).click();
   await page.getByRole('button', { name: 'Still going' }).click();
   await page.getByRole('button', { name: 'Show my match' }).click();
   await expect(page.getByRole('heading', { name: /Your match:\s*All-Day Energy\./ })).toBeVisible();
@@ -139,7 +139,7 @@ test('quiz asks enough to match, and the match leads straight into screening', a
   await page.getByRole('button', { name: 'Start over' }).click();
   await page.getByRole('button', { name: 'I want to love what I see' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
-  await page.getByRole('button', { name: 'Look as good as you want to feel.' }).click();
+  await page.getByRole('button', { name: 'Be the one they ask about your skin.' }).click();
   await page.getByRole('button', { name: 'Skip and show my match' }).click();
   await expect(page.getByRole('heading', { name: /Your match:\s*The Glow Up\./ })).toBeVisible();
   await expect(page.getByText('Also worth asking your clinician about')).toBeVisible();
@@ -147,9 +147,9 @@ test('quiz asks enough to match, and the match leads straight into screening', a
   await expect(page.getByRole('button', { name: /to my pens/ })).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Start over' }).click();
-  await page.getByRole('button', { name: 'I want more energy, sleep or recovery' }).click();
+  await page.getByRole('button', { name: 'I want my energy and spark back' }).click();
   await page.getByRole('button', { name: 'Next' }).click();
-  await page.getByRole('button', { name: 'Make your nights count again.' }).click();
+  await page.getByRole('button', { name: 'Wake up looking like you slept.' }).click();
   await page.getByRole('button', { name: 'Rested' }).click();
   await page.getByRole('button', { name: 'Show my match' }).click();
   await expect(page.getByRole('heading', { name: /Your match:\s*Deep Sleep Rebuild\./ })).toBeVisible();
