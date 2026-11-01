@@ -1,8 +1,9 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { type PenBrand, penBrand, sortRange } from '@/brand/pens';
 import type { Treatment } from '@/domain/model';
 import { repository } from '@/services/repository';
+import { useBrandForSide } from './useSide';
 
 export interface BrandedPen {
   treatment: Treatment;
@@ -33,5 +34,7 @@ export function useCatalogue(initial?: Treatment[]): { pens: BrandedPen[] | null
       live = false;
     };
   }, [fallback]);
-  return { pens, error };
+  const forSide = useBrandForSide();
+  const shown = useMemo(() => pens?.map((p) => ({ ...p, brand: forSide(p.brand) })) ?? null, [pens, forSide]);
+  return { pens: shown, error };
 }

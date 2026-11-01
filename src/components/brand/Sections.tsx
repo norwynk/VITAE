@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { CO_FOUNDERS } from '@/brand/team';
 import { PEN_BRANDS } from '@/brand/pens';
+import { forMen } from '@/brand/sides';
 import { SOURCE_PILLARS } from '@/brand/source';
 import { Motif } from './Botanicals';
 import { PenStage } from './Pen';
@@ -264,7 +265,7 @@ export function DesignedForWomen() {
  * DesignedForWomen so both sides feel like one brand.
  */
 export function BuiltForMen() {
-  const trio = ['rapid-recovery', 'full-throttle', 'body-sculpt'].map((slug) => PEN_BRANDS[slug]);
+  const trio = ['rapid-recovery', 'full-throttle', 'body-sculpt'].map((slug) => forMen(PEN_BRANDS[slug]));
   return (
     <section className="women section">
       <div className="container women__grid">

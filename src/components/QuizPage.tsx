@@ -5,8 +5,8 @@ import { ConsultCard } from './brand/ConsultCard';
 import { useState } from 'react';
 import type { Treatment } from '@/domain/model';
 import { CATEGORIES, PEN_BRANDS, feelingLine } from '@/brand/pens';
-import { CLINICIAN_MAY_SUGGEST, MAX_GOALS, QUIZ_PENS, type QuizAnswers, feelingChoices, pensIn, results, tiebreakPair } from '@/brand/quiz';
-import { MEN_ANGLES, forSide } from '@/brand/sides';
+import { CLINICIAN_MAY_SUGGEST, MAX_GOALS, QUIZ_PENS, type QuizAnswers, feelingChoices, goalsToAsk, pensIn, results, tiebreakPair, withOnlyPens } from '@/brand/quiz';
+import { MEN_ANGLES, MEN_CHOICES, forSide } from '@/brand/sides';
 import { useSide } from '@/hooks/useSide';
 import { type BrandedPen, useCatalogue } from '@/hooks/useCatalogue';
 import { PenStage } from './brand/Pen';
@@ -31,26 +31,35 @@ export function QuizPage({ initialGoal, initialPens }: { initialGoal?: string; i
   const { pens, error } = useCatalogue(initialPens);
   // The men's side is matched to the men's range only, and only offers goals it has pens for.
   const { side } = useSide();
-  const pool = forSide(QUIZ_PENS, side, (p) => p.id);
+  // The men's side also asks in the men's words (hooks, outcomes, feelings).
+  const pool = forSide(QUIZ_PENS, side, (p) => p.id).map((p) => {
+    const men = side === 'men' ? MEN_ANGLES[p.id] : undefined;
+    return men ? { ...p, hook: men.hook, outcome: men.outcome, feeling: men.feeling } : p;
+  });
   const categories = CATEGORIES.filter((c) => pool.some((p) => p.category === c.name));
   // Arriving from a homepage goal card: that goal is chosen, so start at the next question.
   const [step, setStep] = useState<Step>(initialGoal ? { kind: 'hook', index: 0 } : { kind: 'intro' });
   const [answers, setAnswers] = useState<QuizAnswers>(initialGoal ? { ...EMPTY_ANSWERS, goals: [initialGoal] } : EMPTY_ANSWERS);
   const [hover, setHover] = useState<string | null>(null);
   const bySlug = (slug: string) => pens?.find((p) => p.treatment.slug === slug) ?? null;
+  // A goal with only one pen has nothing to choose between, so it skips straight past its question.
+  const hookGoals = goalsToAsk(answers.goals, pool);
+  const full = withOnlyPens(answers, pool);
+  const view: Step = step.kind === 'hook' && !hookGoals[step.index] ? { kind: 'feelings' } : step;
 
-  const totalSteps = 3 + Math.max(answers.goals.length, 1);
-  const stepNumber = { intro: 0, goals: 1, hook: 2 + (step.kind === 'hook' ? step.index : 0), feelings: 2 + answers.goals.length, tiebreak: totalSteps, result: totalSteps }[step.kind];
+  const asked = answers.goals.length ? hookGoals.length : 1;
+  const totalSteps = 3 + asked;
+  const stepNumber = { intro: 0, goals: 1, hook: 2 + (view.kind === 'hook' ? view.index : 0), feelings: 2 + asked, tiebreak: totalSteps, result: totalSteps }[view.kind];
   const progress = Math.max(6, Math.round((stepNumber / totalSteps) * 100));
 
   const restart = () => {
     setAnswers(EMPTY_ANSWERS);
     setStep({ kind: 'goals' });
   };
-  const afterFeelings = (a: QuizAnswers) => setStep(tiebreakPair(a, pool) ? { kind: 'tiebreak' } : { kind: 'result' });
+  const afterFeelings = (a: QuizAnswers) => setStep(tiebreakPair(withOnlyPens(a, pool), pool) ? { kind: 'tiebreak' } : { kind: 'result' });
 
-  if (step.kind === 'result') {
-    const found = results(answers, pool)
+  if (view.kind === 'result') {
+    const found = results(full, pool)
       .map((p) => bySlug(p.id))
       .filter((p): p is BrandedPen => p !== null);
     if (found.length) return <MatchReveal pen={found[0]} others={found.slice(1)} onRestart={restart} />;
@@ -69,7 +78,7 @@ export function QuizPage({ initialGoal, initialPens }: { initialGoal?: string; i
           </div>
           {error && <p className="notice error">The pens could not be loaded: {error}</p>}
 
-          {step.kind === 'intro' && (
+          {view.kind === 'intro' && (
             <section className="quiz-step" key="intro">
               <p className="eyebrow">Find your prick</p>
               <h1 className="display quiz__title">
@@ -86,7 +95,7 @@ export function QuizPage({ initialGoal, initialPens }: { initialGoal?: string; i
             </section>
           )}
 
-          {step.kind === 'goals' && (
+          {view.kind === 'goals' && (
             <section className="quiz-step" key="goals" aria-labelledby="q-goals">
               <p className="eyebrow">{questionLabel(1)} · pick up to {MAX_GOALS}</p>
               <h1 id="q-goals" className="display quiz__title">
@@ -117,7 +126,7 @@ export function QuizPage({ initialGoal, initialPens }: { initialGoal?: string; i
                         }))
                       }
                     >
-                      {c.choice}
+                      <BySide women={c.choice} men={MEN_CHOICES[c.name]} />
                       <span className="dot" />
                     </button>
                   );
@@ -129,7 +138,7 @@ export function QuizPage({ initialGoal, initialPens }: { initialGoal?: string; i
                   disabled={!answers.goals.length}
                   onClick={() => {
                     setHover(null);
-                    setStep({ kind: 'hook', index: 0 });
+                    setStep(hookGoals.length ? { kind: 'hook', index: 0 } : { kind: 'feelings' });
                   }}
                 >
                   Next
@@ -138,12 +147,12 @@ export function QuizPage({ initialGoal, initialPens }: { initialGoal?: string; i
             </section>
           )}
 
-          {step.kind === 'hook' && (() => {
-            const goal = answers.goals[step.index];
+          {view.kind === 'hook' && (() => {
+            const goal = hookGoals[view.index];
             return (
               <section className="quiz-step" key={`hook-${goal}`} aria-labelledby="q-hook">
                 <p className="eyebrow">
-                  {questionLabel(2 + step.index)} · {goal}
+                  {questionLabel(2 + view.index)} · {goal}
                 </p>
                 <h1 id="q-hook" className="display quiz__title">
                   Which sounds
@@ -165,7 +174,7 @@ export function QuizPage({ initialGoal, initialPens }: { initialGoal?: string; i
                         onClick={() => {
                           setAnswers((a) => ({ ...a, hooks: { ...a.hooks, [goal]: qp.id } }));
                           setHover(null);
-                          setStep(step.index + 1 < answers.goals.length ? { kind: 'hook', index: step.index + 1 } : { kind: 'feelings' });
+                          setStep(view.index + 1 < hookGoals.length ? { kind: 'hook', index: view.index + 1 } : { kind: 'feelings' });
                         }}
                       >
                         {qp.hook}
@@ -175,7 +184,7 @@ export function QuizPage({ initialGoal, initialPens }: { initialGoal?: string; i
                   })}
                 </div>
                 <div className="quiz__nav">
-                  <button type="button" className="secondary small" onClick={() => setStep(step.index ? { kind: 'hook', index: step.index - 1 } : { kind: 'goals' })}>
+                  <button type="button" className="secondary small" onClick={() => setStep(view.index ? { kind: 'hook', index: view.index - 1 } : { kind: 'goals' })}>
                     Back
                   </button>
                 </div>
@@ -183,9 +192,9 @@ export function QuizPage({ initialGoal, initialPens }: { initialGoal?: string; i
             );
           })()}
 
-          {step.kind === 'feelings' && (
+          {view.kind === 'feelings' && (
             <section className="quiz-step" key="feelings" aria-labelledby="q-feel">
-              <p className="eyebrow">{questionLabel(2 + answers.goals.length)} · pick any</p>
+              <p className="eyebrow">{questionLabel(2 + asked)} · pick any</p>
               <h1 id="q-feel" className="display quiz__title">
                 How do you
                 <br />
@@ -208,7 +217,7 @@ export function QuizPage({ initialGoal, initialPens }: { initialGoal?: string; i
                 })}
               </div>
               <div className="quiz__nav">
-                <button type="button" className="secondary small" onClick={() => setStep({ kind: 'hook', index: answers.goals.length - 1 })}>
+                <button type="button" className="secondary small" onClick={() => setStep(hookGoals.length ? { kind: 'hook', index: hookGoals.length - 1 } : { kind: 'goals' })}>
                   Back
                 </button>
                 <button type="button" onClick={() => afterFeelings(answers)}>
@@ -218,8 +227,8 @@ export function QuizPage({ initialGoal, initialPens }: { initialGoal?: string; i
             </section>
           )}
 
-          {step.kind === 'tiebreak' && (() => {
-            const pair = tiebreakPair(answers, pool);
+          {view.kind === 'tiebreak' && (() => {
+            const pair = tiebreakPair(full, pool);
             if (!pair) return null;
             return (
               <section className="quiz-step" key="tiebreak" aria-labelledby="q-tie">

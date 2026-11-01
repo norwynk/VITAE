@@ -91,3 +91,18 @@ export function results(answers: QuizAnswers, pool: QuizPen[] = QUIZ_PENS): Quiz
     .slice(0, MAX_RESULTS)
     .map((x) => x.pen);
 }
+
+/** Goals worth a "which sounds most like you" question: a goal with one pen has nothing to choose. */
+export function goalsToAsk(goals: string[], pool: QuizPen[] = QUIZ_PENS): string[] {
+  return goals.filter((g) => pensIn(g, pool).length > 1);
+}
+
+/** The answers with each one-pen goal's pen chosen for them. */
+export function withOnlyPens(answers: QuizAnswers, pool: QuizPen[] = QUIZ_PENS): QuizAnswers {
+  const hooks = { ...answers.hooks };
+  for (const g of answers.goals) {
+    const only = pensIn(g, pool);
+    if (only.length === 1) hooks[g] = only[0].id;
+  }
+  return { ...answers, hooks };
+}

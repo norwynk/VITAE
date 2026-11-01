@@ -74,7 +74,9 @@ export function PenCard({ pen, index = 0 }: { pen: BrandedPen; index?: number })
             </div>
             <div>
               <dt>Transformation</dt>
-              <dd>{brand.transformation}</dd>
+              <dd>
+                <BySide women={brand.transformation} men={MEN_ANGLES[t.slug]?.transformation} />
+              </dd>
             </div>
             <div>
               <dt>What you get</dt>

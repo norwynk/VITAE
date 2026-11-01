@@ -141,7 +141,9 @@ export function ProductPage({ slug, initialPens }: { slug: string; initialPens?:
               </div>
               <div data-reveal style={{ '--delay': '240ms' } as React.CSSProperties}>
                 <p className="eyebrow">Transformation</p>
-                <p className="story-band__text">{brand.transformation}</p>
+                <p className="story-band__text">
+                  <BySide women={brand.transformation} men={MEN_ANGLES[t.slug]?.transformation} />
+                </p>
               </div>
             </div>
             <p className="small" style={{ marginTop: 'var(--space-4)', opacity: 0.9 }}>

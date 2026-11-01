@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { GOALS } from '@/brand/goals';
 import { PEN_BRANDS } from '@/brand/pens';
-import { MEN_GOALS } from '@/brand/sides';
+import { MEN_GOALS, forMen } from '@/brand/sides';
 import { PenStage } from './Pen';
 
 /** "Start here": pick what you want first, then the quiz finds the pens. */
@@ -60,7 +60,7 @@ export function MenGoalCards() {
         </div>
         <ul className="goals__grid goals__grid--three">
           {MEN_GOALS.map((g, i) => {
-            const pen = PEN_BRANDS[g.pen];
+            const pen = forMen(PEN_BRANDS[g.pen]);
             return (
               <li key={g.slug} data-reveal style={{ '--delay': `${i * 90}ms`, '--goal': g.colour } as React.CSSProperties}>
                 <Link href={`/find-your-prick?goal=${g.slug}`} className="goal-card goal-card--pen">

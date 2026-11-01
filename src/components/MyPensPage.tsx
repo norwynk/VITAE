@@ -6,6 +6,7 @@ import { penSafety } from '@/domain/penSafety';
 import { useCatalogue } from '@/hooks/useCatalogue';
 import { useScreening } from '@/hooks/useScreening';
 import { useShortlist } from '@/hooks/useShortlist';
+import { useBrandForSide } from '@/hooks/useSide';
 import { worldStyle } from './brand/worldStyle';
 import { BrandPage } from './site/BrandPage';
 
@@ -16,6 +17,7 @@ import { BrandPage } from './site/BrandPage';
 export function MyPensPage({ initialPens }: { initialPens?: Treatment[] }) {
   const { pens } = useCatalogue(initialPens);
   const shortlist = useShortlist();
+  const sideBrand = useBrandForSide();
   const screening = useScreening();
   const chosen = shortlist.slugs.map((s) => pens?.find((p) => p.treatment.slug === s)).filter((p) => p !== undefined);
   const started = Object.keys(screening.state.answers).length > 0;
@@ -34,7 +36,7 @@ export function MyPensPage({ initialPens }: { initialPens?: Treatment[] }) {
         {chosen.length > 0 && (
           <ul className="plain my-pens-page__list">
             {chosen.map(({ treatment: t }) => {
-              const b = penBrand(t);
+              const b = sideBrand(penBrand(t));
               return (
                 <li key={t.id} className="screening__pen" style={worldStyle(b.colours)}>
                   <span className="screening__pen-dot" />
