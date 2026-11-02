@@ -1,17 +1,21 @@
-/** Brand band between sections: short lines separated by a sparkle, scrolling on a deep pink field. */
-export function Marquee({ items }: { items: string[] }) {
+import type { PenBrand } from '@/brand/pens';
+import { Pen } from '../brand/Pen';
+
+/** Brand band between sections: short lines separated by our own pens, scrolling on a deep pink field. */
+export function Marquee({ items, pens }: { items: string[]; pens: PenBrand[] }) {
   const run = [...items, ...items];
   return (
     <div className="marquee" aria-hidden="true">
       <div className="marquee__track">
-        {run.map((text, i) => (
-          <span key={i} className="marquee__item">
-            {text}
-            <svg className="marquee__spark" viewBox="-10 -10 20 20">
-              <path d="M0 -9 L2.5 -2.5 L9 0 L2.5 2.5 L0 9 L-2.5 2.5 L-9 0 L-2.5 -2.5 Z" />
-            </svg>
-          </span>
-        ))}
+        {run.map((text, i) => {
+          const pen = pens[i % pens.length];
+          return (
+            <span key={i} className="marquee__item">
+              {text}
+              <Pen className="marquee__pen" colours={pen.colours} label={pen.penLabel} botanical={pen.botanical} />
+            </span>
+          );
+        })}
       </div>
     </div>
   );

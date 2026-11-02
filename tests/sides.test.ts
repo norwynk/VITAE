@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import RANGE from '../src/brand/range.json';
 import { QUIZ_PENS, goalsToAsk, results, withOnlyPens } from '../src/brand/quiz';
 import { CATEGORIES, PEN_BRANDS } from '../src/brand/pens';
-import { MEN_ANGLES, MEN_CHOICES, MEN_GOALS, MEN_PENS, forMen, forSide, goalForSide, isForMen } from '../src/brand/sides';
-import { GOALS, PEN_HELP, goalBySlug } from '../src/brand/goals';
+import { MEN_ANGLES, MEN_CHOICES, MEN_GOALS, MEN_PENS, forMen, forSide, goalForPen, goalForSide, isForMen } from '../src/brand/sides';
+import { GOALS, PEN_HELP, PEN_STORY, goalBySlug, goalForCategory } from '../src/brand/goals';
 import { GOALS as HELP_ANSWERS, HELP_OPTIONS } from '../src/domain/intake';
 
 describe('the two sides', () => {
@@ -73,5 +73,27 @@ describe('the two sides', () => {
     expect(g.image).toBe('');
     for (const h of g.intakeGoals) expect(HELP_OPTIONS.men).toContain(h);
     expect(goalForSide(goalBySlug('weight')!, 'women')).toEqual(goalBySlug('weight'));
+  });
+});
+
+describe('the screening story', () => {
+  it('every pen tells its own story, on both sides', () => {
+    for (const b of Object.values(PEN_BRANDS)) {
+      const g = goalForPen(goalForCategory(b.category)!, b.slug, 'women');
+      expect(g.destination, b.slug).toBe(PEN_STORY[b.slug].destination);
+      expect(g.title, b.slug).toBe(b.hook);
+    }
+    for (const slug of MEN_PENS) {
+      const g = goalForPen(goalForCategory(PEN_BRANDS[slug].category)!, slug, 'men');
+      expect(g.destination, slug).toBe(MEN_ANGLES[slug].destination);
+      expect(g.visionExample, slug).toBe(MEN_ANGLES[slug].example);
+      expect(g.title, slug).toBe(MEN_ANGLES[slug].hook);
+    }
+  });
+
+  it('a man with Deep Sleep Rebuild hears about recovery, never weight', () => {
+    const g = goalForPen(goalBySlug('energy')!, 'deep-sleep-rebuild', 'men');
+    expect([g.title, g.destination, g.visionExample].join(' ')).not.toMatch(/weight|scale|jeans/i);
+    expect(g.destination).toBe('recovery while you sleep');
   });
 });

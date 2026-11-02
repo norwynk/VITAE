@@ -28,7 +28,7 @@ import { useCatalogue } from '@/hooks/useCatalogue';
 import { useScreening } from '@/hooks/useScreening';
 import { MAX_SHORTLIST, useShortlist } from '@/hooks/useShortlist';
 import { useBrandForSide, useSide } from '@/hooks/useSide';
-import { MEN_ANGLES, forSide, goalForSide } from '@/brand/sides';
+import { MEN_ANGLES, forSide, goalForPen, goalForSide } from '@/brand/sides';
 import { demoRepository } from '@/services/repository';
 import { BySide } from '../brand/BySide';
 import { worldStyle } from '../brand/worldStyle';
@@ -199,7 +199,9 @@ export function Questionnaire({
   const storedFits = Boolean(state.destination) && (!chosen.length || chosen.some((t) => goalBySlug(state.destination)?.category === t.category));
   const destination = storedFits ? state.destination : (known?.slug ?? state.destination);
   const baseGoal = goalBySlug(destination);
-  const goal = baseGoal && goalForSide(baseGoal, side);
+  // Where the pens live, for choosing them; the rest of the story is told by the pen they lead with.
+  const groupGoal = baseGoal && goalForSide(baseGoal, side);
+  const goal = baseGoal && goalForPen(baseGoal, chosen[0]?.slug, side);
   const knownSlug = known?.slug;
   useEffect(() => {
     const g = goalBySlug(knownSlug);
@@ -426,7 +428,7 @@ export function Questionnaire({
                 repeat={isRepeatRoute(state.answers)}
                 chosen={chosen}
                 available={available}
-                goal={goal}
+                goal={groupGoal}
                 shortlist={shortlist}
                 letClinicianSuggest={state.letClinicianSuggest}
                 onLet={(v) => update({ letClinicianSuggest: v })}
