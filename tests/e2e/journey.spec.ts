@@ -161,7 +161,7 @@ test('quiz asks enough to match, and the match leads straight into screening', a
   // Coming from the quiz means new to peptides, and the goal is known from the pen: neither is asked.
   await expect(page.getByRole('heading', { name: /Picture it\./ })).toBeVisible();
   await expect(page.getByRole('heading', { name: /first time with peptides/ })).toHaveCount(0);
-  await expect(page.getByText('Heading for: Up all day. Out like a light.')).toBeVisible();
+  await expect(page.getByText('Heading for: Wake up looking like you slept.')).toBeVisible();
   await expect(page.getByRole('heading', { name: /Where are you heading\?/ })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'My pens (1)' }).first()).toBeAttached();
 });

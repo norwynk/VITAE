@@ -9,6 +9,7 @@ import { ClinicalTrustPanel, CoFounderQuote, EditorialStatement, FinalCta, HowIt
 import { BrandPage } from './site/BrandPage';
 import { Marquee } from './site/Marquee';
 import { useCatalogue } from '@/hooks/useCatalogue';
+import { PEN_BRANDS } from '@/brand/pens';
 
 /** Pens that lead the homepage, across categories, whatever order the shop uses. */
 const HOME_PENS = ['slow-and-steady', 'craving-control', 'body-sculpt', 'the-glow-up', 'skin-rewind', 'skin-rewind-reserve'];
@@ -16,13 +17,14 @@ const HOME_PENS = ['slow-and-steady', 'craving-control', 'body-sculpt', 'the-glo
 /** The brand band: standards, with the source story slipped in. */
 export const SOURCE_MARQUEE = ['A prick with standards', 'Months of doses in one pen', 'Know where your prick has been', 'Tested. Every. Batch.', 'A clinician in your corner'];
 const MARQUEE = [...SOURCE_MARQUEE, 'Designed for women'];
+const MARQUEE_PENS = HOME_PENS.map((s) => PEN_BRANDS[s]).filter(Boolean);
 
 export function HomePage({ initialPens }: { initialPens?: Treatment[] }) {
   const { pens, error } = useCatalogue(initialPens);
   return (
     <BrandPage revealKey={pens}>
       <BrandHero />
-      <Marquee items={MARQUEE} />
+      <Marquee items={MARQUEE} pens={MARQUEE_PENS} />
       <Explainer />
       <GoalCards />
       <SourceSection />

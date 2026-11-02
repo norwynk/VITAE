@@ -1,6 +1,7 @@
 'use client';
 import { useEffect } from 'react';
-import { MEN_PENS } from '@/brand/sides';
+import { PEN_BRANDS } from '@/brand/pens';
+import { MEN_PENS, forMen } from '@/brand/sides';
 import type { Treatment } from '@/domain/model';
 import { useCatalogue } from '@/hooks/useCatalogue';
 import { rememberSide } from '@/hooks/useSide';
@@ -14,6 +15,8 @@ import { SOURCE_MARQUEE } from './HomePage';
 import { BrandPage } from './site/BrandPage';
 import { Marquee } from './site/Marquee';
 
+const MARQUEE_PENS = MEN_PENS.map((s) => PEN_BRANDS[s] && forMen(PEN_BRANDS[s])).filter(Boolean);
+
 /**
  * PRICK for men: the same brand and standards, a cooler palette
  * (html[data-side="men"]) and only the men's range.
@@ -26,7 +29,7 @@ export function MenHomePage({ initialPens }: { initialPens?: Treatment[] }) {
   return (
     <BrandPage revealKey={pens}>
       <BrandHero pen="full-throttle" who="Built for men." />
-      <Marquee items={[...SOURCE_MARQUEE, 'Built for men']} />
+      <Marquee items={[...SOURCE_MARQUEE, 'Built for men']} pens={MARQUEE_PENS} />
       <Explainer />
       <MenGoalCards />
       <SourceSection />
