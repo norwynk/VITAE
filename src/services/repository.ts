@@ -86,6 +86,10 @@ export const firebaseRepository: Repository & {
   provisionMember(): Promise<{ created: boolean; refreshToken: boolean }>;
   sendTeamTestEmail(): Promise<{ from: string; to: string[] }>;
   registerPushToken(token: string): Promise<{ ok: boolean }>;
+  /** Opens Paystack's checkout for an approved pen: the page to send the member to. */
+  startPayment(releaseId: string): Promise<{ url: string }>;
+  /** Back from Paystack: whether the payment went through (checked with Paystack, not the browser). */
+  confirmPayment(releaseId: string): Promise<{ status: 'PAID' | 'PENDING' | 'FAILED' }>;
 } = {
   mode: 'live',
   publicCatalogue: async () => {
@@ -102,6 +106,8 @@ export const firebaseRepository: Repository & {
   provisionMember: () => callable('provisionMember', {}),
   sendTeamTestEmail: () => callable('sendTeamTestEmail', {}),
   registerPushToken: (token) => callable('registerPushToken', { token }),
+  startPayment: (releaseId) => callable('startPayment', { releaseId }),
+  confirmPayment: (releaseId) => callable('confirmPayment', { releaseId }),
 };
 
 export function repository(): Repository {

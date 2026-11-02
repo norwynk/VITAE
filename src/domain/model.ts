@@ -572,14 +572,33 @@ export interface RepeatDelivery {
   updatedAt: string;
 }
 
+/**
+ * Money for an order or an approved pen. Only a payment the provider has
+ * confirmed (a verified Paystack transaction) is ever marked PAID.
+ */
 export interface Payment {
   id: string;
-  orderId: string;
+  /** Set for shop orders. */
+  orderId?: string;
+  /** Set for a clinician-approved pen, paid before it is sent. */
+  releaseId?: string;
   memberId: string;
-  provider: 'NONE' | 'DEMO_SIMULATION';
-  status: 'AWAITING_PROVIDER' | 'SIMULATED_PAID' | 'VOID';
+  provider: 'NONE' | 'DEMO_SIMULATION' | 'PAYSTACK';
+  status: 'AWAITING_PROVIDER' | 'SIMULATED_PAID' | 'PAID' | 'REFUNDED' | 'VOID';
   amountCents: number;
   currency: 'ZAR';
+  /** What it was for and who paid, so the ledger reads without member records. */
+  description?: string;
+  memberName?: string;
+  /** Paystack reference of the latest checkout attempt; the one that paid once PAID. */
+  reference?: string;
+  /** Paystack's own transaction id and how it was paid (card, eft, apple_pay…). */
+  providerTransactionId?: string;
+  channel?: string;
+  /** True when Paystack ran it with a test key: no real money moved. */
+  testMode?: boolean;
+  paidAt?: string;
+  refundedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -624,7 +643,12 @@ export interface PenRelease {
   approvedBy: string;
   approvedByName: string;
   approvedAt: string;
-  status: 'TO_SEND' | 'SENT';
+  /** AWAITING_PAYMENT until the member pays, when the pen has a price; then TO_SEND. */
+  status: 'AWAITING_PAYMENT' | 'TO_SEND' | 'SENT';
+  /** Price × quantity at approval, and its payment record. Absent for pens with no price. */
+  amountCents?: number;
+  paymentId?: string;
+  paidAt?: string;
   sentAt?: string;
   sentBy?: string;
   courierReference?: string;
@@ -716,7 +740,8 @@ export interface Consent {
 export interface AuditEvent {
   id: string;
   actorId: string;
-  actorRole: Role;
+  /** SYSTEM for events no person performed, such as a payment Paystack confirmed. */
+  actorRole: Role | 'SYSTEM';
   action: string;
   memberId?: string;
   targets: string[];
@@ -1093,6 +1118,7 @@ export function visible(store: Store, actor: Actor): Store {
     }
     case 'SUPER_ADMIN': {
       out.penReleases = { ...store.penReleases };
+      out.payments = { ...store.payments };
       out.treatments = { ...store.treatments };
       out.inventory = { ...store.inventory };
       out.operationalProfiles = { ...store.operationalProfiles };

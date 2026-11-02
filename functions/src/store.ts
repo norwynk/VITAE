@@ -122,6 +122,7 @@ export async function loadWorkspace(db: Firestore, actor: Actor): Promise<Store>
         loadAll(db, r, store, 'treatments'),
         loadAll(db, r, store, 'inventory'),
         loadAll(db, r, store, 'operationalProfiles', OPERATIONAL_LIMIT),
+        r.get(db.collection('payments').orderBy('createdAt', 'desc').limit(OPERATIONAL_LIMIT)).then((s) => put(store, 'payments', s)),
         loadAll(db, r, store, 'biomarkerDefinitions'),
         loadAll(db, r, store, 'careTeams'),
         loadAll(db, r, store, 'corporateAccounts'),

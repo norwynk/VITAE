@@ -9,7 +9,7 @@ import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
 import { getStorage } from 'firebase-admin/storage';
 import { setGlobalOptions } from 'firebase-functions/v2';
-import { type CallableRequest, HttpsError, onCall } from 'firebase-functions/v2/https';
+import { type CallableRequest, HttpsError, onCall, onRequest } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { logger } from 'firebase-functions';
 import {
@@ -18,17 +18,23 @@ import {
   type DocumentRecord,
   type MemberRecord,
   type OperationalProfile,
+  type Payment,
+  type PenRelease,
   type ProviderAssignment,
   type Role,
   type UserRecord,
   MFA_REQUIRED_ROLES,
   ROLES,
   SERVICE_TIME_ZONE,
+  type Store,
+  emptyStore,
   visible,
 } from '../../src/domain/model';
 import {
   DomainError,
   applyCommand,
+  applyConfirmedPayment,
+  applyRefund,
   commandMemberId,
   diffStores,
   parseCommand,
@@ -38,7 +44,8 @@ import {
 import { SIGNED_URL_TTL_MS, assertDocumentAccess, validateDocumentRegistration } from '../../src/domain/documents';
 import { loadCatalogueScope, loadMemberScope, loadWorkspace } from './store';
 import { runReminderSweep } from './reminders';
-import { MAIL_LOGIN, notifyTeam, sendTestEmail } from './mail';
+import { MAIL_LOGIN, SITE, notifyPaid, notifyTeam, sendTestEmail } from './mail';
+import { PAYSTACK_SECRET_KEY, PaystackError, initializeTransaction, paymentIdFrom, validSignature, verifyTransaction } from './paystack';
 
 initializeApp();
 const db = getFirestore();
@@ -185,6 +192,185 @@ export const executeCommand = onCall({ ...callableOptions, secrets: [MAIL_LOGIN]
     throw toHttpsError(e);
   }
 });
+
+// ---------------------------------------------------------------------------
+// Payments (Paystack)
+// ---------------------------------------------------------------------------
+
+type Settled = 'PAID' | 'PENDING' | 'FAILED';
+
+/**
+ * Just the records a payment touches: the payment, its pen and the member's
+ * summary. Paystack's notice and the member's return often arrive together,
+ * so the transaction locks as little as possible.
+ */
+async function paymentScope(t: FirebaseFirestore.Transaction, paymentId: string): Promise<Store> {
+  const store = emptyStore();
+  const payment = (await t.get(db.doc(`payments/${paymentId}`))).data() as Payment | undefined;
+  if (!payment) return store;
+  store.payments[payment.id] = payment;
+  const [release, profile] = await Promise.all([
+    payment.releaseId ? t.get(db.doc(`penReleases/${payment.releaseId}`)) : undefined,
+    t.get(db.doc(`operationalProfiles/${payment.memberId}`)),
+  ]);
+  if (release?.exists) store.penReleases[release.id] = { ...(release.data() as PenRelease), id: release.id };
+  if (profile.exists) store.operationalProfiles[profile.id] = { ...(profile.data() as OperationalProfile), id: profile.id };
+  return store;
+}
+
+/**
+ * Asks Paystack for its own record of a transaction and, if it succeeded,
+ * marks the payment paid and moves the pen to the send list. The browser's
+ * word never counts. Safe to repeat: a second call changes nothing.
+ */
+async function settle(reference: string): Promise<Settled> {
+  const tx = await verifyTransaction(reference);
+  if (tx.status !== 'success') return tx.status === 'failed' || tx.status === 'reversed' ? 'FAILED' : 'PENDING';
+  const paymentId = tx.paymentId ?? paymentIdFrom(tx.reference);
+  const ref = paymentId ? db.doc(`payments/${paymentId}`) : undefined;
+  const found = ref && (await ref.get()).data() as Payment | undefined;
+  if (!ref || !found) throw new DomainError('NOT_FOUND', `Paystack paid ${tx.reference}, which matches no PRICK payment`);
+  if (found.status === 'PAID' || found.status === 'REFUNDED') return 'PAID';
+  const changed = await db.runTransaction(async (t) => {
+    const before = await paymentScope(t, found.id);
+    const applied = applyConfirmedPayment(
+      before,
+      {
+        paymentId: found.id,
+        reference: tx.reference,
+        amountCents: tx.amountCents,
+        currency: tx.currency,
+        providerTransactionId: tx.id,
+        channel: tx.channel,
+        testMode: tx.domain === 'test',
+      },
+      { now: new Date(), mode: 'live', newId },
+    );
+    if (!applied.changed) return false;
+    for (const change of diffStores(before, applied.store)) {
+      t.set(db.doc(`${change.collection}/${change.id}`), toFirestoreData(change.data as object));
+    }
+    return true;
+  });
+  if (changed) {
+    const payment = (await ref.get()).data() as Payment;
+    const release = payment.releaseId ? ((await db.doc(`penReleases/${payment.releaseId}`).get()).data() as PenRelease | undefined) : undefined;
+    await notifyPaid(db, payment, release);
+  }
+  return 'PAID';
+}
+
+function paystackHttpsError(e: unknown): HttpsError {
+  if (e instanceof PaystackError) {
+    logger.error('Paystack', e.message);
+    return new HttpsError('unavailable', 'Payment couldn’t be started just now. Nothing was charged. Please try again in a minute.');
+  }
+  return toHttpsError(e);
+}
+
+/** The member's own approved pen that is waiting for payment, and its payment record. */
+async function unpaidRelease(who: Actor, releaseId: unknown): Promise<{ release: PenRelease; payment: Payment }> {
+  if (who.role !== 'MEMBER') throw new HttpsError('permission-denied', 'Only members pay for pens');
+  if (typeof releaseId !== 'string' || !/^rel_\w{1,40}$/.test(releaseId)) throw new HttpsError('invalid-argument', 'releaseId is required');
+  const release = (await db.doc(`penReleases/${releaseId}`).get()).data() as PenRelease | undefined;
+  if (!release || release.memberId !== who.uid || !release.paymentId) throw new HttpsError('not-found', 'Pen not found');
+  const payment = (await db.doc(`payments/${release.paymentId}`).get()).data() as Payment | undefined;
+  if (!payment || payment.memberId !== who.uid) throw new HttpsError('not-found', 'Payment not found');
+  return { release, payment };
+}
+
+/** Member: open Paystack's checkout for an approved pen. Returns the page to go to. */
+export const startPayment = onCall({ ...callableOptions, secrets: [PAYSTACK_SECRET_KEY] }, async (request) => {
+  try {
+    const who = actor(request);
+    const { release, payment } = await unpaidRelease(who, request.data?.releaseId);
+    if (release.status !== 'AWAITING_PAYMENT' || payment.status !== 'AWAITING_PROVIDER') {
+      throw new HttpsError('failed-precondition', 'This pen is already paid for');
+    }
+    const email = request.auth?.token.email;
+    if (!email) throw new HttpsError('failed-precondition', 'Your account needs an email address for the receipt');
+    // A fresh reference per attempt: Paystack refuses to reuse one.
+    const reference = `${payment.id}-${Date.now().toString(36)}`;
+    const { authorizationUrl } = await initializeTransaction({
+      email,
+      amountCents: payment.amountCents,
+      reference,
+      callbackUrl: `${SITE}/app?paid=${release.id}`,
+      metadata: { paymentId: payment.id, releaseId: release.id, memberId: who.uid },
+    });
+    await db.doc(`payments/${payment.id}`).update({ reference, updatedAt: new Date().toISOString() });
+    await audit({ actorId: who.uid, actorRole: who.role, action: 'paymentStarted', memberId: who.uid, targets: [payment.id] });
+    return { url: authorizationUrl };
+  } catch (e) {
+    throw paystackHttpsError(e);
+  }
+});
+
+/** Member, back from Paystack: has it gone through? Checks with Paystack, so it works even before the webhook arrives. */
+export const confirmPayment = onCall({ ...callableOptions, secrets: [PAYSTACK_SECRET_KEY, MAIL_LOGIN] }, async (request) => {
+  try {
+    const who = actor(request);
+    const { payment } = await unpaidRelease(who, request.data?.releaseId);
+    if (payment.status === 'PAID' || payment.status === 'REFUNDED') return { status: 'PAID' as Settled };
+    if (!payment.reference) return { status: 'PENDING' as Settled };
+    return { status: await settle(payment.reference) };
+  } catch (e) {
+    throw paystackHttpsError(e);
+  }
+});
+
+/**
+ * Paystack's notice that a payment succeeded or was refunded. Set this
+ * function's address as the webhook URL in the Paystack dashboard. Every
+ * notice must carry Paystack's signature; anything else is turned away.
+ */
+export const paystackWebhook = onRequest(
+  { region: REGION, maxInstances: 10, invoker: 'public', secrets: [PAYSTACK_SECRET_KEY, MAIL_LOGIN] },
+  async (req, res) => {
+    if (req.method !== 'POST') {
+      res.status(405).end();
+      return;
+    }
+    if (!validSignature(req.rawBody, req.get('x-paystack-signature'))) {
+      logger.warn('Paystack webhook with a bad signature was ignored');
+      res.status(401).end();
+      return;
+    }
+    const { event, data } = (req.body ?? {}) as {
+      event?: string;
+      data?: { reference?: string; transaction_reference?: string; transaction?: { reference?: string } };
+    };
+    try {
+      if (event === 'charge.success' && data?.reference) {
+        await settle(data.reference);
+      } else if (event === 'refund.processed') {
+        const reference = data?.transaction_reference ?? data?.transaction?.reference ?? '';
+        const paymentId = paymentIdFrom(reference);
+        const found = paymentId && ((await db.doc(`payments/${paymentId}`).get()).data() as Payment | undefined);
+        if (found) {
+          await db.runTransaction(async (t) => {
+            const before = await paymentScope(t, found.id);
+            const applied = applyRefund(before, found.id, { now: new Date(), mode: 'live', newId });
+            for (const change of diffStores(before, applied.store)) {
+              t.set(db.doc(`${change.collection}/${change.id}`), toFirestoreData(change.data as object));
+            }
+          });
+        }
+      }
+      res.status(200).end();
+    } catch (e) {
+      if (e instanceof DomainError) {
+        // Wrong amount or unknown payment: retrying can't fix it, so it's logged for a person to look at.
+        logger.error('Paystack webhook needs attention', { event, reference: data?.reference, problem: e.message });
+        res.status(200).end();
+        return;
+      }
+      // Anything else (Paystack or the database briefly down): Paystack retries.
+      logger.error('Paystack webhook failed', e);
+      res.status(500).end();
+    }
+  },
+);
 
 /** Admin only: send a clearly labelled test email to the clinician and the admins. */
 export const sendTeamTestEmail = onCall({ ...callableOptions, secrets: [MAIL_LOGIN] }, async (request) => {
