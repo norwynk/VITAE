@@ -23,6 +23,11 @@ export interface IntakeQuestion {
   label: string;
   hint?: string;
   options?: string[];
+  /**
+   * Its options are wording the site may change ("What would you like help with?"),
+   * so the server takes any short label: a reworded option never stops a submission.
+   */
+  openOptions?: boolean;
   /** `tags`: quick picks. `rank`: the items to order. */
   suggestions?: string[];
   /** `tags`/`meds`: the label for "nothing to add". */
@@ -121,7 +126,7 @@ export const INTAKE: IntakeSection[] = [
     why: 'Your clinician reads this first. It’s how they know what {goal} really means to you.',
     questions: [
       { id: 'vision', kind: 'long', label: 'What’s different when it’s working?', hint: 'A sentence is plenty. Say it the way you’d say it to a friend.', maxLength: 500 },
-      { id: 'goals', kind: 'multi', label: 'What would you like help with?', options: GOALS, required: true },
+      { id: 'goals', kind: 'multi', label: 'What would you like help with?', options: GOALS, openOptions: true, required: true },
       { id: 'reason', kind: 'long', label: 'What made you reach out now?', hint: 'Your main health concerns, and what you’d love to change.', required: true, maxLength: 1000 },
       { id: 'mainWorry', kind: 'long', label: 'What concerns you most of the time?', maxLength: 1000 },
       { id: 'since', kind: 'choice', label: 'When did this first start?', options: ['Less than 3 months ago', '3 to 12 months ago', '1 to 3 years ago', 'Longer than 3 years', 'Not sure'] },
@@ -396,6 +401,7 @@ export function problemWith(q: IntakeQuestion, v: IntakeValue | undefined, provi
     case 'choice':
       return typeof v === 'string' && options?.includes(v) ? null : `Please choose an option for: ${q.label}`;
     case 'multi':
+      if (q.openOptions) return Array.isArray(v) && v.length <= 20 && v.every((x) => typeof x === 'string' && x.trim().length > 0 && x.length <= 80) ? null : `Please choose from the options for: ${q.label}`;
       return Array.isArray(v) && v.every((x) => typeof x === 'string' && options?.includes(x)) ? null : `Please choose from the options for: ${q.label}`;
     case 'tags':
       if (!Array.isArray(v) || !v.every((x) => typeof x === 'string' && x.length > 0 && x.length <= 120)) return `${q.label}: check your answers`;
