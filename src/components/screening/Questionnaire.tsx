@@ -2,14 +2,15 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { type Goal, GOALS, goalBySlug, goalForCategory } from '@/brand/goals';
-import { penBrand } from '@/brand/pens';
+import { type Goal, GOALS, PEN_HELP, goalBySlug, goalForCategory } from '@/brand/goals';
+import { type PenBrand, penBrand } from '@/brand/pens';
 import { publicDataMode } from '@/config';
 import {
   type IntakeAnswers,
   type IntakeQuestion,
   type IntakeSection,
   type IntakeValue,
+  HELP_OPTIONS,
   ROUTE_NEW,
   ROUTE_REPEAT,
   isNewRoute,
@@ -25,7 +26,7 @@ import { useCatalogue } from '@/hooks/useCatalogue';
 import { useScreening } from '@/hooks/useScreening';
 import { MAX_SHORTLIST, useShortlist } from '@/hooks/useShortlist';
 import { useBrandForSide, useSide } from '@/hooks/useSide';
-import { MEN_ANGLES, forSide } from '@/brand/sides';
+import { MEN_ANGLES, forSide, goalForSide } from '@/brand/sides';
 import { demoRepository } from '@/services/repository';
 import { BySide } from '../brand/BySide';
 import { worldStyle } from '../brand/worldStyle';
@@ -180,21 +181,35 @@ export function Questionnaire({
   const sideBrand = useBrandForSide();
   const available = forSide((pens ?? []).map((p) => p.treatment), side, (t) => t.slug);
   const chosen = shortlist.slugs.map((s) => available.find((t) => t.slug === s)).filter((t): t is Treatment => Boolean(t));
-  // Where they're heading is already known if they came with a goal or with pens: never ask twice.
+  // Where they're heading is already known if they came with pens or a goal: never ask twice.
+  // The pens they picked come first, so the story is always about those pens.
   const known =
+    goalForCategory(chosen[0]?.category) ??
     goalBySlug(initialGoal) ??
-    goalForCategory(available.find((t) => t.slug === initialPen)?.category) ??
-    goalForCategory(chosen[0]?.category);
-  const destination = state.destination ?? known?.slug;
-  const goal = goalBySlug(destination);
+    goalForCategory(available.find((t) => t.slug === initialPen)?.category);
+  // A destination left on this device from an earlier visit only stands if it still fits the pens.
+  const storedFits = Boolean(state.destination) && (!chosen.length || chosen.some((t) => goalBySlug(state.destination)?.category === t.category));
+  const destination = storedFits ? state.destination : (known?.slug ?? state.destination);
+  const baseGoal = goalBySlug(destination);
+  const goal = baseGoal && goalForSide(baseGoal, side);
+  const knownSlug = known?.slug;
   useEffect(() => {
-    if (state.destination || !known) return;
+    const g = goalBySlug(knownSlug);
+    if (storedFits || !g) return;
     update((s) => ({
-      destination: known.slug,
-      destinationFrom: 'known',
-      answers: Array.isArray(s.answers.goals) && s.answers.goals.length ? s.answers : { ...s.answers, goals: known.intakeGoals },
+      destination: g.slug,
+      destinationFrom: s.destinationFrom ?? 'known',
+      answers: Array.isArray(s.answers.goals) && s.answers.goals.length ? s.answers : { ...s.answers, goals: goalForSide(g, side).intakeGoals },
     }));
-  }, [state.destination, known, update]);
+  }, [storedFits, knownSlug, side, update]);
+  // "What would you like help with?" is asked in this side's words, and starts with what the chosen pens are for.
+  const helpOptions = HELP_OPTIONS[side === 'men' ? 'men' : 'women'];
+  const penHelp = [...new Set(chosen.flatMap((t) => (side === 'men' ? MEN_ANGLES[t.slug]?.help : undefined) ?? PEN_HELP[t.slug] ?? []))].join('|');
+  const helpKey = chosen.length ? `${side ?? 'women'}:${chosen.map((t) => t.slug).join(',')}` : undefined;
+  useEffect(() => {
+    if (!helpKey || state.helpFor === helpKey) return;
+    update((s) => ({ helpFor: helpKey, answers: penHelp ? { ...s.answers, goals: penHelp.split('|') } : s.answers }));
+  }, [helpKey, penHelp, state.helpFor, update]);
   const firstName = typeof state.answers.firstName === 'string' ? state.answers.firstName : '';
 
   const sections = sectionsFor(state.answers);
@@ -275,7 +290,8 @@ export function Questionnaire({
   };
 
   const chooseDestination = (slug: string) => {
-    const g = goalBySlug(slug);
+    const found = goalBySlug(slug);
+    const g = found && goalForSide(found, side);
     update((s) => {
       const goals = Array.isArray(s.answers.goals) && s.answers.goals.length ? s.answers.goals : g?.intakeGoals;
       return { destination: slug, destinationFrom: 'asked', answers: goals ? { ...s.answers, goals } : s.answers };
@@ -317,7 +333,7 @@ export function Questionnaire({
 
           <section className="intake__screen" key={step}>
             {screen.kind === 'destination' && (
-              <Destination chosen={destination} onChoose={chooseDestination} goals={GOALS.filter((g) => available.some((t) => t.category === g.category))} men={side === 'men'} />
+              <Destination chosen={destination} onChoose={chooseDestination} goals={GOALS.filter((g) => available.some((t) => t.category === g.category)).map((g) => goalForSide(g, side))} men={side === 'men'} />
             )}
 
             {screen.kind === 'section' && (
@@ -330,12 +346,20 @@ export function Questionnaire({
                     {screen.section.label} · {screen.part + 1} of {screen.parts}
                   </p>
                 )}
-                {screen.section.id === 'why' && screen.part === 0 && goal && <PictureIt goal={goal} />}
+                {screen.section.id === 'why' && screen.part === 0 && goal && (
+                  <PictureIt goal={goal} pen={chosen[0] && sideBrand(penBrand(chosen[0]))} men={side === 'men'} />
+                )}
                 <div className="intake__fields">
                   {screen.questions.map((q) => (
                     <Field
                       key={q.id}
-                      q={q.id === 'vision' && goal ? { ...q, placeholder: `For example: “${goal.visionExample}”` } : onScreen(q)}
+                      q={
+                        q.id === 'vision' && goal
+                          ? { ...q, placeholder: `For example: “${goal.visionExample}”` }
+                          : q.id === 'goals'
+                            ? { ...q, options: withChosen(helpOptions, state.answers.goals) }
+                            : onScreen(q)
+                      }
                       value={state.answers[q.id]}
                       onChange={(v) => {
                         setAnswer(q.id, v);
@@ -519,12 +543,24 @@ function Destination({ chosen, onChoose, goals, men }: { chosen?: string; onChoo
   );
 }
 
-function PictureIt({ goal }: { goal: Goal }) {
+/** Their "after", told by the pen they picked (or, with no pen yet, by where they're heading). */
+function PictureIt({ goal, pen, men }: { goal: Goal; pen?: PenBrand; men: boolean }) {
+  const line = pen ? ((men && MEN_ANGLES[pen.slug]?.transformation) || pen.transformation) : goal.picture;
+  const image = pen ? pen.cardImage : goal.image || undefined;
   return (
-    <figure className="picture-it" style={{ '--goal': goal.colour, backgroundImage: `url(${goal.image})` } as React.CSSProperties}>
-      <figcaption>{goal.picture}</figcaption>
+    <figure
+      className="picture-it"
+      style={{ '--goal': pen?.colours.deep ?? goal.colour, backgroundImage: image ? `url(${image})` : undefined } as React.CSSProperties}
+    >
+      <figcaption>{line}</figcaption>
     </figure>
   );
+}
+
+/** The options to show, plus anything already ticked that isn't one of them (so nothing is ticked out of sight). */
+function withChosen(options: string[], value: IntakeValue | undefined): string[] {
+  const extra = Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string' && !options.includes(v)) : [];
+  return [...options, ...extra];
 }
 
 function GoodToKnow({ name, safety }: { name: string; safety: PenSafety }) {

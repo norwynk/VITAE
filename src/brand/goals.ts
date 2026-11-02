@@ -76,6 +76,27 @@ export const GOALS: Goal[] = [
   },
 ];
 
+/** What each pen helps with, as the women's side answers "What would you like help with?". */
+export const PEN_HELP: Record<string, string[]> = {
+  'craving-control': ['Weight management'],
+  'slow-and-steady': ['Weight management'],
+  momentum: ['Weight management'],
+  'body-sculpt': ['Body shape'],
+  'the-glow-up': ['Skin and appearance'],
+  'skin-rewind': ['Skin and appearance'],
+  'skin-rewind-reserve': ['Skin and appearance'],
+  'holiday-tan': ['Skin and appearance'],
+  'all-day-energy': ['Energy'],
+  'deep-sleep-rebuild': ['Sleep', 'Recovery'],
+  'rapid-recovery': ['Recovery'],
+  'full-throttle': ['Testosterone and drive'],
+  'age-defiance': ['Energy', 'General wellbeing'],
+  'hormone-reset': ['Hormones'],
+  'bedroom-confidence': ['Libido'],
+  'sharp-mind': ['Focus'],
+  'gut-reset': ['Gut health'],
+};
+
 export function goalBySlug(slug: string | undefined): Goal | undefined {
   return GOALS.find((g) => g.slug === slug);
 }

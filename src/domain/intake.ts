@@ -64,7 +64,13 @@ export const ROUTE_REPEAT = 'I already have a script';
 export const isRepeatRoute = (a: IntakeAnswers) => str(a, 'route') === ROUTE_REPEAT;
 export const isNewRoute = (a: IntakeAnswers) => !isRepeatRoute(a);
 
-export const GOALS = ['Weight management', 'Skin and appearance', 'Energy', 'Sleep', 'Recovery', 'Hormones', 'Libido', 'Focus', 'General wellbeing'];
+/** "What would you like help with?", as each side asks it. */
+export const HELP_OPTIONS = {
+  women: ['Weight management', 'Body shape', 'Skin and appearance', 'Energy', 'Sleep', 'Recovery', 'Hormones', 'Libido', 'Focus', 'Gut health', 'General wellbeing'],
+  men: ['Muscle and strength', 'Fat loss and definition', 'Recovery', 'Sleep', 'Energy', 'Testosterone and drive', 'Libido', 'Focus', 'General wellbeing'],
+};
+/** Every answer either side can give (what the server accepts). */
+export const GOALS = [...new Set([...HELP_OPTIONS.women, ...HELP_OPTIONS.men])];
 export const SA_LANGUAGES = ['English', 'Afrikaans', 'isiZulu', 'isiXhosa', 'Sesotho', 'Other'];
 export const STRESS_RESPONSES = [
   'Keep my feelings to myself',
