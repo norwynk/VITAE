@@ -11,11 +11,11 @@ import { defineSecret } from 'firebase-functions/params';
 import { createTransport } from 'nodemailer';
 import type { Command } from '../../src/domain/commands';
 import { isRepeatRoute } from '../../src/domain/intake';
-import type { HealthAssessment, MemberRecord, PenRelease, Role } from '../../src/domain/model';
+import type { HealthAssessment, MemberRecord, PenRelease, Payment, Role } from '../../src/domain/model';
 
 export const MAIL_LOGIN = defineSecret('MAIL_LOGIN');
 // The public site address (functions/.env SITE_URL); the App Hosting address until the domain is linked.
-const SITE = (process.env.SITE_URL || 'https://prick-site--prick-c3c43.europe-west4.hosted.app').replace(/\/+$/, '');
+export const SITE = (process.env.SITE_URL || 'https://prick-site--prick-c3c43.europe-west4.hosted.app').replace(/\/+$/, '');
 
 async function send(to: string[], subject: string, text: string) {
   const login = MAIL_LOGIN.value().trim();
@@ -120,9 +120,25 @@ export async function notifyTeam(db: Firestore, command: Command, memberId: stri
       const r = snap.docs[0]?.data() as PenRelease | undefined;
       if (!r) return;
       const a = r.deliveryAddress;
+      const unpaid = r.status === 'AWAITING_PAYMENT';
+      if (unpaid && r.email) {
+        await send(
+          [r.email],
+          `You're approved: ${r.treatmentName}`,
+          [
+            `Hi ${r.memberName.split(' ')[0]},`,
+            '',
+            `${r.approvedByName} has approved your ${r.treatmentName}.`,
+            '',
+            `To have it sent, pay ${rand(r.amountCents ?? 0)} securely from your dashboard: ${SITE}/app`,
+            '',
+            'Your care team sends your pen as soon as it’s paid.',
+          ].join('\n'),
+        );
+      }
       await send(
         await emailsFor(db, ['SUPER_ADMIN', 'OPERATIONS']),
-        `Approved: ${r.treatmentName} for ${r.memberName}`,
+        `Approved${unpaid ? ' (waiting for payment)' : ''}: ${r.treatmentName} for ${r.memberName}`,
         [
           `${r.approvedByName} approved ${r.treatmentName} for ${r.memberName}.`,
           '',
@@ -137,11 +153,54 @@ export async function notifyTeam(db: Firestore, command: Command, memberId: stri
             ? `Delivery: ${a.recipient}, ${a.line1}${a.line2 ? `, ${a.line2}` : ''}, ${a.suburb}, ${a.city}, ${a.province}, ${a.postalCode} (${a.phone})`
             : 'Delivery address: not saved yet. Contact them to arrange it.',
           '',
-          `When it's on its way, mark it as sent in the admin workspace: ${SITE}/app`,
+          unpaid
+            ? `${r.memberName.split(' ')[0]} has been asked to pay ${rand(r.amountCents ?? 0)}. Don't send it yet: you'll get another email the moment it's paid.`
+            : `When it's on its way, mark it as sent in the admin workspace: ${SITE}/app`,
         ].join('\n'),
       );
     }
   } catch (e) {
     logger.warn('Team email failed', e);
+  }
+}
+
+function rand(cents: number): string {
+  return `R${(cents / 100).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+/** A confirmed payment: the team can send the pen, and the member gets a receipt. Never throws. */
+export async function notifyPaid(db: Firestore, payment: Payment, release: PenRelease | undefined) {
+  try {
+    const test = payment.testMode ? '[TEST, no real money] ' : '';
+    const what = release ? `${release.treatmentName} × ${release.quantity}` : (payment.description ?? 'Order');
+    const who = release?.memberName ?? payment.memberName ?? 'A member';
+    await send(
+      await emailsFor(db, ['SUPER_ADMIN', 'OPERATIONS']),
+      `${test}Paid: ${what} for ${who}, ${rand(payment.amountCents)}`,
+      [
+        `${who} has paid ${rand(payment.amountCents)} for ${what}.`,
+        `Paystack reference: ${payment.reference}`,
+        '',
+        release ? `It's now in "Pens to send". Mark it as sent once it's on its way: ${SITE}/app` : `${SITE}/app`,
+      ].join('\n'),
+    );
+    if (release?.email) {
+      await send(
+        [release.email],
+        `${test}Payment received: ${release.treatmentName}`,
+        [
+          `Hi ${who.split(' ')[0]},`,
+          '',
+          `Thank you. We've received ${rand(payment.amountCents)} for your ${what}.`,
+          `Reference: ${payment.reference}`,
+          '',
+          "Your care team is getting your pen ready and will let you know when it's on its way.",
+          '',
+          `${SITE}/app`,
+        ].join('\n'),
+      );
+    }
+  } catch (e) {
+    logger.warn('Payment email failed', e);
   }
 }

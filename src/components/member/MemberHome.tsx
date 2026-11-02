@@ -34,6 +34,7 @@ import { FinishScreening } from './FinishScreening';
 import { useScreening } from '@/hooks/useScreening';
 import { OnRepeat, renewalsDue } from './OnRepeat';
 import { PushReminders } from './PushReminders';
+import { PayButton, PaymentReturn } from './PayForPen';
 
 const TABS = ['Overview', 'Plan', 'Orders', 'Messages', 'My health'] as const;
 type Tab = (typeof TABS)[number];
@@ -60,6 +61,7 @@ export function MemberHome() {
 
   return (
     <div className="stack member">
+      <PaymentReturn />
       <NextStep onGo={setTab} />
       <div className="member-tabs" role="tablist" aria-label="Your account">
         {TABS.map((t) => (
@@ -220,6 +222,8 @@ function NextStep({ onGo }: { onGo: (tab: Tab) => void }) {
         (r) => r.approvalId === approval.id && r.status === 'SENT' && r.sentAt && r.sentAt.slice(0, 10) >= addDays(now, -1),
       ),
   );
+  // Approved with a price: they pay before the team sends it.
+  const unpaid = approval ? Object.values(store.penReleases).find((r) => r.approvalId === approval.id && r.status === 'AWAITING_PAYMENT') : undefined;
   const awaitingPen = Boolean(
     approval && Object.values(store.penReleases).some((r) => r.approvalId === approval.id && r.status === 'TO_SEND'),
   );
@@ -229,7 +233,10 @@ function NextStep({ onGo }: { onGo: (tab: Tab) => void }) {
   let title: string;
   let body: string;
   let action: { label: string; tab?: Tab; href?: string } | null = null;
-  if (needsInfo) {
+  if (unpaid && approval) {
+    title = "You're approved.";
+    body = `${unpaid.approvedByName} approved ${treatmentName(store, approval.treatmentId)}. Pay securely with Paystack and your care team sends your pen.`;
+  } else if (needsInfo) {
     title = 'Your clinician has a question.';
     body = `They need a little more information about ${treatmentName(store, needsInfo.treatmentId)}.`;
     action = { label: 'Read and reply', tab: 'Messages' };
@@ -279,6 +286,7 @@ function NextStep({ onGo }: { onGo: (tab: Tab) => void }) {
         <h1 className="display next-step__title">{title}</h1>
         <p className="next-step__body">{body}</p>
         <div className="row" style={{ gap: 'var(--space-2)' }}>
+          {unpaid && <PayButton release={unpaid} />}
           {action?.tab && (
             <button type="button" className="btn light" onClick={() => action.tab && onGo(action.tab)}>
               {action.label}

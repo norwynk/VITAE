@@ -5,6 +5,8 @@ import {
   type CommandInput,
   DomainError,
   applyCommand,
+  applyConfirmedPayment,
+  applyRefund,
   diffStores,
   purchaseBlocks,
 } from '../src/domain/commands';
@@ -480,7 +482,7 @@ describe('delivery address and checkout', () => {
     const order = res.store.orders[res.resultId!];
     expect(order).toMatchObject({ status: 'PAID', simulated: true, quantity: 2, totalCents: 379_800 });
     expect(order.deliveryAddress).toEqual(address);
-    expect(Object.values(res.store.payments)[0]).toMatchObject({ provider: 'DEMO_SIMULATION', status: 'SIMULATED_PAID' });
+    expect(Object.values(res.store.payments).find((p) => p.orderId === res.resultId)).toMatchObject({ provider: 'DEMO_SIMULATION', status: 'SIMULATED_PAID' });
     expect(Object.values(res.store.orderItems)).toHaveLength(1);
     expect(res.store.inventory['PRK-CRAVING-CONTROL'].reserved).toBe(2);
     expect(res.store.approvedTreatments[approvalId].remainingQuantity).toBe(0);
@@ -491,7 +493,7 @@ describe('delivery address and checkout', () => {
     const store = makePurchasable(approved('live').store);
     const res = run(store, member, { type: 'checkout', treatmentId: 'trt-craving-control', quantity: 1, address }, 'live');
     expect(res.store.orders[res.resultId!]).toMatchObject({ status: 'PAYMENT_PENDING', simulated: false });
-    expect(Object.values(res.store.payments)[0]).toMatchObject({ provider: 'NONE', status: 'AWAITING_PROVIDER' });
+    expect(Object.values(res.store.payments).find((p) => p.orderId === res.resultId)).toMatchObject({ provider: 'NONE', status: 'AWAITING_PROVIDER' });
   });
 
   it('does not need an approval for a non-prescription pathway', () => {
@@ -544,7 +546,7 @@ describe('orders', () => {
     const cancelled = run(store, ops, { type: 'orderStatus', orderId, memberId: NEW, status: 'CANCELLED' }, 'live').store;
     expect(cancelled.inventory['PRK-CRAVING-CONTROL'].reserved).toBe(0);
     expect(Object.values(cancelled.approvedTreatments).find((a) => a.memberId === NEW)!.remainingQuantity).toBe(2);
-    expect(Object.values(cancelled.payments)[0].status).toBe('VOID');
+    expect(Object.values(cancelled.payments).find((p) => p.orderId === orderId)!.status).toBe('VOID');
   });
 });
 
@@ -971,6 +973,66 @@ describe('approval releases the pen to the team', () => {
     expect(sent.penReleases[r.id]).toMatchObject({ status: 'SENT', courierReference: 'TRK-1', sentBy: admin.uid });
     expect(Object.values(sent.notifications).some((n) => n.memberId === NEW && /on its way/.test(n.title))).toBe(true);
     expectError(() => run(sent, ops, cmd), 'CONFLICT');
+  });
+
+  it('a priced pen waits for payment, and the team cannot send it until Paystack confirms', () => {
+    const { store } = approved('live');
+    const r = Object.values(store.penReleases)[0];
+    const p = store.payments[r.paymentId!];
+    // R1 899 × 2, from the catalogue: never from the browser.
+    expect(r).toMatchObject({ status: 'AWAITING_PAYMENT', amountCents: 379_800 });
+    expect(p).toMatchObject({ provider: 'PAYSTACK', status: 'AWAITING_PROVIDER', amountCents: 379_800, releaseId: r.id, memberId: NEW, description: 'Craving Control × 2' });
+    expect(Object.values(store.notifications).some((n) => n.memberId === NEW && /Pay for your pen/.test(n.body))).toBe(true);
+    expectError(() => run(store, admin, { type: 'releaseSent', memberId: NEW, releaseId: r.id }, 'live'), 'PRECONDITION', /paid/);
+    // Members and admin see it; the clinician never sees money.
+    expect(visible(store, member).payments[p.id]).toBeDefined();
+    expect(visible(store, admin).payments[p.id]).toBeDefined();
+    expect(visible(store, clinician).payments).toEqual({});
+  });
+
+  it('a confirmed payment moves the pen to the send list, once, and only for the exact amount', () => {
+    const { store } = approved('live');
+    const r = Object.values(store.penReleases)[0];
+    const paid = { paymentId: r.paymentId!, reference: `${r.paymentId}-abc`, amountCents: 379_800, currency: 'ZAR', providerTransactionId: '42', channel: 'card', testMode: true };
+    expectError(() => applyConfirmedPayment(store, { ...paid, amountCents: 100 }, ctx('live')), 'CONFLICT', /due/);
+    expectError(() => applyConfirmedPayment(store, { ...paid, currency: 'NGN' }, ctx('live')), 'CONFLICT');
+    expectError(() => applyConfirmedPayment(store, { ...paid, paymentId: 'pay_nope' }, ctx('live')), 'NOT_FOUND');
+    const first = applyConfirmedPayment(store, paid, ctx('live'));
+    expect(first.changed).toBe(true);
+    expect(first.store.payments[r.paymentId!]).toMatchObject({ status: 'PAID', reference: paid.reference, channel: 'card', testMode: true });
+    expect(first.store.penReleases[r.id]).toMatchObject({ status: 'TO_SEND', paidAt: NOW.toISOString() });
+    expect(Object.values(first.store.notifications).some((n) => n.memberId === NEW && n.title === 'Payment received')).toBe(true);
+    expect(first.store.auditEvents[first.auditEventId]).toMatchObject({ actorRole: 'SYSTEM', action: 'paymentConfirmed' });
+    // Paystack's webhook and the member's return can both arrive: the second changes nothing.
+    expect(applyConfirmedPayment(first.store, paid, ctx('live')).changed).toBe(false);
+    expect(run(first.store, ops, { type: 'releaseSent', memberId: NEW, releaseId: r.id }, 'live').store.penReleases[r.id].status).toBe('SENT');
+    // The original store is untouched (the function returns a new one).
+    expect(store.payments[r.paymentId!].status).toBe('AWAITING_PROVIDER');
+  });
+
+  it('a refund is recorded only for a paid payment', () => {
+    const { store } = approved('live');
+    const id = Object.values(store.penReleases)[0].paymentId!;
+    expectError(() => applyRefund(store, id, ctx('live')), 'PRECONDITION');
+    const paid = applyConfirmedPayment(store, { paymentId: id, reference: `${id}-x`, amountCents: 379_800, currency: 'ZAR', providerTransactionId: '1', testMode: false }, ctx('live')).store;
+    const refunded = applyRefund(paid, id, ctx('live'));
+    expect(refunded.store.payments[id]).toMatchObject({ status: 'REFUNDED', refundedAt: NOW.toISOString() });
+    expect(applyRefund(refunded.store, id, ctx('live')).changed).toBe(false);
+  });
+
+  it('a pen with no price goes straight to the send list, and the demo never asks for money', () => {
+    const free = approved('demo');
+    const r = Object.values(free.store.penReleases)[0];
+    expect(r.status).toBe('TO_SEND');
+    expect(free.store.payments[r.paymentId!]).toMatchObject({ provider: 'DEMO_SIMULATION', status: 'SIMULATED_PAID' });
+    let store = onboarded();
+    store.treatments['trt-craving-control'] = { ...store.treatments['trt-craving-control'], priceCents: 0 };
+    const req = run(store, member, { type: 'request', treatmentId: 'trt-craving-control' }, 'live');
+    store = run(req.store, clinician, { type: 'review', requestId: req.resultId!, memberId: NEW, decision: 'APPROVED', note: 'ok', reviewDate: addDays(TODAY, 14), approval: approvalPlan() }, 'live').store;
+    const unpriced = Object.values(store.penReleases)[0];
+    expect(unpriced.status).toBe('TO_SEND');
+    expect(unpriced.paymentId).toBeUndefined();
+    expect(Object.keys(store.payments)).toHaveLength(Object.keys(onboarded().payments).length);
   });
 
   it('the repeat-script route skips lifestyle and still onboards', () => {

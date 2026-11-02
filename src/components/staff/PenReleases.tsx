@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import type { PenRelease } from '@/domain/model';
+import { type PenRelease, formatRand } from '@/domain/model';
 import { Badge, Card, Empty, fmtDateTime } from '../ui';
 import { useWorkspace } from '../workspace-context';
 
@@ -13,6 +13,7 @@ export function PenReleases() {
   const all = Object.values(workspace.store.penReleases).sort((a, b) => b.approvedAt.localeCompare(a.approvedAt));
   const toSend = all.filter((r) => r.status === 'TO_SEND');
   const sent = all.filter((r) => r.status === 'SENT').slice(0, 20);
+  const unpaid = all.filter((r) => r.status === 'AWAITING_PAYMENT');
   return (
     <Card title={`Pens to send${toSend.length ? ` (${toSend.length})` : ''}`}>
       <p className="muted small" style={{ marginTop: 0 }}>
@@ -24,6 +25,19 @@ export function PenReleases() {
           <ReleaseRow key={r.id} release={r} />
         ))}
       </div>
+      {unpaid.length > 0 && (
+        <details style={{ marginTop: 'var(--space-3)' }} open>
+          <summary className="small">Approved, waiting for payment ({unpaid.length})</summary>
+          <p className="muted small">Don&apos;t send these yet. Each moves up to the send list by itself the moment Paystack confirms payment.</p>
+          <ul className="plain small">
+            {unpaid.map((r) => (
+              <li key={r.id}>
+                {r.treatmentName} × {r.quantity} for {r.memberName}, {formatRand(r.amountCents ?? 0)}, approved {fmtDateTime(r.approvedAt)}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
       {sent.length > 0 && (
         <details style={{ marginTop: 'var(--space-3)' }}>
           <summary className="small">Recently sent ({sent.length})</summary>
@@ -42,7 +56,9 @@ export function PenReleases() {
 }
 
 function ReleaseRow({ release: r }: { release: PenRelease }) {
-  const { run, busy } = useWorkspace();
+  const { workspace, run, busy } = useWorkspace();
+  // Paid with Paystack's test key: nothing was actually received.
+  const testPaid = Boolean(r.paymentId && workspace.store.payments[r.paymentId]?.testMode);
   const [courier, setCourier] = useState('');
   const a = r.deliveryAddress;
   return (
@@ -52,6 +68,8 @@ function ReleaseRow({ release: r }: { release: PenRelease }) {
           {r.treatmentName} × {r.quantity}
         </strong>
         <Badge tone="good">Approved by {r.approvedByName}</Badge>
+        {r.paidAt && r.amountCents && !testPaid ? <Badge tone="good">Paid {formatRand(r.amountCents)}</Badge> : null}
+        {testPaid && <Badge tone="alert">Test payment: no money received. Don&apos;t send</Badge>}
       </div>
       <dl className="release__facts">
         <dt>For</dt>
@@ -111,12 +129,16 @@ export function TeamActivity() {
     .sort((a, b) => b.at.localeCompare(a.at))
     .slice(0, 30);
   const approvals = Object.values(store.penReleases).map((r) => ({ at: r.approvedAt, text: `${r.approvedByName} approved ${r.treatmentName} for ${r.memberName}` }));
+  const paid = Object.values(store.penReleases)
+    .filter((r) => r.paidAt && r.amountCents)
+    .map((r) => ({ at: r.paidAt as string, text: `${r.memberName} paid ${formatRand(r.amountCents ?? 0)} for ${r.treatmentName}` }));
   const feed = [
     ...rows.map((e) => ({
       at: e.at,
       text: e.action === 'onboard' ? `${name(e.memberId)} sent a screening to the clinician` : `Pen sent to ${name(e.memberId)}`,
     })),
     ...approvals,
+    ...paid,
   ]
     .sort((a, b) => b.at.localeCompare(a.at))
     .slice(0, 30);

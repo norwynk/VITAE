@@ -1038,14 +1038,36 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
         };
         // What the team needs to send the pen: never the screening answers.
         const m = store.members[request.memberId];
+        const memberName = m ? `${m.firstName} ${m.lastName}`.trim() : 'Member';
         const releaseId = ctx.newId('rel');
+        // A priced pen is paid before it is sent. The amount comes from the catalogue, never the browser.
+        const amountCents = treatment.priceCents * plan.quantity;
+        const paymentId = amountCents > 0 ? ctx.newId('pay') : undefined;
+        const simulated = ctx.mode === 'demo';
+        if (paymentId) {
+          store.payments[paymentId] = {
+            id: paymentId,
+            releaseId,
+            memberId: request.memberId,
+            provider: simulated ? 'DEMO_SIMULATION' : 'PAYSTACK',
+            status: simulated ? 'SIMULATED_PAID' : 'AWAITING_PROVIDER',
+            amountCents,
+            currency: 'ZAR',
+            description: `${treatment.name} × ${plan.quantity}`,
+            memberName,
+            ...(simulated ? { paidAt: at } : {}),
+            createdAt: at,
+            updatedAt: at,
+          };
+          targets.push(paymentId);
+        }
         store.penReleases[releaseId] = {
           id: releaseId,
           memberId: request.memberId,
           approvalId,
           treatmentId: treatment.id,
           treatmentName: treatment.name,
-          memberName: m ? `${m.firstName} ${m.lastName}`.trim() : 'Member',
+          memberName,
           ...(m?.phone ? { phone: m.phone } : {}),
           ...(m?.email ? { email: m.email } : {}),
           ...(m?.deliveryAddress ? { deliveryAddress: m.deliveryAddress } : {}),
@@ -1056,7 +1078,9 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
           approvedBy: actor.uid,
           approvedByName: store.users[actor.uid]?.displayName || 'Your clinician',
           approvedAt: at,
-          status: 'TO_SEND',
+          status: paymentId && !simulated ? 'AWAITING_PAYMENT' : 'TO_SEND',
+          ...(paymentId ? { amountCents, paymentId } : {}),
+          ...(paymentId && simulated ? { paidAt: at } : {}),
         };
         targets.push(approvalId, regimenId, reminderId, followUpId, releaseId);
         resultId = approvalId;
@@ -1070,7 +1094,17 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
         NEEDS_INFORMATION: 'Your clinician needs more information',
         ALTERNATIVE_RECOMMENDED: 'Your clinician has recommended a different pathway',
       };
-      targets.push(notify(store, ctx, request.memberId, 'DECISION', titles[command.decision], 'Open your dashboard to see the details.'));
+      const awaitingPayment = resultId !== undefined && Object.values(store.penReleases).some((r) => r.approvalId === resultId && r.status === 'AWAITING_PAYMENT');
+      targets.push(
+        notify(
+          store,
+          ctx,
+          request.memberId,
+          'DECISION',
+          titles[command.decision],
+          awaitingPayment ? 'Pay for your pen from your dashboard and your care team will send it.' : 'Open your dashboard to see the details.',
+        ),
+      );
       refreshOpenRequestCount(store, request.memberId);
       touchProfile(store, request.memberId, at);
       resultId ??= request.id;
@@ -1081,6 +1115,7 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
       const release = store.penReleases[command.releaseId];
       if (!release || release.memberId !== command.memberId) fail('NOT_FOUND', 'Release not found');
       if (release.status === 'SENT') fail('CONFLICT', 'This pen is already marked as sent');
+      if (release.status === 'AWAITING_PAYMENT') fail('PRECONDITION', 'This pen hasn’t been paid for yet');
       Object.assign(release, {
         status: 'SENT',
         sentAt: at,
@@ -1617,6 +1652,70 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
   if (event.memberId === undefined) delete event.memberId;
   store.auditEvents[auditEventId] = event;
   return { store, resultId, auditEventId };
+}
+
+/** What Paystack confirmed for one transaction, after the server re-checked it with Paystack. */
+export interface ConfirmedPayment {
+  paymentId: string;
+  reference: string;
+  amountCents: number;
+  currency: string;
+  providerTransactionId: string;
+  channel?: string;
+  testMode: boolean;
+}
+
+/**
+ * A verified Paystack payment: the payment is PAID and the pen moves to the
+ * team's send list. Not a command: no person can call it, only the server
+ * after Paystack confirms. Repeating it changes nothing. The amount must
+ * match what was asked for, to the cent.
+ */
+export function applyConfirmedPayment(current: Store, paid: ConfirmedPayment, ctx: CommandContext): CommandResult & { changed: boolean } {
+  const store = cloneStore(current);
+  const at = ctx.now.toISOString();
+  const payment = store.payments[paid.paymentId];
+  if (!payment || payment.provider !== 'PAYSTACK') fail('NOT_FOUND', 'Payment not found');
+  if (paid.currency !== payment.currency || paid.amountCents !== payment.amountCents) {
+    fail('CONFLICT', `Paystack confirmed ${paid.currency} ${paid.amountCents / 100} but ${payment.currency} ${payment.amountCents / 100} was due`);
+  }
+  if (payment.status === 'PAID' || payment.status === 'REFUNDED') return { store: current, auditEventId: '', changed: false };
+  if (payment.status !== 'AWAITING_PROVIDER') fail('PRECONDITION', `This payment is ${payment.status.toLowerCase()}`);
+  Object.assign(payment, {
+    status: 'PAID',
+    reference: paid.reference,
+    providerTransactionId: paid.providerTransactionId,
+    testMode: paid.testMode,
+    paidAt: at,
+    updatedAt: at,
+    ...(paid.channel ? { channel: paid.channel } : {}),
+  });
+  const targets = [payment.id];
+  const release = payment.releaseId ? store.penReleases[payment.releaseId] : undefined;
+  if (release && release.status === 'AWAITING_PAYMENT') {
+    release.status = 'TO_SEND';
+    release.paidAt = at;
+    targets.push(release.id);
+    targets.push(notify(store, ctx, payment.memberId, 'ORDER', 'Payment received', `Thank you. Your care team is getting your ${release.treatmentName} ready to send.`));
+  }
+  touchProfile(store, payment.memberId, at);
+  const auditEventId = ctx.newId('aud');
+  store.auditEvents[auditEventId] = { id: auditEventId, actorId: 'paystack', actorRole: 'SYSTEM', action: 'paymentConfirmed', memberId: payment.memberId, targets, at };
+  return { store, resultId: payment.id, auditEventId, changed: true };
+}
+
+/** Paystack reported a refund for a paid payment. The pen's dispatch status is left to the team. */
+export function applyRefund(current: Store, paymentId: string, ctx: CommandContext): CommandResult & { changed: boolean } {
+  const store = cloneStore(current);
+  const at = ctx.now.toISOString();
+  const payment = store.payments[paymentId];
+  if (!payment || payment.provider !== 'PAYSTACK') fail('NOT_FOUND', 'Payment not found');
+  if (payment.status === 'REFUNDED') return { store: current, auditEventId: '', changed: false };
+  if (payment.status !== 'PAID') fail('PRECONDITION', 'Only a paid payment can be refunded');
+  Object.assign(payment, { status: 'REFUNDED', refundedAt: at, updatedAt: at });
+  const auditEventId = ctx.newId('aud');
+  store.auditEvents[auditEventId] = { id: auditEventId, actorId: 'paystack', actorRole: 'SYSTEM', action: 'paymentRefunded', memberId: payment.memberId, targets: [payment.id], at };
+  return { store, resultId: payment.id, auditEventId, changed: true };
 }
 
 /** Records that differ between two stores, for transactional persistence. */

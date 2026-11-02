@@ -17,7 +17,7 @@ const DESCRIPTION = 'Peptide pens for women and men from a SAHPRA-licensed, batc
  * Before first paint: the side they chose (the theme), the doors if they
  * haven't chosen, and the men's homepage for men who come back to "/".
  */
-const SIDE_SCRIPT = `try{var h=document.documentElement,p=location.pathname,s=localStorage.getItem('${SIDE_KEY}');if(p==='/men')s='men';if(s==='men'&&p==='/'){location.replace('/men'+location.search)}if(s==='men'||s==='women')h.dataset.side=s;else h.classList.add('choose-side')}catch(e){}`;
+const SIDE_SCRIPT = `try{var h=document.documentElement,p=location.pathname,s=localStorage.getItem('${SIDE_KEY}');if(p==='/men'){s='men';localStorage.setItem('${SIDE_KEY}',s)}if(s==='men'&&p==='/'){location.replace('/men'+location.search)}if(s==='men'||s==='women')h.dataset.side=s;else h.classList.add('choose-side')}catch(e){}`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),

@@ -3,6 +3,8 @@
  * Functions. Run with `npm run test:firebase`, which starts the emulators.
  */
 import assert from 'node:assert/strict';
+import { createHmac } from 'node:crypto';
+import { createServer } from 'node:http';
 import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -21,6 +23,44 @@ const auth = getAuth();
 const db = getFirestore();
 // Match the functions: empty optional fields (e.g. undisclosed ingredients) are omitted.
 db.settings({ ignoreUndefinedProperties: true });
+
+// A stand-in Paystack (functions/.env.demo-vitae points the functions here). It answers like the real API.
+const PAYSTACK_KEY = 'sk_test_emulator_only';
+type FakeTx = { reference: string; amount: number; currency: string; email: string; callback_url: string; metadata: Record<string, string>; status: string };
+const paystack = new Map<string, FakeTx>();
+const paystackServer = createServer((req, res) => {
+  let raw = '';
+  req.on('data', (c) => (raw += c));
+  req.on('end', () => {
+    const reply = (status: number, body: unknown) => {
+      res.writeHead(status, { 'content-type': 'application/json' });
+      res.end(JSON.stringify(body));
+    };
+    if (req.headers.authorization !== `Bearer ${PAYSTACK_KEY}`) return reply(401, { status: false, message: 'Invalid key' });
+    if (req.method === 'POST' && req.url === '/transaction/initialize') {
+      const b = JSON.parse(raw) as FakeTx;
+      if (paystack.has(b.reference)) return reply(400, { status: false, message: 'Duplicate Transaction Reference' });
+      paystack.set(b.reference, { ...b, status: 'abandoned' });
+      return reply(200, { status: true, data: { authorization_url: `https://checkout.paystack.com/${b.reference}`, reference: b.reference } });
+    }
+    const verify = /^\/transaction\/verify\/(.+)$/.exec(req.url ?? '');
+    const tx = verify && paystack.get(decodeURIComponent(verify[1]));
+    if (tx) {
+      return reply(200, {
+        status: true,
+        data: { id: 9001, domain: 'test', status: tx.status, reference: tx.reference, amount: tx.amount, currency: tx.currency, channel: 'card', metadata: tx.metadata },
+      });
+    }
+    reply(404, { status: false, message: 'Transaction reference not found' });
+  });
+});
+
+async function webhook(body: unknown, sign = true): Promise<number> {
+  const raw = JSON.stringify(body);
+  const headers: Record<string, string> = { 'content-type': 'application/json' };
+  if (sign) headers['x-paystack-signature'] = createHmac('sha512', PAYSTACK_KEY).update(raw).digest('hex');
+  return (await fetch(`${FUNCTIONS_BASE}/paystackWebhook`, { method: 'POST', headers, body: raw })).status;
+}
 
 let passed = 0;
 async function step(name: string, fn: () => Promise<void>) {
@@ -91,6 +131,7 @@ async function main() {
   await createUser('ful1', { role: 'FULFILMENT' });
   await db.doc('providerAssignments/pa1').set({ id: 'pa1', memberId: 'member1', clinicianId: 'clin1', active: true, createdAt: new Date().toISOString() });
 
+  await new Promise<void>((r) => paystackServer.listen(4555, '127.0.0.1', r));
   console.log('Firebase emulator journey');
 
   await step('rejects unauthenticated and unverified callers', async () => {
@@ -190,6 +231,75 @@ async function main() {
     assert.equal(Object.keys(ful.operationalProfiles).length, 0);
   });
 
+  let releaseId = '';
+  let paymentId = '';
+  await step('a priced pen waits for payment and cannot be sent yet', async () => {
+    const release = (await db.collection('penReleases').where('approvalId', '==', approvalId).get()).docs[0].data();
+    releaseId = release.id;
+    paymentId = release.paymentId;
+    assert.equal(release.status, 'AWAITING_PAYMENT');
+    assert.equal(release.amountCents, 379_800); // R1 899 × 2, from the catalogue
+    const payment = (await db.doc(`payments/${paymentId}`).get()).data();
+    assert.equal(payment?.provider, 'PAYSTACK');
+    assert.equal(payment?.status, 'AWAITING_PROVIDER');
+    await denied('executeCommand', { type: 'releaseSent', memberId: 'member1', releaseId }, 'ops1', 'FAILED_PRECONDITION');
+  });
+
+  let reference = '';
+  await step('only the member opens checkout, for the amount the server set', async () => {
+    await denied('startPayment', { releaseId }, 'member2', 'NOT_FOUND');
+    await denied('startPayment', { releaseId }, 'ops1', 'PERMISSION_DENIED');
+    await denied('startPayment', { releaseId: 'rel_does_not_exist' }, 'member1', 'NOT_FOUND');
+    await denied('startPayment', {}, undefined, 'UNAUTHENTICATED');
+    const { url } = await ok('startPayment', { releaseId, amountCents: 1 }, 'member1');
+    reference = (await db.doc(`payments/${paymentId}`).get()).get('reference');
+    assert.equal(url, `https://checkout.paystack.com/${reference}`);
+    const tx = paystack.get(reference)!;
+    assert.equal(tx.amount, 379_800); // the browser's amount is ignored
+    assert.equal(tx.currency, 'ZAR');
+    assert.equal(tx.email, 'member1@example.invalid');
+    assert.equal(tx.metadata.paymentId, paymentId);
+    assert.ok(tx.callback_url.endsWith(`/app?paid=${releaseId}`));
+    assert.equal((await ok('confirmPayment', { releaseId }, 'member1')).status, 'PENDING');
+  });
+
+  await step('only a signed, verified, exact payment counts', async () => {
+    const charge = { event: 'charge.success', data: { reference, amount: 379_800 } };
+    assert.equal(await webhook(charge, false), 401);
+    // Paystack's own record says it isn't paid: a forged "success" changes nothing.
+    assert.equal(await webhook(charge), 200);
+    assert.equal((await db.doc(`payments/${paymentId}`).get()).get('status'), 'AWAITING_PROVIDER');
+    // Paid, but the wrong amount: still not paid.
+    paystack.get(reference)!.status = 'success';
+    paystack.get(reference)!.amount = 100;
+    assert.equal(await webhook(charge), 200);
+    assert.equal((await db.doc(`payments/${paymentId}`).get()).get('status'), 'AWAITING_PROVIDER');
+    paystack.get(reference)!.amount = 379_800;
+    assert.equal(await webhook(charge), 200);
+    const payment = (await db.doc(`payments/${paymentId}`).get()).data();
+    assert.equal(payment?.status, 'PAID');
+    assert.equal(payment?.testMode, true);
+    assert.equal(payment?.channel, 'card');
+    assert.equal((await db.doc(`penReleases/${releaseId}`).get()).get('status'), 'TO_SEND');
+  });
+
+  await step('the member’s return and repeat notices change nothing twice', async () => {
+    assert.equal((await ok('confirmPayment', { releaseId }, 'member1')).status, 'PAID');
+    assert.equal(await webhook({ event: 'charge.success', data: { reference } }), 200);
+    const received = await db.collection('notifications').where('memberId', '==', 'member1').where('title', '==', 'Payment received').get();
+    assert.equal(received.size, 1);
+    await denied('startPayment', { releaseId }, 'member1', 'FAILED_PRECONDITION');
+    const admin = (await ok('getWorkspace', {}, 'admin1')).store;
+    assert.equal(admin.payments[paymentId].status, 'PAID');
+    assert.equal(Object.keys((await ok('getWorkspace', {}, 'clin1')).store.payments).length, 0);
+    await ok('executeCommand', { type: 'releaseSent', memberId: 'member1', releaseId }, 'ops1');
+  });
+
+  await step('a refund in Paystack shows up as refunded', async () => {
+    assert.equal(await webhook({ event: 'refund.processed', data: { transaction_reference: reference } }), 200);
+    assert.equal((await db.doc(`payments/${paymentId}`).get()).get('status'), 'REFUNDED');
+  });
+
   await step('unverified treatment cannot be ordered', async () => {
     const r = await call('executeCommand', { type: 'checkout', treatmentId: 'trt-craving-control', quantity: 1 }, 'member1');
     assert.equal(r.ok, false);
@@ -206,7 +316,7 @@ async function main() {
       'member1',
     );
     assert.equal((await db.collection('orders').get()).size, 0);
-    assert.equal((await db.collection('payments').get()).size, 0);
+    assert.equal((await db.collection('payments').where('orderId', '!=', null).get()).size, 0);
   });
 
   await step('super admin catalogue update is gated and other roles are denied', async () => {
@@ -274,12 +384,13 @@ async function main() {
   await step('every command and access is audited', async () => {
     const events = (await db.collection('auditEvents').get()).docs.map((d) => d.data());
     const actions = new Set(events.map((e) => e.action));
-    for (const a of ['member_provisioned', 'onboard', 'request', 'review', 'note', 'catalogue', 'checkout', 'adherence', 'deliveryAddress', 'workspace_viewed', 'document_registered']) {
+    for (const a of ['paymentStarted', 'paymentConfirmed', 'paymentRefunded', 'member_provisioned', 'onboard', 'request', 'review', 'note', 'catalogue', 'checkout', 'adherence', 'deliveryAddress', 'workspace_viewed', 'document_registered']) {
       assert.ok(actions.has(a), `missing audit action ${a}`);
     }
     assert.ok(!JSON.stringify(events).includes('Confidential emulator note'));
   });
 
+  paystackServer.close();
   console.log(`\n${passed} emulator checks passed`);
 }
 
