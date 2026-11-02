@@ -9,7 +9,8 @@ import {
   isApprovalCurrent,
   localDate,
 } from '@/domain/model';
-import { type IntakeAnswers, answerText, sectionsFor, visibleQuestions } from '@/domain/intake';
+import type { IntakeAnswers } from '@/domain/intake';
+import { IntakeReview } from '../screening/IntakeReview';
 import { Thread } from '../member/MemberHome';
 import { Badge, Card, Empty, Notice, fmtDateTime, formValues, humanise } from '../ui';
 import { useWorkspace } from '../workspace-context';
@@ -56,29 +57,7 @@ export function ClinicianHome() {
 function Questionnaire({ answers }: { answers: IntakeAnswers }) {
   return (
     <Card title="Questionnaire">
-      <div className="stack" style={{ gap: '0.4rem' }}>
-        {sectionsFor(answers).map((s) => {
-          const rows = visibleQuestions(s, answers)
-            .map((q) => ({ q, text: answerText(q, answers[q.id]) }))
-            .filter((r) => r.text);
-          if (!rows.length) return null;
-          return (
-            <details key={s.id} open={s.id === 'why' || s.id === 'history'} className="intake-review">
-              <summary>
-                <strong>{s.label}</strong> <span className="muted small">· {rows.length} answered</span>
-              </summary>
-              <dl>
-                {rows.map(({ q, text }) => (
-                  <div key={q.id}>
-                    <dt>{q.label}</dt>
-                    <dd>{text}</dd>
-                  </div>
-                ))}
-              </dl>
-            </details>
-          );
-        })}
-      </div>
+      <IntakeReview answers={answers} open={['why', 'history']} />
     </Card>
   );
 }
