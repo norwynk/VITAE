@@ -1,8 +1,10 @@
 'use client';
+import Link from 'next/link';
 import { useState } from 'react';
-import { type IntakeAnswers, NONE, isRepeatRoute, medsText } from '@/domain/intake';
+import { type IntakeAnswers, NONE, intakeQuestion, isRepeatRoute, knownAnswers, medsText, validateIntake } from '@/domain/intake';
 import { MENOPAUSE_STAGES, SA_PROVINCES, type Treatment } from '@/domain/model';
-import { groupsFor } from '@/domain/penQuestions';
+import { groupsFor, invalidAnswer } from '@/domain/penQuestions';
+import { IntakeReview } from '../screening/IntakeReview';
 import { useScreening } from '@/hooks/useScreening';
 import { useShortlist } from '@/hooks/useShortlist';
 import { Notice, formValues } from '../ui';
@@ -43,7 +45,7 @@ export function FinishScreening() {
   const { state, clear } = useScreening();
   const shortlist = useShortlist();
   const [idType, setIdType] = useState<'SA_ID' | 'PASSPORT'>('SA_ID');
-  const [problem, setProblem] = useState<string | null>(null);
+  const [problem, setProblem] = useState<{ text: string; stop?: string } | null>(null);
   const a = state.answers;
   const chosen = shortlist.slugs
     .map((slug) => Object.values(workspace.store.treatments).find((t) => t.slug === slug))
@@ -65,6 +67,17 @@ export function FinishScreening() {
           }
         }
         setProblem(null);
+        // Checked here exactly as the server checks it, so a gap is named and one tap away, never a dead end.
+        const gap = validateIntake(knownAnswers(a), SA_PROVINCES);
+        if (gap.problem) {
+          setProblem({ text: gap.problem, stop: gap.questionId && intakeQuestion(gap.questionId)?.s.id });
+          return;
+        }
+        const penGap = groupsFor(chosen).flatMap((g) => g.questions).find((q) => invalidAnswer(q, state.penAnswers[q.id] ?? ''));
+        if (penGap) {
+          setProblem({ text: invalidAnswer(penGap, state.penAnswers[penGap.id] ?? '')! });
+          return;
+        }
         const v = formValues(form);
         const penAnswers = groupsFor(chosen).flatMap((g) => g.questions.map((q) => ({ questionId: q.id, answer: state.penAnswers[q.id] ?? '' })));
         const ok = await run(
@@ -116,7 +129,7 @@ export function FinishScreening() {
                 }),
             testingInterest: s(a, 'testingInterest') === 'Yes',
             penAnswers,
-            intake: a,
+            intake: knownAnswers(a),
             consents: {
               privacy: v.checked('consentPrivacy'),
               terms: v.checked('consentTerms'),
@@ -131,7 +144,7 @@ export function FinishScreening() {
             : 'Your screening is in. Your clinician will suggest what could suit you.',
         );
         if (!ok) {
-          setProblem('Something in your answers needs another look. The message above says what.');
+          setProblem({ text: 'This didn’t send. Your answers are still saved on this device, so nothing is lost. Please try again in a minute.' });
           return;
         }
         for (const t of chosen) await run({ type: 'request', treatmentId: t.id, reason: 'Chosen at sign-up' }, `${t.name} sent to your clinician`);
@@ -214,15 +227,26 @@ export function FinishScreening() {
         </label>
       </fieldset>
 
-      {problem && <Notice tone="error">{problem}</Notice>}
+      {problem && (
+        <Notice tone="error">
+          {problem.text}{' '}
+          {problem.stop && (
+            <Link href={`/start?stop=${problem.stop}&back=1`} className="link-arrow">
+              Fix it now
+            </Link>
+          )}
+        </Notice>
+      )}
       <div className="row">
         <button type="submit" disabled={busy}>
           Send it to my clinician
         </button>
-        <a href="/start" className="link-arrow">
-          Review my answers
-        </a>
       </div>
+      <details className="finish__review">
+        <summary className="link-arrow">Review my answers</summary>
+        <p className="small muted">Everything you told us. Tap Change to fix a part; you’ll come straight back here.</p>
+        <IntakeReview answers={a} open={['why']} changeHref={(id) => `/start?stop=${id}&back=1`} />
+      </details>
     </form>
   );
 }

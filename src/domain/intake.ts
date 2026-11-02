@@ -363,6 +363,11 @@ export function visibleQuestions(s: IntakeSection, a: IntakeAnswers): IntakeQues
 
 const QUESTIONS = new Map(INTAKE.flatMap((s) => s.questions.map((q) => [q.id, { q, s }] as const)));
 
+/** Only answers to questions that still exist: one saved by an older version of the site is left behind, not sent. */
+export function knownAnswers(a: IntakeAnswers): IntakeAnswers {
+  return Object.fromEntries(Object.entries(a).filter(([k]) => QUESTIONS.has(k)));
+}
+
 export function intakeQuestion(id: string) {
   return QUESTIONS.get(id);
 }
@@ -430,7 +435,7 @@ export function problemWith(q: IntakeQuestion, v: IntakeValue | undefined, provi
  * questions that don't apply are rejected; required questions must be
  * answered. Returns the cleaned answers.
  */
-export function validateIntake(input: unknown, provinces: readonly string[]): { answers: IntakeAnswers; problem?: string } {
+export function validateIntake(input: unknown, provinces: readonly string[]): { answers: IntakeAnswers; problem?: string; questionId?: string } {
   if (!input || typeof input !== 'object' || Array.isArray(input)) return { answers: {}, problem: 'The questionnaire is missing' };
   const raw = input as Record<string, unknown>;
   const answers: IntakeAnswers = {};
@@ -447,7 +452,7 @@ export function validateIntake(input: unknown, provinces: readonly string[]): { 
         continue;
       }
       const problem = problemWith(q, answers[q.id], provinces);
-      if (problem) return { answers: {}, problem };
+      if (problem) return { answers: {}, problem, questionId: q.id };
     }
   }
   return { answers };

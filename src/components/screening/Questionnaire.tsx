@@ -17,6 +17,8 @@ import {
   isRepeatRoute,
   problemWith,
   sectionsFor,
+  knownAnswers,
+  validateIntake,
   visibleQuestions,
 } from '@/domain/intake';
 import { SA_PROVINCES, type Treatment, ageOn, localDate, peptideLine } from '@/domain/model';
@@ -151,11 +153,17 @@ export function Questionnaire({
   initialGoal,
   initialRoute,
   initialPens,
+  initialStop,
+  back,
 }: {
   initialPen?: string;
   initialGoal?: string;
   initialRoute?: string;
   initialPens?: Treatment[];
+  /** Open at this part (a section id), e.g. "Change" from the review before sending. */
+  initialStop?: string;
+  /** Came from the send screen: offer the way straight back to it. */
+  back?: boolean;
 }) {
   const { pens } = useCatalogue(initialPens);
   const shortlist = useShortlist();
@@ -243,14 +251,14 @@ export function Questionnaire({
     topRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const check = (): string | null => {
-    switch (screen.kind) {
+  const check = (sc: Screen = screen): string | null => {
+    switch (sc.kind) {
       case 'destination':
         return destination ? null : 'Choose where you’re heading. You can change it later.';
       case 'pens':
         return chosen.length || state.letClinicianSuggest ? null : 'Choose at least one pen, or let your clinician suggest one.';
       case 'section': {
-        for (const q of screen.questions) {
+        for (const q of sc.questions) {
           const p = problemWith(onScreen(q), state.answers[q.id], SA_PROVINCES);
           if (p) return p;
           if (q.id === 'dateOfBirth' && underAge(state.answers.dateOfBirth)) return 'PRICK is only for adults aged 18 and over.';
@@ -258,7 +266,7 @@ export function Questionnaire({
         return null;
       }
       case 'safety':
-        for (const q of screen.group.questions) {
+        for (const q of sc.group.questions) {
           const p = invalidAnswer(q, state.penAnswers[q.id] ?? '');
           if (p) return p;
         }
@@ -268,14 +276,55 @@ export function Questionnaire({
     }
   };
 
+  // The whole screening, checked the way the server will check it, so nothing missed early surfaces at the very end.
+  const firstGap = (): { at: number; problem: string } | null => {
+    for (let i = 0; i < screens.length; i++) {
+      const p = check(screens[i]);
+      if (p) return { at: i, problem: p };
+    }
+    const server = validateIntake(knownAnswers(state.answers), SA_PROVINCES);
+    if (!server.problem) return null;
+    const at = screens.findIndex((sc) => sc.kind === 'section' && sc.questions.some((q) => q.id === server.questionId));
+    return { at: Math.max(at, 0), problem: server.problem };
+  };
+  // Takes them to the first thing that needs an answer, and says what. Returns true if there was one.
+  const sendToGap = () => {
+    const gap = firstGap();
+    if (!gap) return false;
+    go(gap.at);
+    setProblem(gap.problem);
+    return true;
+  };
+
   const next = () => {
     const p = check();
     if (p) {
       setProblem(p);
       return;
     }
+    // Leaving the questions for the result: everything must be answered first.
+    if (screens[step + 1]?.kind === 'arrive' && sendToGap()) return;
     go(step + 1);
   };
+  // Back to the send screen, only once everything is answered.
+  const backToSend = () => {
+    if (!sendToGap()) router.push('/app');
+  };
+
+  // "Change" from the review opens the right part, once.
+  const opened = useRef(false);
+  useEffect(() => {
+    if (opened.current || !initialStop || !pens) return;
+    opened.current = true;
+    const at = screens.findIndex((sc) => sc.kind === 'section' && sc.section.id === initialStop);
+    if (at >= 0) update({ step: at });
+  });
+  // Arriving at the result with something unanswered (an older visit, a changed question): straight back to it.
+  const atEnd = screen.kind === 'arrive' || screen.kind === 'fit';
+  useEffect(() => {
+    if (atEnd && pens) sendToGap();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [atEnd, pens]);
   // Single-tap screens move on by themselves; the ref always sees the latest answers.
   const nextRef = useRef(next);
   const stepRef = useRef(step);
@@ -448,6 +497,11 @@ export function Questionnaire({
               {screen.kind !== 'fit' && screen.kind !== 'destination' && (
                 <button type="button" onClick={next} disabled={!pens}>
                   {screens[step + 1]?.kind === 'arrive' ? 'See where I stand' : 'Next'}
+                </button>
+              )}
+              {back && (
+                <button type="button" className="secondary" onClick={backToSend}>
+                  Save and go back to send
                 </button>
               )}
               {(step > 0 || Object.keys(state.answers).length > 0) && (

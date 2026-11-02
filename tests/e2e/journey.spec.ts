@@ -329,6 +329,11 @@ test('full journey across roles', async ({ page }) => {
   await page.getByLabel(/terms of use/).check();
   await page.getByLabel(/health information being processed/).check();
   await page.getByLabel(/clinician decides/).check();
+  // Review my answers: what they told us, with a way to change each part and come straight back.
+  await page.getByText('Review my answers').click();
+  await expect(page.locator('.finish__review').getByText('I want my energy back.')).toBeVisible();
+  await expect(page.locator('.finish__review').getByRole('link', { name: 'Change your why' })).toHaveAttribute('href', '/start?stop=why&back=1');
+  await expect(page.getByRole('button', { name: 'Create my account' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Send it to my clinician' }).click();
   await expect(page.getByText('Hey, Alex.')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Your clinician is on it.' })).toBeVisible();
@@ -579,6 +584,33 @@ test.describe('the doors', () => {
     await page.reload();
     await expect(page.getByRole('dialog', { name: 'Which way?' })).toBeHidden();
   });
+});
+
+test('nothing missed early waits until the end: the screening sends them back to it first', async ({ page }) => {
+  await page.addInitScript(() => {
+    if (sessionStorage.getItem('seeded')) return;
+    sessionStorage.setItem('seeded', '1');
+    localStorage.setItem('prick:side', 'women');
+    localStorage.setItem('prick:shortlist', JSON.stringify(['craving-control']));
+    // Everything but "What made you reach out now?", and parked at the very end.
+    localStorage.setItem('prick:screening', JSON.stringify({ answers: { route: 'I’m new to peptides', goals: ['Weight management'], oldQuestion: 'from an older site' }, penAnswers: {}, letClinicianSuggest: false, destination: 'weight', destinationFrom: 'known', step: 99 }));
+  });
+  await page.goto('/start');
+  await expect(page.getByText('Please answer: What made you reach out now?')).toBeVisible();
+  await expect(page.locator('[data-q="reason"] textarea')).toBeVisible();
+});
+
+test('a man who clears his answers and taps the logo is home on the men’s side', async ({ page }) => {
+  page.on('dialog', (d) => void d.accept());
+  await page.goto('/men');
+  await page.evaluate(() => localStorage.setItem('prick:screening', JSON.stringify({ answers: { route: 'I’m new to peptides' }, penAnswers: {}, letClinicianSuggest: false, step: 1 })));
+  await page.goto('/start');
+  await page.getByRole('button', { name: 'Clear my answers' }).click();
+  await expect(page.getByRole('button', { name: 'Clear my answers' })).toHaveCount(0);
+  await page.waitForLoadState('networkidle');
+  await page.getByRole('link', { name: 'PRICK home' }).first().click();
+  await expect(page).toHaveURL(/\/men$/);
+  await expect(page.locator('html')).toHaveAttribute('data-side', 'men');
 });
 
 test('the explainer film sits under the hero on both sides and plays', async ({ page }) => {
