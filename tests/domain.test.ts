@@ -1,3 +1,4 @@
+import { HELP_OPTIONS } from '../src/domain/intake';
 import { describe, expect, it } from 'vitest';
 import {
   type CommandContext,
@@ -913,6 +914,16 @@ describe('preparatory questionnaire', () => {
     const yes = Object.fromEntries(['mLibido', 'mEnergy', 'mStrength', 'mHeight', 'mEnjoyment', 'mMood', 'mErections', 'mSport', 'mDinnerSleep', 'mWork'].map((k) => [k, 'No']));
     const { store, resultId } = run(createFixtureStore(NOW), member, onboardCommand({ intake: { ...men, ...yes } }));
     expect(store.healthAssessments[resultId!].intake!.answers.mWork).toBe('No');
+  });
+
+  it('takes every "help with" option from both sides, and a reworded one never blocks the finish', () => {
+    const yes = Object.fromEntries(['mLibido', 'mEnergy', 'mStrength', 'mHeight', 'mEnjoyment', 'mMood', 'mErections', 'mSport', 'mDinnerSleep', 'mWork'].map((k) => [k, 'No']));
+    const men = herIntake({ sex: 'Male', pregnant: undefined, breastfeeding: undefined, planningPregnancy: undefined, menopauseStage: undefined, ...yes });
+    for (const [intake, options] of [[men, HELP_OPTIONS.men], [herIntake(), HELP_OPTIONS.women]] as const) {
+      const { store, resultId } = run(createFixtureStore(NOW), member, onboardCommand({ intake: { ...intake, goals: [...options, 'A label we rename later'] } }));
+      expect(store.healthAssessments[resultId!].intake!.answers.goals).toContain('A label we rename later');
+    }
+    expectError(() => run(createFixtureStore(NOW), member, onboardCommand({ intake: herIntake({ goals: [] }) })), 'INVALID', /help with/);
   });
 
   it('rejects unknown questions, invalid options, missing answers and bad rankings', () => {
