@@ -26,6 +26,7 @@ import { type PenQuestion, type PenQuestionGroup, NONE_OF_THESE, groupsFor, inva
 import { type PenSafety, penSafety } from '@/domain/penSafety';
 import { useCatalogue } from '@/hooks/useCatalogue';
 import { useScreening } from '@/hooks/useScreening';
+import { useSignedIn } from '@/hooks/useSignedIn';
 import { MAX_SHORTLIST, useShortlist } from '@/hooks/useShortlist';
 import { useBrandForSide, useSide } from '@/hooks/useSide';
 import { MEN_ANGLES, forSide, goalForPen, goalForSide } from '@/brand/sides';
@@ -172,6 +173,7 @@ export function Questionnaire({
   const [busy, setBusy] = useState(false);
   const topRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const signedIn = useSignedIn();
 
   const { add } = shortlist;
   useEffect(() => {
@@ -469,6 +471,18 @@ export function Questionnaire({
                   tooYoung={underAge(state.answers.dateOfBirth)}
                   repeat={isRepeatRoute(state.answers)}
                 />
+                {signedIn ? (
+                  // Already signed in: no account question, straight on to the last stop.
+                  <div className="intake__account">
+                    <h2 className="display">One last stop.</h2>
+                    <p>Your surname, ID number and consent, then it’s with your clinician.</p>
+                    <div className="row">
+                      <button type="button" onClick={backToSend} disabled={underAge(state.answers.dateOfBirth)}>
+                        Continue
+                      </button>
+                    </div>
+                  </div>
+                ) : (
                 <div className="intake__account">
                   <h2 className="display">Save your journey.</h2>
                   <p>
@@ -484,6 +498,7 @@ export function Questionnaire({
                     </Link>
                   </div>
                 </div>
+                )}
               </>
             )}
           </section>
