@@ -74,7 +74,8 @@ export const demoRepository: Repository & {
 async function callable<T>(name: string, data: unknown): Promise<T> {
   const [{ httpsCallable }, { firebase }] = await Promise.all([import('firebase/functions'), import('./firebase')]);
   try {
-    const result = await httpsCallable(firebase().functions, name)(data);
+    // Through JSON first: a callable sends a missing (undefined) field as null, which the server rejects.
+    const result = await httpsCallable(firebase().functions, name)(JSON.parse(JSON.stringify(data)));
     return result.data as T;
   } catch (e) {
     const err = e as { message?: string; code?: string };

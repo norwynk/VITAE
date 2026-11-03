@@ -115,6 +115,30 @@ export async function notifyTeam(db: Firestore, command: Command, memberId: stri
       );
     }
 
+    // An existing member's new screening, or a pen added from their account: the clinician has something to review.
+    if ((command.type === 'rescreen' || command.type === 'request') && memberId) {
+      const member = (await db.doc(`members/${memberId}`).get()).data() as MemberRecord | undefined;
+      const name = member ? `${member.firstName} ${member.lastName}`.trim() : 'A member';
+      const ids = command.type === 'request' ? [command.treatmentId] : command.treatmentIds;
+      const pens = (await Promise.all(ids.map((id) => db.doc(`treatments/${id}`).get()))).map((t) => (t.get('name') as string) || 'a pen');
+      const assessment =
+        command.type === 'rescreen' && resultId ? ((await db.doc(`healthAssessments/${resultId}`).get()).data() as HealthAssessment | undefined) : undefined;
+      const flagged = assessment?.penAnswers?.filter((a) => a.flagged).length ?? 0;
+      const asks = pens.length ? `asked for ${pens.join(' and ')}` : 'asked you to suggest a pen';
+      await send(
+        await clinicianEmailsFor(db, memberId),
+        command.type === 'rescreen' ? `Updated screening: ${name}` : `New pen request: ${name}`,
+        [
+          command.type === 'rescreen' ? `${name} has sent you an updated screening and ${asks}.` : `${name} has ${asks}.`,
+          ...(flagged ? [`${flagged} answer${flagged === 1 ? '' : 's'} flagged for you to look at.`] : []),
+          '',
+          `Open your clinician workspace to review it: ${SITE}/app`,
+          '',
+          'For privacy, health details are only in the workspace, never in email.',
+        ].join('\n'),
+      );
+    }
+
     if (command.type === 'review' && command.decision === 'APPROVED' && resultId) {
       const snap = await db.collection('penReleases').where('approvalId', '==', resultId).limit(1).get();
       const r = snap.docs[0]?.data() as PenRelease | undefined;

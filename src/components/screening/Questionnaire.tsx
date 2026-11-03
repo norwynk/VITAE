@@ -475,7 +475,7 @@ export function Questionnaire({
                   // Already signed in: no account question, straight on to the last stop.
                   <div className="intake__account">
                     <h2 className="display">One last stop.</h2>
-                    <p>Your surname, ID number and consent, then it’s with your clinician.</p>
+                    <p>Check your details and send it. Then it’s with your clinician.</p>
                     <div className="row">
                       <button type="button" onClick={backToSend} disabled={underAge(state.answers.dateOfBirth)}>
                         Continue

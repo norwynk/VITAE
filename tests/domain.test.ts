@@ -6,6 +6,7 @@ import {
   DomainError,
   applyCommand,
   diffStores,
+  parseCommand,
   purchaseBlocks,
 } from '../src/domain/commands';
 import { DEMO_ESTABLISHED_MEMBER, DEMO_USERS, createFixtureStore, demoActor } from '../src/domain/fixtures';
@@ -722,6 +723,23 @@ describe('audit and persistence', () => {
     expect(JSON.stringify(res.store.auditEvents[res.auditEventId])).not.toContain('private');
   });
 
+  it('treats a null field as missing (Firebase sends undefined as null)', () => {
+    const store = onboarded();
+    const req = run(store, member, { type: 'request', treatmentId: 'trt-craving-control' });
+    const review = {
+      type: 'review',
+      requestId: req.resultId!,
+      memberId: NEW,
+      decision: 'DECLINED',
+      note: 'Not for now',
+      reviewDate: addDays(TODAY, 5),
+      approval: null,
+      alternativeTreatmentId: null,
+    };
+    expect(parseCommand(review)).not.toHaveProperty('alternativeTreatmentId');
+    expect(run(req.store, clinician, parseCommand(review)).store.treatmentRequests[req.resultId!].status).toBe('DECLINED');
+  });
+
   it('rejects unknown commands', () => {
     expectError(() => run(onboarded(), member, { type: 'deleteEverything' } as never), 'INVALID');
   });
@@ -899,6 +917,27 @@ describe('preparatory questionnaire', () => {
     expect(saved.answers).toMatchObject({ sex: 'Female', menopauseStage: 'Before menopause', alcoholUnits: '3' });
     expect(visible(store, clinician).healthAssessments[resultId!].intake).toBeDefined();
     for (const actor of [ops, fulfilment, admin, corporate]) expect(visible(store, actor).healthAssessments[resultId!]).toBeUndefined();
+  });
+
+  it('a member screening again sends new answers and pens to the clinician together', () => {
+    const before = run(createFixtureStore(NOW), member, onboardCommand({ intake: herIntake() })).store;
+    const rescreen = {
+      type: 'rescreen' as const,
+      health: { conditions: ['Cancer'], medications: '', allergies: '', pregnancyOrBreastfeeding: false, previousPeptideUse: false, notes: '' },
+      testingInterest: false,
+      intake: herIntake(),
+      penAnswers: [{ questionId: 'glp1-thyroid', answer: 'Not sure' }],
+      treatmentIds: ['trt-craving-control'],
+    };
+    const { store, resultId } = run(before, member, rescreen, 'demo', new Date(NOW.getTime() + 60_000));
+    expect(store.healthAssessments[resultId!]).toMatchObject({ kind: 'INTAKE', penAnswers: [{ questionId: 'glp1-thyroid', flagged: true }] });
+    expect(store.medicalHistories[NEW].conditions).toEqual(['Cancer']);
+    const open = Object.values(store.treatmentRequests).filter((r) => r.memberId === NEW && r.status === 'OPEN');
+    expect(open.map((r) => r.treatmentId)).toEqual(['trt-craving-control']);
+    // Sending again leaves the waiting request as it is.
+    const again = run(store, member, rescreen).store;
+    expect(Object.values(again.treatmentRequests).filter((r) => r.memberId === NEW && r.status === 'OPEN')).toHaveLength(1);
+    expectError(() => run(createFixtureStore(NOW), member, rescreen), 'PRECONDITION');
   });
 
   it('drops answers to sections that do not apply', () => {

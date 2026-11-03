@@ -54,9 +54,9 @@ export function ClinicianHome() {
 }
 
 /** The member's preparatory questionnaire, section by section, in the words they were asked. */
-function Questionnaire({ answers }: { answers: IntakeAnswers }) {
+function Questionnaire({ answers, updated }: { answers: IntakeAnswers; updated?: string }) {
   return (
-    <Card title="Questionnaire">
+    <Card title={updated ? `Questionnaire (updated ${fmtDateTime(updated)})` : 'Questionnaire'}>
       <IntakeReview answers={answers} open={['why', 'history']} />
     </Card>
   );
@@ -69,7 +69,13 @@ function MemberChart({ memberId }: { memberId: string }) {
   const history = store.medicalHistories[memberId];
   const lifestyle = store.lifestyleProfiles[memberId];
   const goals = Object.values(store.memberGoals).filter((g) => g.memberId === memberId);
-  const intake = Object.values(store.healthAssessments).find((a) => a.memberId === memberId && a.kind === 'INTAKE');
+  // Newest screening first: a member who screens again for another pen sends fresh answers.
+  const intakes = Object.values(store.healthAssessments)
+    .filter((a) => a.memberId === memberId && a.kind === 'INTAKE')
+    .sort((a, b) => b.completedAt.localeCompare(a.completedAt));
+  const intake = intakes[0];
+  // Pen answers from every screening, the newest answer to each question kept.
+  const penAnswers = [...new Map(intakes.flatMap((a) => a.penAnswers ?? []).reverse().map((a) => [a.questionId, a])).values()];
   const repeats = Object.values(store.repeatDeliveries).filter((r) => r.memberId === memberId && (r.status === 'ACTIVE' || r.status === 'PAUSED'));
   const checkins = Object.values(store.healthAssessments)
     .filter((a) => a.memberId === memberId && a.kind === 'CHECKIN')
@@ -111,11 +117,11 @@ function MemberChart({ memberId }: { memberId: string }) {
             </ul>
           )}
         </Card>
-        {intake?.intake ? <Questionnaire answers={intake.intake.answers} /> : null}
-        {intake?.penAnswers?.length ? (
+        {intake?.intake ? <Questionnaire answers={intake.intake.answers} updated={intakes.length > 1 ? intake.completedAt : undefined} /> : null}
+        {penAnswers.length ? (
           <Card title="Pen-specific answers">
             <ul className="plain small stack" style={{ gap: '0.5rem' }}>
-              {[...intake.penAnswers]
+              {[...penAnswers]
                 .sort((a, b) => Number(b.flagged) - Number(a.flagged))
                 .map((a) => (
                   <li key={a.questionId}>

@@ -58,6 +58,9 @@ export function MemberHome() {
     return <ScreeningIntro resuming={Object.keys(screening.state.answers).length > 0} />;
   }
 
+  // A finished screening on this device from someone already onboarded: send it before anything else.
+  if (screening.complete) return <FinishScreening again />;
+
   return (
     <div className="stack member">
       <NextStep onGo={setTab} />
