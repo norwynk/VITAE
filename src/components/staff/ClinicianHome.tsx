@@ -10,6 +10,7 @@ import {
   localDate,
 } from '@/domain/model';
 import type { IntakeAnswers } from '@/domain/intake';
+import { type SafetyFlags, flagCount, safetyFlags } from '@/domain/safety';
 import { IntakeReview } from '../screening/IntakeReview';
 import { Thread } from '../member/MemberHome';
 import { Badge, Card, Empty, Notice, fmtDateTime, formValues, humanise } from '../ui';
@@ -38,11 +39,15 @@ export function ClinicianHome() {
             const m = store.members[id];
             const open = openRequests.filter((r) => r.memberId === id).length;
             const alerts = escalated.filter((t) => t.memberId === id).length;
+            const flags = openRequests
+              .filter((r) => r.memberId === id && store.treatments[r.treatmentId])
+              .reduce((n, r) => n + flagCount(safetyFlags(store, id, store.treatments[r.treatmentId])), 0);
             return (
               <button key={id} type="button" aria-pressed={selected === id} onClick={() => setSelected(id)}>
                 {m.firstName} {m.lastName}
                 {open > 0 && ` · ${open} request${open === 1 ? '' : 's'}`}
                 {alerts > 0 && ' · concern'}
+                {flags > 0 && ` · ⚠ ${flags} safety flag${flags === 1 ? '' : 's'}`}
               </button>
             );
           })}
@@ -73,7 +78,9 @@ function MemberChart({ memberId }: { memberId: string }) {
   const intakes = Object.values(store.healthAssessments)
     .filter((a) => a.memberId === memberId && a.kind === 'INTAKE')
     .sort((a, b) => b.completedAt.localeCompare(a.completedAt));
-  const intake = intakes[0];
+  // A pen asked for from the account carries only its safety answers, so the questionnaire is the newest full one.
+  const full = intakes.filter((a) => a.intake);
+  const intake = full[0] ?? intakes[0];
   // Pen answers from every screening, the newest answer to each question kept.
   const penAnswers = [...new Map(intakes.flatMap((a) => a.penAnswers ?? []).reverse().map((a) => [a.questionId, a])).values()];
   const repeats = Object.values(store.repeatDeliveries).filter((r) => r.memberId === memberId && (r.status === 'ACTIVE' || r.status === 'PAUSED'));
@@ -87,8 +94,24 @@ function MemberChart({ memberId }: { memberId: string }) {
     .filter((t) => t.memberId === memberId)
     .sort((a, b) => Number(b.escalated) - Number(a.escalated) || b.lastMessageAt.localeCompare(a.lastMessageAt));
 
+  const pending = requests.filter((r) => PENDING_REQUEST_STATUSES.includes(r.status) && store.treatments[r.treatmentId]);
+  const flagged = pending
+    .map((r) => ({ name: store.treatments[r.treatmentId].name, flags: safetyFlags(store, memberId, store.treatments[r.treatmentId]) }))
+    .filter((p) => flagCount(p.flags) > 0);
+
   return (
     <div className="stack">
+      {flagged.length > 0 && (
+        <Notice tone="error">
+          <strong>Safety flags before you decide.</strong>
+          {flagged.map((p) => (
+            <div key={p.name} style={{ marginTop: '0.5rem' }}>
+              <strong>{p.name}</strong>
+              <FlagList flags={p.flags} />
+            </div>
+          ))}
+        </Notice>
+      )}
       <div className="grid">
         <Card title={`${m.firstName} ${m.lastName}`}>
           {!m.onboardedAt ? (
@@ -117,7 +140,7 @@ function MemberChart({ memberId }: { memberId: string }) {
             </ul>
           )}
         </Card>
-        {intake?.intake ? <Questionnaire answers={intake.intake.answers} updated={intakes.length > 1 ? intake.completedAt : undefined} /> : null}
+        {intake?.intake ? <Questionnaire answers={intake.intake.answers} updated={full.length > 1 ? intake.completedAt : undefined} /> : null}
         {penAnswers.length ? (
           <Card title="Pen-specific answers">
             <ul className="plain small stack" style={{ gap: '0.5rem' }}>
@@ -246,6 +269,39 @@ function MemberChart({ memberId }: { memberId: string }) {
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+function FlagList({ flags }: { flags: SafetyFlags }) {
+  return (
+    <ul className="small" style={{ margin: '0.25rem 0 0', paddingLeft: '1.2rem' }}>
+      {flags.unanswered.length > 0 && (
+        <li>
+          <strong>Safety check not answered:</strong> {flags.unanswered.join(' · ')} Ask before approving.
+        </li>
+      )}
+      {flags.answers.map((a) => (
+        <li key={a.questionId}>
+          {a.question} <strong>{a.answer}</strong>
+        </li>
+      ))}
+      {flags.history.map((h) => (
+        <li key={h}>{h}</li>
+      ))}
+    </ul>
+  );
+}
+
+/** Shown first on every decision: what the clinician must look at for this pen. */
+function RequestFlags({ flags }: { flags: SafetyFlags }) {
+  if (!flagCount(flags)) return <p className="small muted">No safety flags for this pen.</p>;
+  return (
+    <Notice tone="error">
+      <strong>
+        ⚠ {flagCount(flags)} safety flag{flagCount(flags) === 1 ? '' : 's'}: look at these first
+      </strong>
+      <FlagList flags={flags} />
+    </Notice>
+  );
+}
+
 function ReviewForm({ request, store }: { request: TreatmentRequest; store: Store }) {
   const { run, busy } = useWorkspace();
   const [decision, setDecision] = useState<'APPROVED' | 'DECLINED' | 'NEEDS_INFORMATION' | 'ALTERNATIVE_RECOMMENDED'>('APPROVED');
@@ -311,6 +367,7 @@ function ReviewForm({ request, store }: { request: TreatmentRequest; store: Stor
         <Badge>{humanise(request.status)}</Badge>
         <span className="muted small">requested {fmtDateTime(request.createdAt)}</span>
       </div>
+      {treatment && <RequestFlags flags={safetyFlags(store, request.memberId, treatment)} />}
       {request.reason && <p className="small">Member&apos;s reason: {request.reason}</p>}
       {treatment?.requiredLabs.length ? <p className="small muted">Pathway lists labs: {treatment.requiredLabs.join(', ')}</p> : null}
       <div className="form-grid">

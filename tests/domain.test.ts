@@ -1,4 +1,6 @@
 import { HELP_OPTIONS } from '../src/domain/intake';
+import { PEN_QUESTION_GROUPS, groupsFor } from '../src/domain/penQuestions';
+import { flagCount, safetyFlags } from '../src/domain/safety';
 import { describe, expect, it } from 'vitest';
 import {
   type CommandContext,
@@ -917,6 +919,72 @@ describe('preparatory questionnaire', () => {
     expect(saved.answers).toMatchObject({ sex: 'Female', menopauseStage: 'Before menopause', alcoholUnits: '3' });
     expect(visible(store, clinician).healthAssessments[resultId!].intake).toBeDefined();
     for (const actor of [ops, fulfilment, admin, corporate]) expect(visible(store, actor).healthAssessments[resultId!]).toBeUndefined();
+  });
+
+  it('shows the clinician health-history flags for a pen: cancer in the family, their own cancer, pregnancy', () => {
+    const { store } = run(
+      createFixtureStore(NOW),
+      member,
+      onboardCommand({ intake: herIntake({ familyHistory: ['Cancer', 'Medullary thyroid cancer or MEN2'], conditions: ['Cancer (now or in the past)'], pregnant: 'Not sure' }) }),
+    );
+    const seen = visible(store, clinician);
+    const rr = safetyFlags(seen, NEW, seen.treatments['trt-rapid-recovery']);
+    expect(rr.history).toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(/Cancer runs in the family/),
+        expect.stringMatching(/Has had cancer/),
+        expect.stringMatching(/medullary thyroid/),
+        expect.stringMatching(/Pregnant or might be/),
+      ]),
+    );
+    expect(safetyFlags(seen, NEW, seen.treatments['trt-craving-control']).history).toContainEqual(expect.stringMatching(/warning for GLP-1/));
+    // Nothing chosen in the family: no family flag.
+    const clear = run(createFixtureStore(NOW), member, onboardCommand({ intake: herIntake({ familyHistory: ['Diabetes'] }) })).store;
+    expect(safetyFlags(clear, NEW, clear.treatments['trt-rapid-recovery']).history).toEqual([]);
+  });
+
+  it('asking for a pen from the account carries its safety check, and an unanswered check is flagged', () => {
+    const store = run(createFixtureStore(NOW), member, onboardCommand({ intake: herIntake() })).store;
+    const rr = store.treatments['trt-rapid-recovery'];
+    expect(safetyFlags(store, NEW, rr).unanswered.length).toBeGreaterThan(0);
+    const asked = run(store, member, {
+      type: 'request',
+      treatmentId: rr.id,
+      penAnswers: [
+        { questionId: 'rr-cancer', answer: 'Not sure' },
+        { questionId: 'rr-conditions', answer: 'None of these' },
+        { questionId: 'rr-meds', answer: 'None of these' },
+      ],
+    }).store;
+    const flags = safetyFlags(visible(asked, clinician), NEW, rr);
+    expect(flags.unanswered).toEqual([]);
+    expect(flags.answers.map((a) => [a.questionId, a.answer])).toEqual([['rr-cancer', 'Not sure']]);
+  });
+
+  it('every pen with a safety check flags each risky answer for the clinician', () => {
+    const base = run(createFixtureStore(NOW), member, onboardCommand({ intake: herIntake() })).store;
+    const pens = Object.values(base.treatments).filter((t) => t.active && t.public && groupsFor([t]).length);
+    expect(pens.length).toBeGreaterThan(0);
+    let checked = 0;
+    for (const pen of pens) {
+      for (const q of groupsFor([pen]).flatMap((g) => g.questions)) {
+        for (const risky of q.flagWhen ?? []) {
+          const others = groupsFor([pen])
+            .flatMap((g) => g.questions)
+            .filter((o) => o.id !== q.id && o.required)
+            .map((o) => ({ questionId: o.id, answer: o.kind === 'number' ? String(o.min) : o.options!.includes('None of these') ? 'None of these' : o.options!.includes('No') ? 'No' : o.options![0] }));
+          const after = run(base, member, { type: 'request', treatmentId: pen.id, penAnswers: [...others, { questionId: q.id, answer: risky }] }).store;
+          const flags = safetyFlags(visible(after, clinician), NEW, pen);
+          expect(flags.answers.map((a) => a.questionId), `${pen.slug}: ${q.id} = ${risky}`).toContain(q.id);
+          expect(flags.unanswered, pen.slug).toEqual([]);
+          checked++;
+        }
+      }
+    }
+    // Every flagged question in the catalogue of safety checks is covered by a pen on sale.
+    const flaggable = PEN_QUESTION_GROUPS.flatMap((g) => g.questions).reduce((n, q) => n + (q.flagWhen?.length ?? 0), 0);
+    expect(checked).toBeGreaterThanOrEqual(flaggable);
+    expect(flagCount(safetyFlags(base, NEW, pens[0]))).toBeGreaterThan(0);
   });
 
   it('a member screening again sends new answers and pens to the clinician together', () => {

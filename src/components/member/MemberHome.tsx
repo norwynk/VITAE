@@ -31,6 +31,9 @@ import { worldStyle } from '../brand/worldStyle';
 import { Badge, Card, Empty, Notice, fmtDateTime, formValues, humanise } from '../ui';
 import { useWorkspace } from '../workspace-context';
 import { FinishScreening } from './FinishScreening';
+import { PenField } from '../screening/Questionnaire';
+import { groupsFor, invalidAnswer } from '@/domain/penQuestions';
+import { latestPenAnswers } from '@/domain/safety';
 import { useScreening } from '@/hooks/useScreening';
 import { OnRepeat, renewalsDue } from './OnRepeat';
 import { PushReminders } from './PushReminders';
@@ -323,7 +326,19 @@ function MyPens() {
   const asked = new Set(requests.filter((r) => r.status !== 'DECLINED').map((r) => r.treatmentId));
   const addable = Object.values(store.treatments).filter((t) => t.active && t.public && !asked.has(t.id));
   const [toAdd, setToAdd] = useState('');
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [problem, setProblem] = useState('');
   const room = active.length < MAX_SHORTLIST;
+  // The pen's own safety check is asked every time, starting from their last answers.
+  const adding = store.treatments[toAdd];
+  const questions = adding ? groupsFor([adding]).flatMap((g) => g.questions) : [];
+  const before = latestPenAnswers(store, workspace.actor.uid);
+  const answer = (id: string) => answers[id] ?? before.get(id)?.answer ?? '';
+  const choose = (id: string) => {
+    setToAdd(id);
+    setAnswers({});
+    setProblem('');
+  };
   return (
     <section className="card my-pens">
       <h2>My pens</h2>
@@ -352,12 +367,16 @@ function MyPens() {
           className="row my-pens__add"
           onSubmit={async (e) => {
             e.preventDefault();
-            if (toAdd && (await run({ type: 'request', treatmentId: toAdd, reason: 'Added from my account' }, 'Sent to your clinician'))) setToAdd('');
+            if (!toAdd) return;
+            const gap = questions.map((q) => invalidAnswer(q, answer(q.id))).find(Boolean);
+            if (gap) return setProblem(gap);
+            const penAnswers = questions.map((q) => ({ questionId: q.id, answer: answer(q.id) }));
+            if (await run({ type: 'request', treatmentId: toAdd, reason: 'Added from my account', penAnswers }, 'Sent to your clinician')) choose('');
           }}
         >
           <label style={{ flex: 1 }}>
             Add another pen
-            <select value={toAdd} onChange={(e) => setToAdd(e.target.value)}>
+            <select value={toAdd} onChange={(e) => choose(e.target.value)}>
               <option value="">Choose…</option>
               {addable.map((t) => (
                 <option key={t.id} value={t.id}>
@@ -366,6 +385,23 @@ function MyPens() {
               ))}
             </select>
           </label>
+          {questions.length > 0 && (
+            <div className="stack my-pens__safety" style={{ flexBasis: '100%' }}>
+              <p className="small">
+                <strong>{adding.name}: the safety check.</strong> Required, and your clinician reads every answer.
+              </p>
+              <div className="intake__pen-qs">
+                {questions.map((q) => (
+                  <PenField key={q.id} q={q} value={answer(q.id)} onChange={(v) => setAnswers((s) => ({ ...s, [q.id]: v }))} />
+                ))}
+              </div>
+            </div>
+          )}
+          {problem && (
+            <div style={{ flexBasis: '100%' }}>
+              <Notice tone="error">{problem}</Notice>
+            </div>
+          )}
           <button type="submit" disabled={busy || !toAdd}>
             Ask my clinician
           </button>
