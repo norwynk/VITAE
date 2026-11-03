@@ -39,8 +39,9 @@ function diet(a: IntakeAnswers) {
 /**
  * Last step, once they have an account: surname, ID, mobile and consent.
  * The questionnaire answers come from this device and are sent together.
+ * Someone already onboarded (screening again for another pen) just checks and sends.
  */
-export function FinishScreening() {
+export function FinishScreening({ again = false }: { again?: boolean }) {
   const { run, busy, workspace } = useWorkspace();
   const { state, clear } = useScreening();
   const shortlist = useShortlist();
@@ -52,6 +53,9 @@ export function FinishScreening() {
     .filter((t): t is Treatment => Boolean(t));
   const female = s(a, 'sex') === 'Female';
   const repeat = isRepeatRoute(a);
+  const pens = chosen.length
+    ? `Your clinician will review ${chosen.map((t) => t.name).join(' and ')}.`
+    : 'Your clinician will suggest what could suit you.';
 
   return (
     <form
@@ -80,6 +84,59 @@ export function FinishScreening() {
         }
         const v = formValues(form);
         const penAnswers = groupsFor(chosen).flatMap((g) => g.questions.map((q) => ({ questionId: q.id, answer: state.penAnswers[q.id] ?? '' })));
+        const screening = {
+          health: {
+            conditions: list(a, 'conditions').slice(0, 30),
+            medications: medsText(a.medications),
+            allergies: list(a, 'allergies').join(', ') || NONE,
+            pregnancyOrBreastfeeding: female && (s(a, 'pregnant') !== 'No' || s(a, 'breastfeeding') === 'Yes'),
+            previousPeptideUse: s(a, 'previousPeptides') === 'Yes',
+            notes: s(a, 'healthNotes'),
+            ...(female
+              ? {
+                  reproductiveHealth: {
+                    pregnant: s(a, 'pregnant') !== 'No',
+                    breastfeeding: s(a, 'breastfeeding') === 'Yes',
+                    planningPregnancy: s(a, 'planningPregnancy') === 'Yes',
+                    contraception: s(a, 'contraception'),
+                    menopauseStage: MENOPAUSE[s(a, 'menopauseStage')] ?? 'PREFER_NOT_TO_SAY',
+                  },
+                }
+              : {}),
+          },
+          ...(repeat
+            ? {}
+            : {
+                lifestyle: {
+                  activityLevel: ACTIVITY[s(a, 'activity') as keyof typeof ACTIVITY] ?? 'LIGHT',
+                  sleepHours: Number(s(a, 'sleepHours')),
+                  smoking: s(a, 'smoking') === 'Yes',
+                  alcoholUnitsPerWeek: s(a, 'alcohol') === 'None' ? 0 : Math.round(Number(s(a, 'alcoholUnits') || 0)),
+                  diet: diet(a),
+                },
+              }),
+          testingInterest: s(a, 'testingInterest') === 'Yes',
+          penAnswers,
+          intake: knownAnswers(a),
+        };
+        // The repeat-script route skips goals and lifestyle: it's about verifying an existing protocol.
+        const goals = repeat
+          ? { goals: ['Repeat an existing script'], motivation: s(a, 'protocol').slice(0, 1000) }
+          : { goals: list(a, 'goals'), motivation: s(a, 'reason').slice(0, 1000) };
+        if (again) {
+          // Already a member: the new answers and the chosen pens go to the clinician together.
+          const sent = await run(
+            { type: 'rescreen', ...screening, ...(goals.goals.length ? { goals } : {}), treatmentIds: chosen.map((t) => t.id) },
+            `Your new answers are in. ${pens}`,
+          );
+          if (!sent) {
+            setProblem({ text: 'This didn’t send. Your answers are still saved on this device, so nothing is lost. Please try again in a minute.' });
+            return;
+          }
+          shortlist.clear();
+          clear();
+          return;
+        }
         const ok = await run(
           {
             type: 'onboard',
@@ -93,43 +150,8 @@ export function FinishScreening() {
               city: s(a, 'city'),
             },
             body: { heightCm: Number(s(a, 'heightCm')), weightKg: Number(s(a, 'weightKg')) },
-            // The repeat-script route skips goals and lifestyle: it's about verifying an existing protocol.
-            goals: repeat
-              ? { goals: ['Repeat an existing script'], motivation: s(a, 'protocol').slice(0, 1000) }
-              : { goals: list(a, 'goals'), motivation: s(a, 'reason').slice(0, 1000) },
-            health: {
-              conditions: list(a, 'conditions').slice(0, 30),
-              medications: medsText(a.medications),
-              allergies: list(a, 'allergies').join(', ') || NONE,
-              pregnancyOrBreastfeeding: female && (s(a, 'pregnant') !== 'No' || s(a, 'breastfeeding') === 'Yes'),
-              previousPeptideUse: s(a, 'previousPeptides') === 'Yes',
-              notes: s(a, 'healthNotes'),
-              ...(female
-                ? {
-                    reproductiveHealth: {
-                      pregnant: s(a, 'pregnant') !== 'No',
-                      breastfeeding: s(a, 'breastfeeding') === 'Yes',
-                      planningPregnancy: s(a, 'planningPregnancy') === 'Yes',
-                      contraception: s(a, 'contraception'),
-                      menopauseStage: MENOPAUSE[s(a, 'menopauseStage')] ?? 'PREFER_NOT_TO_SAY',
-                    },
-                  }
-                : {}),
-            },
-            ...(repeat
-              ? {}
-              : {
-                  lifestyle: {
-                    activityLevel: ACTIVITY[s(a, 'activity') as keyof typeof ACTIVITY] ?? 'LIGHT',
-                    sleepHours: Number(s(a, 'sleepHours')),
-                    smoking: s(a, 'smoking') === 'Yes',
-                    alcoholUnitsPerWeek: s(a, 'alcohol') === 'None' ? 0 : Math.round(Number(s(a, 'alcoholUnits') || 0)),
-                    diet: diet(a),
-                  },
-                }),
-            testingInterest: s(a, 'testingInterest') === 'Yes',
-            penAnswers,
-            intake: knownAnswers(a),
+            goals,
+            ...screening,
             consents: {
               privacy: v.checked('consentPrivacy'),
               terms: v.checked('consentTerms'),
@@ -139,9 +161,7 @@ export function FinishScreening() {
               marketing: v.checked('consentMarketing'),
             },
           },
-          chosen.length
-            ? `Your screening is in. Your clinician will review ${chosen.map((t) => t.name).join(' and ')}.`
-            : 'Your screening is in. Your clinician will suggest what could suit you.',
+          `Your screening is in. ${pens}`,
         );
         if (!ok) {
           setProblem({ text: 'This didn’t send. Your answers are still saved on this device, so nothing is lost. Please try again in a minute.' });
@@ -156,11 +176,13 @@ export function FinishScreening() {
         <p className="eyebrow">Final stop</p>
         <h1 className="display finish__title">
           Nearly there{s(a, 'firstName') ? `, ${s(a, 'firstName')}` : ''}.
-          <span className="serif-i">Your answers are saved. Just the official bits now.</span>
+          <span className="serif-i">{again ? 'Your new answers are saved. Send them to your clinician.' : 'Your answers are saved. Just the official bits now.'}</span>
         </h1>
+        {again && <p className="muted">{pens}</p>}
       </div>
 
-      <fieldset>
+      {/* Someone already onboarded gave these already; a disabled field is never checked. */}
+      <fieldset hidden={again} disabled={again}>
         <legend>Your details</legend>
         <p className="muted small" style={{ marginTop: 0 }}>
           Your clinician needs these to prescribe safely and lawfully. Your ID number is never shown to delivery or support staff.
@@ -188,7 +210,7 @@ export function FinishScreening() {
         </div>
       </fieldset>
 
-      <fieldset>
+      <fieldset hidden={again} disabled={again}>
         <legend>Consent</legend>
         <label className="check">
           {/* One span per sentence: the label is a flex row, so loose text and links would become columns. */}

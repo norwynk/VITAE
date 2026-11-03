@@ -177,6 +177,18 @@ const onboardSchema = z.object({
     .default([]),
 });
 
+/** A new screening from a member who is already onboarded: fresh health answers, plus any pens they chose. */
+const rescreenSchema = z.object({
+  type: z.literal('rescreen'),
+  goals: onboardSchema.shape.goals.optional(),
+  health: onboardSchema.shape.health,
+  lifestyle: onboardSchema.shape.lifestyle,
+  testingInterest: z.boolean(),
+  intake: z.record(z.string(), z.unknown()),
+  penAnswers: onboardSchema.shape.penAnswers,
+  treatmentIds: z.array(id).max(6).default([]),
+});
+
 const checkinFields = {
   mood: z.number().int().min(1).max(5),
   energy: z.number().int().min(1).max(5),
@@ -292,6 +304,7 @@ const treatmentEditable = z.object({
 
 export const commandSchema = z.discriminatedUnion('type', [
   onboardSchema,
+  rescreenSchema,
   z.object({ type: z.literal('request'), treatmentId: id, reason: text(1000).default('') }),
   reviewSchema,
   z.object({
@@ -381,8 +394,17 @@ export type Command = z.infer<typeof commandSchema>;
 export type CommandInput = z.input<typeof commandSchema>;
 export type CommandType = Command['type'];
 
+/** Drops null fields: Firebase callables send a missing (undefined) field as null, and no command field is ever null. */
+function withoutNulls(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(withoutNulls);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).filter(([, v]) => v !== null).map(([k, v]) => [k, withoutNulls(v)]));
+  }
+  return value;
+}
+
 export function parseCommand(input: unknown): Command {
-  const parsed = commandSchema.safeParse(input);
+  const parsed = commandSchema.safeParse(withoutNulls(input));
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
     const where = issue?.path.length ? `${issue.path.join('.')}: ` : '';
@@ -397,6 +419,7 @@ export function parseCommand(input: unknown): Command {
 
 const COMMAND_ROLES: Record<CommandType, readonly Role[]> = {
   onboard: ['MEMBER'],
+  rescreen: ['MEMBER'],
   request: ['MEMBER'],
   review: ['CLINICIAN'],
   adherence: ['MEMBER'],
@@ -566,6 +589,28 @@ function hasCompleteAssessment(store: Store, memberId: string): boolean {
 function touchProfile(store: Store, memberId: string, at: string) {
   const profile = store.operationalProfiles[memberId];
   if (profile) profile.lastActivityAt = at;
+}
+
+/** Pen-specific answers with the server's own wording and safety flags. */
+function checkedPenAnswers(answers: { questionId: string; answer: string }[]): PenAnswer[] {
+  const penAnswers: PenAnswer[] = [];
+  const seen = new Set<string>();
+  for (const { questionId, answer } of answers) {
+    const q = penQuestion(questionId);
+    if (!q) fail('INVALID', 'Unknown screening question');
+    if (seen.has(questionId)) fail('INVALID', 'Each screening question can be answered once');
+    seen.add(questionId);
+    const problem = invalidAnswer(q, answer);
+    if (problem) fail('INVALID', problem);
+    if (answer) penAnswers.push({ questionId, question: q.question, answer, flagged: isFlagged(q, answer) });
+  }
+  return penAnswers;
+}
+
+function checkedIntake(answers: Record<string, unknown>): { version: string; answers: IntakeAnswers } {
+  const checked = validateIntake(answers, SA_PROVINCES);
+  if (checked.problem) fail('INVALID', checked.problem);
+  return { version: INTAKE_VERSION, answers: checked.answers };
 }
 
 function refreshOpenRequestCount(store: Store, memberId: string) {
@@ -838,23 +883,8 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
 
       const goalId = ctx.newId('goal');
       store.memberGoals[goalId] = { id: goalId, memberId: member.id, goals: goals.goals, motivation: goals.motivation, createdAt: at };
-      const penAnswers: PenAnswer[] = [];
-      const seen = new Set<string>();
-      for (const { questionId, answer } of command.penAnswers) {
-        const q = penQuestion(questionId);
-        if (!q) fail('INVALID', 'Unknown screening question');
-        if (seen.has(questionId)) fail('INVALID', 'Each screening question can be answered once');
-        seen.add(questionId);
-        const problem = invalidAnswer(q, answer);
-        if (problem) fail('INVALID', problem);
-        if (answer) penAnswers.push({ questionId, question: q.question, answer, flagged: isFlagged(q, answer) });
-      }
-      let intake: { version: string; answers: IntakeAnswers } | undefined;
-      if (command.intake) {
-        const checked = validateIntake(command.intake, SA_PROVINCES);
-        if (checked.problem) fail('INVALID', checked.problem);
-        intake = { version: INTAKE_VERSION, answers: checked.answers };
-      }
+      const penAnswers = checkedPenAnswers(command.penAnswers);
+      const intake = command.intake ? checkedIntake(command.intake) : undefined;
       const assessmentId = ctx.newId('asmt');
       store.healthAssessments[assessmentId] = {
         id: assessmentId,
@@ -907,6 +937,50 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
         store.screeningDrafts[member.id] = { ...store.screeningDrafts[member.id], status: 'SUBMITTED', answers: {}, updatedAt: at };
         targets.push(member.id);
       }
+      resultId = assessmentId;
+      break;
+    }
+
+    case 'rescreen': {
+      const member = requireOnboarded(store, actor.uid);
+      const penAnswers = checkedPenAnswers(command.penAnswers);
+      const intake = checkedIntake(command.intake);
+      const assessmentId = ctx.newId('asmt');
+      store.healthAssessments[assessmentId] = {
+        id: assessmentId,
+        memberId: member.id,
+        kind: 'INTAKE',
+        status: 'COMPLETE',
+        testingInterest: command.testingInterest,
+        ...(penAnswers.length ? { penAnswers } : {}),
+        intake,
+        completedAt: at,
+      };
+      targets.push(assessmentId);
+      const { health } = command;
+      const pregnancyOrBreastfeeding =
+        health.pregnancyOrBreastfeeding || Boolean(health.reproductiveHealth?.pregnant || health.reproductiveHealth?.breastfeeding);
+      store.medicalHistories[member.id] = { id: member.id, memberId: member.id, ...health, pregnancyOrBreastfeeding, updatedAt: at };
+      if (command.lifestyle) store.lifestyleProfiles[member.id] = { id: member.id, memberId: member.id, ...command.lifestyle, updatedAt: at };
+      if (command.goals) {
+        const goalId = ctx.newId('goal');
+        store.memberGoals[goalId] = { id: goalId, memberId: member.id, goals: command.goals.goals, motivation: command.goals.motivation, createdAt: at };
+        targets.push(goalId);
+      }
+      // Each chosen pen goes to the clinician with these answers; one already waiting is left as it is.
+      for (const treatmentId of new Set(command.treatmentIds)) {
+        const treatment = store.treatments[treatmentId];
+        if (!treatment || !treatment.active || !treatment.public) fail('NOT_FOUND', 'This pathway is not available');
+        const waiting = Object.values(store.treatmentRequests).some(
+          (r) => r.memberId === member.id && r.treatmentId === treatment.id && PENDING_REQUEST_STATUSES.includes(r.status),
+        );
+        if (waiting) continue;
+        const rid = ctx.newId('req');
+        store.treatmentRequests[rid] = { id: rid, memberId: member.id, treatmentId: treatment.id, status: 'OPEN', reason: 'Chosen in a new screening', createdAt: at };
+        targets.push(rid);
+      }
+      refreshOpenRequestCount(store, member.id);
+      member.updatedAt = at;
       resultId = assessmentId;
       break;
     }
