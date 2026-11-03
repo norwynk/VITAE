@@ -11,6 +11,7 @@ import { defineSecret } from 'firebase-functions/params';
 import { createTransport } from 'nodemailer';
 import type { Command } from '../../src/domain/commands';
 import { isRepeatRoute } from '../../src/domain/intake';
+import { isFlagged, penQuestion } from '../../src/domain/penQuestions';
 import type { HealthAssessment, MemberRecord, PenRelease, Role } from '../../src/domain/model';
 
 export const MAIL_LOGIN = defineSecret('MAIL_LOGIN');
@@ -123,7 +124,13 @@ export async function notifyTeam(db: Firestore, command: Command, memberId: stri
       const pens = (await Promise.all(ids.map((id) => db.doc(`treatments/${id}`).get()))).map((t) => (t.get('name') as string) || 'a pen');
       const assessment =
         command.type === 'rescreen' && resultId ? ((await db.doc(`healthAssessments/${resultId}`).get()).data() as HealthAssessment | undefined) : undefined;
-      const flagged = assessment?.penAnswers?.filter((a) => a.flagged).length ?? 0;
+      const flagged =
+        command.type === 'rescreen'
+          ? (assessment?.penAnswers?.filter((a) => a.flagged).length ?? 0)
+          : command.penAnswers.filter((a) => {
+              const q = penQuestion(a.questionId);
+              return q && isFlagged(q, a.answer);
+            }).length;
       const asks = pens.length ? `asked for ${pens.join(' and ')}` : 'asked you to suggest a pen';
       await send(
         await clinicianEmailsFor(db, memberId),

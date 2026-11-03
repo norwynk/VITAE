@@ -305,7 +305,13 @@ const treatmentEditable = z.object({
 export const commandSchema = z.discriminatedUnion('type', [
   onboardSchema,
   rescreenSchema,
-  z.object({ type: z.literal('request'), treatmentId: id, reason: text(1000).default('') }),
+  z.object({
+    type: z.literal('request'),
+    treatmentId: id,
+    reason: text(1000).default(''),
+    /** The pen's own safety check, answered when it was asked for. */
+    penAnswers: onboardSchema.shape.penAnswers,
+  }),
   reviewSchema,
   z.object({
     type: z.literal('adherence'),
@@ -993,6 +999,13 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
         (r) => r.memberId === actor.uid && r.treatmentId === treatment.id && PENDING_REQUEST_STATUSES.includes(r.status),
       );
       if (duplicate) fail('CONFLICT', 'You already have a request in progress for this pathway');
+      const penAnswers = checkedPenAnswers(command.penAnswers);
+      if (penAnswers.length) {
+        // Kept with the screenings, so the clinician sees the answers and their flags with the request.
+        const checkId = ctx.newId('asmt');
+        store.healthAssessments[checkId] = { id: checkId, memberId: actor.uid, kind: 'INTAKE', status: 'COMPLETE', penAnswers, completedAt: at };
+        targets.push(checkId);
+      }
       const rid = ctx.newId('req');
       store.treatmentRequests[rid] = {
         id: rid,

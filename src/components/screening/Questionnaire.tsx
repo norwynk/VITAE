@@ -834,7 +834,7 @@ function PensPicker({
   );
 }
 
-function PenField({ q, value, onChange }: { q: PenQuestion; value: string; onChange: (v: string) => void }) {
+export function PenField({ q, value, onChange }: { q: PenQuestion; value: string; onChange: (v: string) => void }) {
   const head = (
     <>
       <span className="qf__label">
