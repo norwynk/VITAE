@@ -12,13 +12,13 @@ import { createTransport } from 'nodemailer';
 import type { Command } from '../../src/domain/commands';
 import { isRepeatRoute } from '../../src/domain/intake';
 import { isFlagged, penQuestion } from '../../src/domain/penQuestions';
-import type { HealthAssessment, MemberRecord, PenRelease, Role } from '../../src/domain/model';
+import type { HealthAssessment, MemberRecord, MessageThread, PenRelease, Role } from '../../src/domain/model';
 
 export const MAIL_LOGIN = defineSecret('MAIL_LOGIN');
 // The public site address (functions/.env SITE_URL); the App Hosting address until the domain is linked.
 const SITE = (process.env.SITE_URL || 'https://prick-site--prick-c3c43.europe-west4.hosted.app').replace(/\/+$/, '');
 
-async function send(to: string[], subject: string, text: string) {
+export async function send(to: string[], subject: string, text: string) {
   const login = MAIL_LOGIN.value().trim();
   const recipients = [...new Set(to.filter(Boolean))];
   if (!login || login === 'none' || !recipients.length) {
@@ -50,7 +50,7 @@ export function parseLogin(raw: string): { user: string; pass: string } {
   return { user: match[1], pass: match[2].replace(/[^A-Za-z0-9]/g, '') };
 }
 
-async function emailsFor(db: Firestore, roles: Role[]): Promise<string[]> {
+export async function emailsFor(db: Firestore, roles: Role[]): Promise<string[]> {
   const snap = await db.collection('users').where('role', 'in', roles).get();
   return snap.docs.map((d) => d.get('email') as string).filter(Boolean);
 }
@@ -87,8 +87,11 @@ export async function sendTestEmail(requestedBy: string): Promise<{ from: string
   return { from: parseLogin(login).user, to };
 }
 
+/** So the admin can write to someone personally. Contact details only. */
+const contactLines = (member: MemberRecord | undefined) => [`Email: ${member?.email || 'not given'}`, `Mobile: ${member?.phone ?? 'not given'}`];
+
 /** After a command succeeds: tell the people who need to act. Never throws. */
-export async function notifyTeam(db: Firestore, command: Command, memberId: string | undefined, resultId: string | undefined) {
+export async function notifyTeam(db: Firestore, command: Command, memberId: string | undefined, resultId: string | undefined, actorRole: Role) {
   try {
     if (command.type === 'onboard' && memberId) {
       const member = (await db.doc(`members/${memberId}`).get()).data() as MemberRecord | undefined;
@@ -112,7 +115,7 @@ export async function notifyTeam(db: Firestore, command: Command, memberId: stri
       await send(
         await emailsFor(db, ['SUPER_ADMIN']),
         `${repeat ? 'Script' : 'Screening'} sent to the clinician: ${name}`,
-        `${name} has sent ${what} to their clinician.\n\nYou'll get another email if a pen is approved.\n\n${SITE}/app`,
+        [`${name} has sent ${what} to their clinician.`, '', ...contactLines(member), '', "You'll get another email if a pen is approved.", '', `${SITE}/app`].join('\n'),
       );
     }
 
@@ -144,6 +147,33 @@ export async function notifyTeam(db: Firestore, command: Command, memberId: stri
           'For privacy, health details are only in the workspace, never in email.',
         ].join('\n'),
       );
+      if (command.type === 'rescreen') {
+        await send(
+          await emailsFor(db, ['SUPER_ADMIN']),
+          `Screening sent to the clinician: ${name}`,
+          [`${name} has sent an updated screening to their clinician.`, '', ...contactLines(member), '', `${SITE}/app`].join('\n'),
+        );
+      }
+    }
+
+    // A member writing in: the clinician is told at once, whatever the day. The words stay in the workspace.
+    if (command.type === 'message' && actorRole === 'MEMBER' && memberId && resultId) {
+      const thread = (await db.doc(`messageThreads/${resultId}`).get()).data() as MessageThread | undefined;
+      if (thread && thread.topic !== 'ORDER_DELIVERY') {
+        const member = (await db.doc(`members/${memberId}`).get()).data() as MemberRecord | undefined;
+        const name = member ? `${member.firstName} ${member.lastName}`.trim() : 'A member';
+        await send(
+          await clinicianEmailsFor(db, memberId),
+          `${thread.escalated ? 'Urgent message' : 'New message'}: ${name}`,
+          [
+            `${name} has sent you ${thread.escalated ? 'an urgent message' : 'a message'}.`,
+            '',
+            `Open your clinician workspace to read it: ${SITE}/app`,
+            '',
+            'For privacy, health details are only in the workspace, never in email.',
+          ].join('\n'),
+        );
+      }
     }
 
     if (command.type === 'review' && command.decision === 'APPROVED' && resultId) {

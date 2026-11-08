@@ -11,6 +11,7 @@ import {
 } from '@/domain/model';
 import type { IntakeAnswers } from '@/domain/intake';
 import { type SafetyFlags, flagCount, safetyFlags } from '@/domain/safety';
+import { waitedLabel, waitingOnClinician, workingHours } from '@/domain/waiting';
 import { IntakeReview } from '../screening/IntakeReview';
 import { Thread } from '../member/MemberHome';
 import { Badge, Card, Empty, Notice, fmtDateTime, formValues, humanise } from '../ui';
@@ -19,7 +20,12 @@ import { useWorkspace } from '../workspace-context';
 export function ClinicianHome() {
   const { workspace } = useWorkspace();
   const { store, actor } = workspace;
-  const memberIds = [...activeAssignedMemberIds(store, actor.uid)].filter((id) => store.members[id]);
+  // Whoever has waited longest comes first.
+  const waitingSince = new Map(waitingOnClinician(store).reverse().map((i) => [i.memberId, i.since]));
+  const memberIds = [...activeAssignedMemberIds(store, actor.uid)]
+    .filter((id) => store.members[id])
+    .sort((a, b) => (waitingSince.get(a) ?? '9999').localeCompare(waitingSince.get(b) ?? '9999'));
+  const now = new Date();
   const [selected, setSelected] = useState<string | null>(memberIds[0] ?? null);
   const escalated = Object.values(store.messageThreads).filter((t) => t.escalated);
   const openRequests = Object.values(store.treatmentRequests).filter((r) => PENDING_REQUEST_STATUSES.includes(r.status));
@@ -39,6 +45,7 @@ export function ClinicianHome() {
             const m = store.members[id];
             const open = openRequests.filter((r) => r.memberId === id).length;
             const alerts = escalated.filter((t) => t.memberId === id).length;
+            const since = waitingSince.get(id);
             const flags = openRequests
               .filter((r) => r.memberId === id && store.treatments[r.treatmentId])
               .reduce((n, r) => n + flagCount(safetyFlags(store, id, store.treatments[r.treatmentId])), 0);
@@ -46,6 +53,7 @@ export function ClinicianHome() {
               <button key={id} type="button" aria-pressed={selected === id} onClick={() => setSelected(id)}>
                 {m.firstName} {m.lastName}
                 {open > 0 && ` · ${open} request${open === 1 ? '' : 's'}`}
+                {since && ` · waiting ${waitedLabel(workingHours(since, now))}`}
                 {alerts > 0 && ' · concern'}
                 {flags > 0 && ` · ⚠ ${flags} safety flag${flags === 1 ? '' : 's'}`}
               </button>

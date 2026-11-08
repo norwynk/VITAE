@@ -697,10 +697,12 @@ describe('visibility projection', () => {
   it('operations, fulfilment, admin and corporate do not see medical data', () => {
     for (const actor of [ops, fulfilment, admin, corporate]) {
       const v = visible(withOrder, actor);
-      for (const c of ['medicalHistories', 'healthAssessments', 'clinicalNotes', 'measurements', 'lifestyleProfiles', 'members'] as const) {
+      for (const c of ['medicalHistories', 'healthAssessments', 'clinicalNotes', 'measurements', 'lifestyleProfiles'] as const) {
         expect(Object.keys(v[c]), `${actor.role} ${c}`).toHaveLength(0);
       }
     }
+    // Only the admin gets member records at all, and those are contact details (see waiting.test.ts).
+    for (const actor of [ops, fulfilment, corporate]) expect(Object.keys(visible(withOrder, actor).members), actor.role).toHaveLength(0);
     expect(Object.keys(visible(withOrder, ops).orders)).toHaveLength(1);
     expect(Object.keys(visible(withOrder, fulfilment).orders)).toHaveLength(1);
     expect(Object.keys(visible(withOrder, corporate).orders)).toHaveLength(0);
