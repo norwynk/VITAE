@@ -42,6 +42,7 @@ import {
   isValidDate,
   localDate,
 } from './model';
+import { waitingOnClinician } from './waiting';
 import { INTAKE_VERSION, type IntakeAnswers, validateIntake } from './intake';
 import { invalidAnswer, isFlagged, penQuestion } from './penQuestions';
 
@@ -625,6 +626,9 @@ function refreshOpenRequestCount(store: Store, memberId: string) {
   profile.openRequestCount = Object.values(store.treatmentRequests).filter(
     (r) => r.memberId === memberId && PENDING_REQUEST_STATUSES.includes(r.status),
   ).length;
+  const since = waitingOnClinician(store, memberId)[0]?.since;
+  if (since) profile.waitingSince = since;
+  else delete profile.waitingSince;
 }
 
 function notify(
@@ -1295,6 +1299,7 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
       if (actor.role !== 'MEMBER') {
         targets.push(notify(store, ctx, thread.memberId, 'MESSAGE', 'New message from your care team', 'Open your messages to read it.'));
       }
+      refreshOpenRequestCount(store, thread.memberId);
       touchProfile(store, thread.memberId, at);
       resultId = thread.id;
       break;

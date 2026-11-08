@@ -38,7 +38,8 @@ import {
 import { SIGNED_URL_TTL_MS, assertDocumentAccess, validateDocumentRegistration } from '../../src/domain/documents';
 import { loadCatalogueScope, loadMemberScope, loadWorkspace } from './store';
 import { runReminderSweep } from './reminders';
-import { MAIL_LOGIN, notifyTeam, sendTestEmail } from './mail';
+import { MAIL_LOGIN, emailsFor, notifyTeam, send, sendTestEmail } from './mail';
+import { runWaitingSweep } from './waiting';
 
 initializeApp();
 const db = getFirestore();
@@ -179,7 +180,7 @@ export const executeCommand = onCall({ ...callableOptions, secrets: [MAIL_LOGIN]
       return { resultId: applied.resultId, auditEventId: applied.auditEventId };
     });
     // Emails to the clinician and the team (never health details). Best effort.
-    await notifyTeam(db, command, memberId, result.resultId);
+    await notifyTeam(db, command, memberId, result.resultId, who.role);
     return { ok: true, ...result };
   } catch (e) {
     throw toHttpsError(e);
@@ -304,5 +305,14 @@ export const sendTreatmentReminders = onSchedule(
   async () => {
     const result = await runReminderSweep(db, getMessaging(), new Date());
     logger.info('Reminder sweep complete', result);
+  },
+);
+
+/** Chases anything left waiting on the clinician. */
+export const sendClinicianReminders = onSchedule(
+  { schedule: 'every 1 hours', timeZone: SERVICE_TIME_ZONE, region: SCHEDULER_REGION, maxInstances: 1, secrets: [MAIL_LOGIN] },
+  async () => {
+    const result = await runWaitingSweep(db, new Date(), { send, adminEmails: () => emailsFor(db, ['SUPER_ADMIN']) });
+    logger.info('Waiting sweep complete', result);
   },
 );

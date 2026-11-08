@@ -171,6 +171,8 @@ export interface OperationalProfile {
   province?: Province;
   hasDeliveryAddress: boolean;
   openRequestCount: number;
+  /** Since when something has been waiting on the clinician. Absent when nothing is. */
+  waitingSince?: string;
   consentWithdrawn: boolean;
   lastActivityAt: string;
 }
@@ -1096,6 +1098,18 @@ export function visible(store: Store, actor: Actor): Store {
       out.treatments = { ...store.treatments };
       out.inventory = { ...store.inventory };
       out.operationalProfiles = { ...store.operationalProfiles };
+      // Enough to reach someone; ID numbers, dates of birth and addresses stay out.
+      out.members = mapRecords(store.members, (m) => ({
+        id: m.id,
+        memberId: m.memberId,
+        firstName: m.firstName,
+        lastName: m.lastName,
+        email: m.email,
+        ...(m.phone ? { phone: m.phone } : {}),
+        ...(m.onboardedAt ? { onboardedAt: m.onboardedAt } : {}),
+        createdAt: m.createdAt,
+        updatedAt: m.updatedAt,
+      }));
       out.auditEvents = { ...store.auditEvents };
       out.biomarkerDefinitions = { ...store.biomarkerDefinitions };
       out.careTeams = { ...store.careTeams };

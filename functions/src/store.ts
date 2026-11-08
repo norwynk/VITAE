@@ -6,16 +6,18 @@ import type { Firestore, Query, Transaction } from 'firebase-admin/firestore';
 import {
   type Actor,
   type CollectionName,
+  type OperationalProfile,
   type Store,
   FULFILMENT_ORDER_STATUSES,
   MEMBER_COLLECTIONS,
   OPERATIONS_TOPICS,
   emptyStore,
 } from '../../src/domain/model';
+import { byAttention } from '../../src/domain/waiting';
 
 export const OPERATIONAL_LIMIT = 250;
 export const AUDIT_LIMIT = 100;
-/** Upper bound on members loaded into one clinician workspace. */
+/** Upper bound on members loaded into one clinician workspace; anyone waiting is always loaded first. */
 export const CLINICIAN_MEMBER_LIMIT = 50;
 
 type Reader = { get: (q: Query) => Promise<FirebaseFirestore.QuerySnapshot> };
@@ -63,9 +65,16 @@ export async function assignedMemberIds(db: Firestore, clinicianId: string): Pro
     .collection('providerAssignments')
     .where('clinicianId', '==', clinicianId)
     .where('active', '==', true)
-    .limit(CLINICIAN_MEMBER_LIMIT)
     .get();
-  return [...new Set(snap.docs.map((d) => d.get('memberId') as string))];
+  const ids = [...new Set(snap.docs.map((d) => d.get('memberId') as string))];
+  if (ids.length <= CLINICIAN_MEMBER_LIMIT) return ids;
+  const profiles = await db.getAll(...ids.map((id) => db.doc(`operationalProfiles/${id}`)));
+  return profiles
+    .filter((p) => p.exists)
+    .map((p) => p.data() as OperationalProfile)
+    .sort(byAttention)
+    .slice(0, CLINICIAN_MEMBER_LIMIT)
+    .map((p) => p.memberId);
 }
 
 export async function loadWorkspace(db: Firestore, actor: Actor): Promise<Store> {
@@ -118,6 +127,7 @@ export async function loadWorkspace(db: Firestore, actor: Actor): Promise<Store>
     }
     case 'SUPER_ADMIN': {
       await Promise.all([
+        r.get(db.collection('members').orderBy('createdAt', 'desc').limit(OPERATIONAL_LIMIT)).then((s) => put(store, 'members', s)),
         r.get(db.collection('penReleases').orderBy('approvedAt', 'desc').limit(OPERATIONAL_LIMIT)).then((s) => put(store, 'penReleases', s)),
         loadAll(db, r, store, 'treatments'),
         loadAll(db, r, store, 'inventory'),
@@ -128,6 +138,8 @@ export async function loadWorkspace(db: Firestore, actor: Actor): Promise<Store>
         loadAll(db, r, store, 'users', OPERATIONAL_LIMIT),
         r.get(db.collection('auditEvents').orderBy('at', 'desc').limit(AUDIT_LIMIT)).then((s) => put(store, 'auditEvents', s)),
       ]);
+      // The waiting list is never cut off by the limit above.
+      put(store, 'operationalProfiles', await r.get(db.collection('operationalProfiles').where('waitingSince', '>', '')));
       break;
     }
     case 'CORPORATE_ADMIN': {
