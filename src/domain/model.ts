@@ -165,6 +165,8 @@ export interface MemberRecord {
   pensPicked?: string[];
   /** Only on the admin's view: when each step happened for each pen. Never what was said or decided. */
   penJourneys?: PenJourney[];
+  /** Only on the admin's view: their age in years, in place of their date of birth. */
+  age?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -1174,7 +1176,7 @@ export function visible(store: Store, actor: Actor): Store {
       out.treatments = { ...store.treatments };
       out.inventory = { ...store.inventory };
       out.operationalProfiles = { ...store.operationalProfiles };
-      // Enough to reach someone and know what they asked for; ID numbers, dates of birth, addresses and decisions stay out.
+      // Enough to know who someone is, reach them and see how far they've got; ID numbers, dates of birth, home addresses and decisions stay out.
       out.members = mapRecords(store.members, (m) => ({
         id: m.id,
         memberId: m.memberId,
@@ -1183,6 +1185,9 @@ export function visible(store: Store, actor: Actor): Store {
         email: m.email,
         ...(m.phone ? { phone: m.phone } : {}),
         ...(m.onboardedAt ? { onboardedAt: m.onboardedAt } : {}),
+        ...(m.city ? { city: m.city } : {}),
+        ...(m.province ? { province: m.province } : {}),
+        ...(m.dateOfBirth ? { age: ageOn(m.dateOfBirth, localDate(new Date())) } : {}),
         pensPicked: [
           ...new Set(
             Object.values(store.treatmentRequests)
@@ -1196,6 +1201,11 @@ export function visible(store: Store, actor: Actor): Store {
         updatedAt: m.updatedAt,
       }));
       out.auditEvents = { ...store.auditEvents };
+      out.orders = { ...store.orders };
+      // A reason for cancelling is in the member's own words, so it stays out.
+      out.repeatDeliveries = mapRecords(store.repeatDeliveries, ({ cancelReason: _cancelReason, ...r }) => r as RepeatDelivery);
+      out.messageThreads = filterRecords(store, 'messageThreads', (t) => OPERATIONS_TOPICS.includes(t.topic));
+      out.messages = filterRecords(store, 'messages', (m) => OPERATIONS_TOPICS.includes(m.topic));
       out.biomarkerDefinitions = { ...store.biomarkerDefinitions };
       out.careTeams = { ...store.careTeams };
       out.corporateAccounts = { ...store.corporateAccounts };

@@ -130,20 +130,29 @@ function ReleaseRow({ release: r }: { release: PenRelease }) {
   );
 }
 
-/** What happened, without what anyone said: screenings sent, pens sent. */
+const ACTIVITY: Record<string, (who: string) => string> = {
+  onboard: (who) => `${who} sent a screening to the clinician`,
+  request: (who) => `${who} asked for a pen`,
+  logCall: (who) => `The doctor logged a call with ${who}`,
+  releaseSent: (who) => `Pen sent to ${who}`,
+  releaseDelivered: (who) => `Pen delivered to ${who}`,
+  penReceived: (who) => `${who} confirmed they have their pen`,
+};
+
+/** What happened, without what anyone said. */
 export function TeamActivity() {
   const { workspace } = useWorkspace();
   const { store } = workspace;
   const name = (memberId?: string) => (memberId && store.operationalProfiles[memberId]?.displayName) || 'A member';
   const rows = Object.values(store.auditEvents)
-    .filter((e) => e.action === 'onboard' || e.action === 'releaseSent')
+    .filter((e) => e.action in ACTIVITY)
     .sort((a, b) => b.at.localeCompare(a.at))
     .slice(0, 30);
   const approvals = Object.values(store.penReleases).map((r) => ({ at: r.approvedAt, text: `${r.approvedByName} approved ${r.treatmentName} for ${r.memberName}` }));
   const feed = [
     ...rows.map((e) => ({
       at: e.at,
-      text: e.action === 'onboard' ? `${name(e.memberId)} sent a screening to the clinician` : `Pen sent to ${name(e.memberId)}`,
+      text: ACTIVITY[e.action](name(e.memberId)),
     })),
     ...approvals,
   ]

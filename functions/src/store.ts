@@ -17,8 +17,8 @@ import { byAttention } from '../../src/domain/waiting';
 
 export const OPERATIONAL_LIMIT = 250;
 export const AUDIT_LIMIT = 100;
-/** Enough for every pen picked by the members on the admin's list. */
-export const ADMIN_PEN_REQUEST_LIMIT = 2000;
+/** Enough for the whole business on the admin's dashboard. */
+export const ADMIN_RECORD_LIMIT = 2000;
 /** Upper bound on members loaded into one clinician workspace; anyone waiting is always loaded first. */
 export const CLINICIAN_MEMBER_LIMIT = 50;
 
@@ -129,16 +129,20 @@ export async function loadWorkspace(db: Firestore, actor: Actor): Promise<Store>
     }
     case 'SUPER_ADMIN': {
       await Promise.all([
-        r.get(db.collection('members').orderBy('createdAt', 'desc').limit(OPERATIONAL_LIMIT)).then((s) => put(store, 'members', s)),
-        r.get(db.collection('penReleases').orderBy('approvedAt', 'desc').limit(OPERATIONAL_LIMIT)).then((s) => put(store, 'penReleases', s)),
+        r.get(db.collection('members').orderBy('createdAt', 'desc').limit(ADMIN_RECORD_LIMIT)).then((s) => put(store, 'members', s)),
+        r.get(db.collection('penReleases').orderBy('approvedAt', 'desc').limit(ADMIN_RECORD_LIMIT)).then((s) => put(store, 'penReleases', s)),
+        r.get(db.collection('orders').orderBy('updatedAt', 'desc').limit(ADMIN_RECORD_LIMIT)).then((s) => put(store, 'orders', s)),
+        loadAll(db, r, store, 'repeatDeliveries', ADMIN_RECORD_LIMIT),
+        r.get(db.collection('messageThreads').where('topic', 'in', [...OPERATIONS_TOPICS]).limit(ADMIN_RECORD_LIMIT)).then((s) => put(store, 'messageThreads', s)),
+        r.get(db.collection('messages').where('topic', 'in', [...OPERATIONS_TOPICS]).limit(ADMIN_RECORD_LIMIT)).then((s) => put(store, 'messages', s)),
         // Read only to work out which pens each member picked and how far each has got; visible() returns dates and nothing else from these.
-        r.get(db.collection('treatmentRequests').orderBy('createdAt', 'desc').limit(ADMIN_PEN_REQUEST_LIMIT)).then((s) => put(store, 'treatmentRequests', s)),
-        r.get(db.collection('approvedTreatments').orderBy('createdAt', 'desc').limit(ADMIN_PEN_REQUEST_LIMIT)).then((s) => put(store, 'approvedTreatments', s)),
-        r.get(db.collection('followUps').orderBy('createdAt', 'desc').limit(ADMIN_PEN_REQUEST_LIMIT)).then((s) => put(store, 'followUps', s)),
-        r.get(db.collection('phoneCalls').orderBy('calledAt', 'desc').limit(ADMIN_PEN_REQUEST_LIMIT)).then((s) => put(store, 'phoneCalls', s)),
+        r.get(db.collection('treatmentRequests').orderBy('createdAt', 'desc').limit(ADMIN_RECORD_LIMIT)).then((s) => put(store, 'treatmentRequests', s)),
+        r.get(db.collection('approvedTreatments').orderBy('createdAt', 'desc').limit(ADMIN_RECORD_LIMIT)).then((s) => put(store, 'approvedTreatments', s)),
+        r.get(db.collection('followUps').orderBy('createdAt', 'desc').limit(ADMIN_RECORD_LIMIT)).then((s) => put(store, 'followUps', s)),
+        r.get(db.collection('phoneCalls').orderBy('calledAt', 'desc').limit(ADMIN_RECORD_LIMIT)).then((s) => put(store, 'phoneCalls', s)),
         loadAll(db, r, store, 'treatments'),
         loadAll(db, r, store, 'inventory'),
-        loadAll(db, r, store, 'operationalProfiles', OPERATIONAL_LIMIT),
+        loadAll(db, r, store, 'operationalProfiles', ADMIN_RECORD_LIMIT),
         loadAll(db, r, store, 'biomarkerDefinitions'),
         loadAll(db, r, store, 'careTeams'),
         loadAll(db, r, store, 'corporateAccounts'),

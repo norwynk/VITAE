@@ -12,6 +12,8 @@ const SA_OFFSET = 2 * HOUR;
 /** Overdue means the admin hears: after two working days, or four working hours for an urgent message. */
 const URGENT_HOURS = 4;
 export const OVERDUE_HOURS = 48;
+/** A delivery question should get an answer within one working day. */
+export const TEAM_REPLY_HOURS = 24;
 
 const isWeekday = (saTime: number) => ![0, 6].includes(new Date(saTime).getUTCDay());
 
@@ -93,6 +95,19 @@ export function waitingOnClinician(store: Store, memberId?: string): WaitingItem
     // A phone call answers whatever they had sent before it.
     const unanswered = thread.slice(thread.map((m) => m.authorRole !== 'MEMBER').lastIndexOf(true) + 1).filter((m) => m.createdAt > (lastSpoke.get(t.memberId) ?? ''));
     if (unanswered.length) items.push({ key: `msg_${t.id}`, memberId: t.memberId, kind: t.escalated ? 'URGENT' : 'MESSAGE', since: unanswered[0].createdAt });
+  }
+  return items.sort((a, b) => a.since.localeCompare(b.since));
+}
+
+/** Order and delivery questions nobody has answered yet, longest wait first. */
+export function waitingOnTeam(store: Store): WaitingItem[] {
+  const messages = Object.values(store.messages).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const items: WaitingItem[] = [];
+  for (const t of Object.values(store.messageThreads)) {
+    if (t.topic !== 'ORDER_DELIVERY') continue;
+    const thread = messages.filter((m) => m.threadId === t.id);
+    const first = thread[thread.map((m) => m.authorRole !== 'MEMBER').lastIndexOf(true) + 1];
+    if (first) items.push({ key: `msg_${t.id}`, memberId: t.memberId, kind: 'MESSAGE', since: first.createdAt });
   }
   return items.sort((a, b) => a.since.localeCompare(b.since));
 }

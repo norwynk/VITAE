@@ -1,6 +1,7 @@
 'use client';
 import { type JourneyStage, journeyStage } from '@/domain/journey';
 import type { MemberRecord, PenJourney } from '@/domain/model';
+import { OVERDUE_HOURS, waitedLabel, workingHours } from '@/domain/waiting';
 import { Badge, Card, Empty, fmtDateTime } from '../ui';
 import { useWorkspace } from '../workspace-context';
 
@@ -13,7 +14,7 @@ interface Row {
   stage: JourneyStage;
 }
 
-function trail({ requestedAt, missedCalls, spokenAt, decidedAt, sentAt, deliveredAt, memberConfirmedAt, followUpDoneAt }: PenJourney): string {
+export function trail({ requestedAt, missedCalls, spokenAt, decidedAt, sentAt, deliveredAt, memberConfirmedAt, followUpDoneAt }: PenJourney): string {
   return [
     `Asked ${fmtDateTime(requestedAt)}`,
     missedCalls ? `${missedCalls} missed call${missedCalls === 1 ? '' : 's'}` : '',
@@ -26,6 +27,32 @@ function trail({ requestedAt, missedCalls, spokenAt, decidedAt, sentAt, delivere
   ]
     .filter(Boolean)
     .join(' · ');
+}
+
+/** Everyone with something sitting with the doctor, longest wait first. */
+export function WaitingOnDoctor() {
+  const { workspace } = useWorkspace();
+  const { store } = workspace;
+  const now = new Date();
+  const waiting = Object.values(store.operationalProfiles)
+    .filter((p) => p.waitingSince)
+    .sort((a, b) => a.waitingSince!.localeCompare(b.waitingSince!));
+  return (
+    <Card title="Waiting on the clinician">
+      {!waiting.length && <Empty>Nobody is waiting.</Empty>}
+      <ul className="plain small stack" style={{ gap: '0.5rem' }}>
+        {waiting.map((p) => {
+          const hours = workingHours(p.waitingSince!, now);
+          const m = store.members[p.memberId];
+          return (
+            <li key={p.id}>
+              <strong>{m ? `${m.firstName} ${m.lastName}`.trim() || m.email : p.displayName}</strong>: waiting {waitedLabel(hours)} {hours >= OVERDUE_HOURS && <Badge tone="alert">Overdue</Badge>}
+            </li>
+          );
+        })}
+      </ul>
+    </Card>
+  );
 }
 
 /** Every pen, the step it has reached and whose move it is. Steps and dates only, never what was said or decided. */

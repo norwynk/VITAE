@@ -577,6 +577,15 @@ describe('messages, notes, check-ins and follow-ups', () => {
     expect(visible(res.store, admin).phoneCalls).toEqual({});
   });
 
+  it('lets the admin answer delivery messages but not join clinical ones', () => {
+    const store = onboarded();
+    const open = run(store, member, { type: 'message', topic: 'ORDER_DELIVERY', subject: 'Where is it', body: 'Hello' });
+    const reply = run(open.store, admin, { type: 'message', threadId: open.resultId!, memberId: NEW, body: 'On its way' });
+    expect(Object.values(reply.store.messages).some((m) => m.authorRole === 'SUPER_ADMIN' && m.body === 'On its way')).toBe(true);
+    const clinical = run(store, member, { type: 'message', topic: 'CLINICAL', subject: 'Question', body: 'Hello' });
+    expectError(() => run(clinical.store, admin, { type: 'message', threadId: clinical.resultId!, memberId: NEW, body: 'x' }), 'FORBIDDEN');
+  });
+
   it('keeps clinical notes with the assigned clinician', () => {
     const store = onboarded();
     expectError(() => run(store, otherClinician, { type: 'note', memberId: NEW, body: 'x' }), 'FORBIDDEN');
