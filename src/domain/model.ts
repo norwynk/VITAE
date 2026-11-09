@@ -636,6 +636,11 @@ export interface PenRelease {
   sentAt?: string;
   sentBy?: string;
   courierReference?: string;
+  /** The first confirmation of arrival, from the courier's proof (team) or the member. */
+  deliveredAt?: string;
+  deliveredBy?: string;
+  /** The member tapped "I've got my pen". */
+  memberConfirmedAt?: string;
 }
 
 export interface ProviderAssignment {
@@ -701,6 +706,8 @@ export interface PenJourney {
   decidedAt?: string;
   approvedAt?: string;
   sentAt?: string;
+  deliveredAt?: string;
+  memberConfirmedAt?: string;
   followUpDue?: string;
   followUpDoneAt?: string;
 }
@@ -1082,6 +1089,8 @@ function penJourneys(store: Store, memberId: string): PenJourney[] {
       // Approved before pen releases existed means there is nothing left to track.
       if (release) journey.approvedAt = release.approvedAt;
       if (release?.sentAt) journey.sentAt = release.sentAt;
+      if (release?.deliveredAt) journey.deliveredAt = release.deliveredAt;
+      if (release?.memberConfirmedAt) journey.memberConfirmedAt = release.memberConfirmedAt;
       if (release && followUp) {
         journey.followUpDue = followUp.dueDate;
         if (followUp.completedAt) journey.followUpDoneAt = followUp.completedAt;

@@ -12,7 +12,8 @@ export function PenReleases() {
   const { workspace } = useWorkspace();
   const all = Object.values(workspace.store.penReleases).sort((a, b) => b.approvedAt.localeCompare(a.approvedAt));
   const toSend = all.filter((r) => r.status === 'TO_SEND');
-  const sent = all.filter((r) => r.status === 'SENT').slice(0, 20);
+  const toConfirm = all.filter((r) => r.status === 'SENT' && !r.deliveredAt).sort((a, b) => (a.sentAt ?? '').localeCompare(b.sentAt ?? ''));
+  const sent = all.filter((r) => r.status === 'SENT' && r.deliveredAt).slice(0, 20);
   return (
     <Card title={`Pens to send${toSend.length ? ` (${toSend.length})` : ''}`}>
       <p className="muted small" style={{ marginTop: 0 }}>
@@ -24,13 +25,26 @@ export function PenReleases() {
           <ReleaseRow key={r.id} release={r} />
         ))}
       </div>
+      {toConfirm.length > 0 && (
+        <div style={{ marginTop: 'var(--space-3)' }}>
+          <strong>Sent, delivery to confirm ({toConfirm.length})</strong>
+          <p className="muted small" style={{ margin: '0.25rem 0 0.5rem' }}>
+            Check each one on the courier&apos;s tracking once a day. It clears by itself if the member taps &quot;I&apos;ve got my pen&quot;.
+          </p>
+          <ul className="plain small stack" style={{ gap: '0.5rem' }}>
+            {toConfirm.map((r) => (
+              <DeliveryRow key={r.id} release={r} />
+            ))}
+          </ul>
+        </div>
+      )}
       {sent.length > 0 && (
         <details style={{ marginTop: 'var(--space-3)' }}>
-          <summary className="small">Recently sent ({sent.length})</summary>
+          <summary className="small">Recently delivered ({sent.length})</summary>
           <ul className="plain small">
             {sent.map((r) => (
               <li key={r.id}>
-                {r.treatmentName} for {r.memberName}, sent {r.sentAt ? fmtDateTime(r.sentAt) : ''}
+                {r.treatmentName} for {r.memberName}, delivered {r.deliveredAt ? fmtDateTime(r.deliveredAt) : ''}
                 {r.courierReference ? ` · ${r.courierReference}` : ''}
               </li>
             ))}
@@ -38,6 +52,21 @@ export function PenReleases() {
         </details>
       )}
     </Card>
+  );
+}
+
+function DeliveryRow({ release: r }: { release: PenRelease }) {
+  const { run, busy } = useWorkspace();
+  return (
+    <li className="row">
+      <span style={{ flex: 1, minWidth: '12rem' }}>
+        {r.treatmentName} for {r.memberName}, sent {r.sentAt ? fmtDateTime(r.sentAt) : ''}
+        {r.courierReference ? ` · ${r.courierReference}` : ''}
+      </span>
+      <button type="button" className="secondary" disabled={busy} onClick={() => void run({ type: 'releaseDelivered', memberId: r.memberId, releaseId: r.id }, `${r.treatmentName} marked as delivered`)}>
+        Delivered
+      </button>
+    </li>
   );
 }
 
@@ -84,14 +113,14 @@ function ReleaseRow({ release: r }: { release: PenRelease }) {
         onSubmit={(e) => {
           e.preventDefault();
           void run(
-            { type: 'releaseSent', memberId: r.memberId, releaseId: r.id, ...(courier.trim() ? { courierReference: courier.trim() } : {}) },
+            { type: 'releaseSent', memberId: r.memberId, releaseId: r.id, courierReference: courier.trim() },
             `${r.treatmentName} marked as sent. ${r.memberName.split(' ')[0]} has been told it's on its way.`,
           );
         }}
       >
         <label style={{ flex: 1 }}>
-          Courier reference (optional)
-          <input value={courier} onChange={(e) => setCourier(e.target.value)} maxLength={80} />
+          Courier reference
+          <input value={courier} onChange={(e) => setCourier(e.target.value)} maxLength={80} required pattern=".*\S.*" />
         </label>
         <button type="submit" disabled={busy}>
           Mark as sent

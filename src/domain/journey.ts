@@ -7,6 +7,8 @@ import { OVERDUE_HOURS, workingHours } from './waiting';
 
 /** An approved pen should go out within one working day. */
 export const SEND_HOURS = 24;
+/** A sent pen with no confirmation after three working days needs chasing. */
+export const DELIVERY_HOURS = 72;
 
 export interface JourneyStage {
   label: string;
@@ -25,8 +27,9 @@ export function journeyStage(j: PenJourney, now: Date): JourneyStage {
   if (!j.approvedAt) return { label: 'Decision recorded', late: false, open: false };
   if (!j.sentAt) return { label: 'Pen to send', who: 'Team', late: workingHours(j.approvedAt, now) >= SEND_HOURS, open: true };
   if (j.followUpDoneAt) return { label: 'Follow-up done', late: false, open: false };
-  if (!j.followUpDue) return { label: 'Pen sent', late: false, open: false };
+  if (!j.deliveredAt) return { label: 'Pen sent, delivery not confirmed', who: 'Team', late: workingHours(j.sentAt, now) >= DELIVERY_HOURS, open: true };
+  if (!j.followUpDue) return { label: 'Pen delivered', late: false, open: false };
   return localDate(now) > j.followUpDue
     ? { label: `Follow-up overdue since ${j.followUpDue}`, who: 'Doctor', late: true, open: true }
-    : { label: `Pen sent, follow-up due ${j.followUpDue}`, who: 'Doctor', late: false, open: true };
+    : { label: `Pen delivered, follow-up due ${j.followUpDue}`, who: 'Doctor', late: false, open: true };
 }

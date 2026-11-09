@@ -6,6 +6,10 @@ assertMatchingDataModes();
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // The address printed on the welcome pack's QR code. Keep it working for as long as packs are out there.
+  async redirects() {
+    return [{ source: '/first-prick', destination: '/app', permanent: false }];
+  },
   async headers() {
     return [
       {

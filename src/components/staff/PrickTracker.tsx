@@ -13,13 +13,15 @@ interface Row {
   stage: JourneyStage;
 }
 
-function trail({ requestedAt, missedCalls, spokenAt, decidedAt, sentAt, followUpDoneAt }: PenJourney): string {
+function trail({ requestedAt, missedCalls, spokenAt, decidedAt, sentAt, deliveredAt, memberConfirmedAt, followUpDoneAt }: PenJourney): string {
   return [
     `Asked ${fmtDateTime(requestedAt)}`,
     missedCalls ? `${missedCalls} missed call${missedCalls === 1 ? '' : 's'}` : '',
     spokenAt ? `Spoke ${fmtDateTime(spokenAt)}` : '',
     decidedAt ? `Decided ${fmtDateTime(decidedAt)}` : '',
     sentAt ? `Sent ${fmtDateTime(sentAt)}` : '',
+    deliveredAt ? `Delivered ${fmtDateTime(deliveredAt)}` : '',
+    memberConfirmedAt ? `Member has it ${fmtDateTime(memberConfirmedAt)}` : '',
     followUpDoneAt ? `Follow-up ${fmtDateTime(followUpDoneAt)}` : '',
   ]
     .filter(Boolean)

@@ -150,8 +150,9 @@ describe('the prick tracker', () => {
     expect(stage({ moreInfoAsked: true })).toMatchObject({ label: 'More information requested', who: 'Member' });
     expect(stage({ decidedAt: MON_10 })).toMatchObject({ label: 'Decision recorded', open: false });
     expect(stage({ decidedAt: MON_10, approvedAt: MON_10 })).toMatchObject({ label: 'Pen to send', who: 'Team', open: true });
-    expect(stage({ decidedAt: MON_10, approvedAt: MON_10, sentAt: MON_10 })).toMatchObject({ label: 'Pen sent', open: false });
-    expect(stage({ decidedAt: MON_10, approvedAt: MON_10, sentAt: MON_10, followUpDue: '2026-11-30' })).toMatchObject({ label: 'Pen sent, follow-up due 2026-11-30', who: 'Doctor', open: true });
+    expect(stage({ decidedAt: MON_10, approvedAt: MON_10, sentAt: MON_10 })).toMatchObject({ label: 'Pen sent, delivery not confirmed', who: 'Team', open: true });
+    expect(stage({ decidedAt: MON_10, approvedAt: MON_10, sentAt: MON_10, deliveredAt: MON_10 })).toMatchObject({ label: 'Pen delivered', open: false });
+    expect(stage({ decidedAt: MON_10, approvedAt: MON_10, sentAt: MON_10, deliveredAt: MON_10, followUpDue: '2026-11-30' })).toMatchObject({ label: 'Pen delivered, follow-up due 2026-11-30', who: 'Doctor', open: true });
     expect(stage({ decidedAt: MON_10, approvedAt: MON_10, sentAt: MON_10, followUpDue: '2026-11-30', followUpDoneAt: '2026-11-30T08:00:00.000Z' })).toMatchObject({ label: 'Follow-up done', open: false });
   });
 
@@ -160,7 +161,10 @@ describe('the prick tracker', () => {
     expect(stage({ spokenAt: MON_10 }, WED_11).late).toBe(true);
     expect(stage({ decidedAt: MON_10, approvedAt: MON_10 }, at('2026-11-03T07:59:00.000Z')).late).toBe(false);
     expect(stage({ decidedAt: MON_10, approvedAt: MON_10 }, at('2026-11-03T08:00:00.000Z')).late).toBe(true);
-    expect(stage({ decidedAt: MON_10, approvedAt: MON_10, sentAt: MON_10, followUpDue: '2026-11-03' }, WED_11)).toMatchObject({ label: 'Follow-up overdue since 2026-11-03', late: true });
+    const sent = { decidedAt: MON_10, approvedAt: MON_10, sentAt: MON_10 };
+    expect(stage(sent, at('2026-11-05T07:59:00.000Z')).late).toBe(false);
+    expect(stage(sent, at('2026-11-05T08:00:00.000Z')).late).toBe(true);
+    expect(stage({ decidedAt: MON_10, approvedAt: MON_10, sentAt: MON_10, deliveredAt: MON_10, followUpDue: '2026-11-03' }, WED_11)).toMatchObject({ label: 'Follow-up overdue since 2026-11-03', late: true });
   });
 
   it('gives the admin dates only, never what was decided or said', () => {

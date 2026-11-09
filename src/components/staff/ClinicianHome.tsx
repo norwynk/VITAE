@@ -553,6 +553,7 @@ function Plans({ memberId }: { memberId: string }) {
           const events = Object.values(store.adherenceEvents).filter((e) => e.approvalId === a.id);
           const taken = events.filter((e) => e.action === 'TAKEN').length;
           const missed = events.filter((e) => e.action === 'MISSED').length;
+          const release = Object.values(store.penReleases).find((p) => p.approvalId === a.id);
           return (
             <li key={a.id}>
               <strong>{store.treatments[a.treatmentId]?.name}</strong>{' '}
@@ -560,6 +561,7 @@ function Plans({ memberId }: { memberId: string }) {
               <br />
               {regimen && `${regimen.dose} ${regimen.doseUnit}, ${describeSchedule(regimen.schedule)}. `}
               {a.startDate} to {a.expiresOn}. {a.remainingQuantity}/{a.approvedQuantity} packs left. Taken {taken}, missed {missed}.
+              {release?.memberConfirmedAt && ` Has the pen since ${fmtDateTime(release.memberConfirmedAt)}.`}
             </li>
           );
         })}
