@@ -68,7 +68,7 @@ describe('the two sides', () => {
 
   it('a man heading for his body hears about the body he is building, not the scale', () => {
     const g = goalForSide(goalBySlug('weight')!, 'men');
-    expect(g.title).toBe('Get lean. Look built.');
+    expect(g.title).toBe('Training hard. Not showing.');
     expect(g.picture).not.toMatch(/scale/i);
     expect(g.image).toBe('');
     for (const h of g.intakeGoals) expect(HELP_OPTIONS.men).toContain(h);

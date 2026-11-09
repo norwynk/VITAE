@@ -62,7 +62,7 @@ export function ProductPage({ slug, initialPens }: { slug: string; initialPens?:
 
   const { treatment: t, brand } = pen;
   const needsApproval = t.requiresClinicianApproval || t.requiresPrescription;
-  const startHref = `/start?pen=${t.slug}`;
+  const startHref = `/app?pen=${t.slug}`;
   const truth = t.productTruth ?? {};
   const safety = penSafety(t.slug);
   const certs = PEN_CERTIFICATES[t.slug];
@@ -107,9 +107,6 @@ export function ProductPage({ slug, initialPens }: { slug: string; initialPens?:
             </div>
             <div className="row" style={{ gap: 'var(--space-3)' }}>
               <ShortlistButton slug={t.slug} name={t.name} className="btn product-hero__cta" />
-              <Link href={startHref} className="btn ghost">
-                Start screening
-              </Link>
               <Link href="/find-your-prick" className="link-arrow">
                 Not sure? Take the quiz
               </Link>
@@ -283,7 +280,7 @@ export function ProductPage({ slug, initialPens }: { slug: string; initialPens?:
                 A private questionnaire about you, your health history, current medication and lifestyle, and what you are
                 hoping for. Your answers go to your clinician only, not to delivery or support staff.
               </p>
-              <Link href={startHref} className="link-arrow">Start your screening</Link>
+              <Link href={startHref} className="link-arrow">Ask my clinician</Link>
             </div>
           </section>
 
@@ -367,7 +364,7 @@ export function ProductPage({ slug, initialPens }: { slug: string; initialPens?:
         <div className={`sticky-cta${stuck ? ' show' : ''}`}>
           <strong className="display" style={{ fontSize: '1.3rem' }}>{t.name}</strong>
           <Link href={startHref} className="btn product-hero__cta">
-            Start screening
+            Ask my clinician
           </Link>
         </div>
       </div>

@@ -2,8 +2,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { type Goal, GOALS, PEN_HELP, goalBySlug, goalForCategory } from '@/brand/goals';
-import { type PenBrand, penBrand } from '@/brand/pens';
+import { type Goal, GOALS, goalBySlug } from '@/brand/goals';
 import { publicDataMode } from '@/config';
 import {
   type IntakeAnswers,
@@ -21,19 +20,14 @@ import {
   validateIntake,
   visibleQuestions,
 } from '@/domain/intake';
-import { SA_PROVINCES, type Treatment, ageOn, localDate, peptideLine } from '@/domain/model';
-import { type PenQuestion, type PenQuestionGroup, NONE_OF_THESE, groupsFor, invalidAnswer, isFlagged, splitMulti } from '@/domain/penQuestions';
-import { type PenSafety, penSafety } from '@/domain/penSafety';
-import { useCatalogue } from '@/hooks/useCatalogue';
+import { SA_PROVINCES, type Treatment, ageOn, localDate } from '@/domain/model';
+import { type PenQuestion, NONE_OF_THESE, groupsFor, isFlagged, splitMulti } from '@/domain/penQuestions';
+import type { PenSafety } from '@/domain/penSafety';
 import { useScreening } from '@/hooks/useScreening';
 import { useSignedIn } from '@/hooks/useSignedIn';
-import { MAX_SHORTLIST, useShortlist } from '@/hooks/useShortlist';
-import { useBrandForSide, useSide } from '@/hooks/useSide';
-import { MEN_ANGLES, forSide, goalForPen, goalForSide } from '@/brand/sides';
+import { useSide } from '@/hooks/useSide';
+import { MEN_GOALS, goalForSide } from '@/brand/sides';
 import { demoRepository } from '@/services/repository';
-import { BySide } from '../brand/BySide';
-import { worldStyle } from '../brand/worldStyle';
-import { ConsultCard } from '../brand/ConsultCard';
 import { FitMoment } from '../member/FitMoment';
 import { SiteNav } from '../site/SiteNav';
 import { Notice } from '../ui';
@@ -58,9 +52,7 @@ export function needsLook(answers: IntakeAnswers, penAnswers: Record<string, str
 
 type Screen =
   | { kind: 'destination'; stop: number }
-  | { kind: 'pens'; stop: number }
   | { kind: 'section'; stop: number; section: IntakeSection; questions: IntakeQuestion[]; part: number; parts: number }
-  | { kind: 'safety'; stop: number; group: PenQuestionGroup; pen?: Treatment }
   | { kind: 'arrive'; stop: number }
   | { kind: 'fit'; stop: number };
 
@@ -96,12 +88,10 @@ function chunk(questions: IntakeQuestion[]): IntakeQuestion[][] {
   return out;
 }
 
-/** The route: why, pens, who you are, your health, safety for your pens, the rest of your life. */
+/** The route: why, who you are, your health, the rest of your life. Treatments and their safety checks come afterwards, in the account. */
 function buildRoute(
   sections: IntakeSection[],
   answers: IntakeAnswers,
-  groups: PenQuestionGroup[],
-  chosen: Treatment[],
   askDestination: boolean,
   askRoute: boolean,
 ) {
@@ -120,19 +110,10 @@ function buildRoute(
       .filter((c) => c.length);
     parts.forEach((questions, part) => screens.push({ kind: 'section', stop, section: s, questions, part, parts: parts.length }));
   };
-  let pensAdded = false;
   for (const s of sections) {
     addSection(s);
-    // New to peptides: where they're heading, unless we already know.
+    // New here: what's going on, unless we already know.
     if (s.id === 'start' && askDestination && isNewRoute(answers)) screens.push({ kind: 'destination', stop: -1 });
-    if ((s.id === 'why' || s.id === 'script') && !pensAdded) {
-      pensAdded = true;
-      screens.push({ kind: 'pens', stop: stops.push('Your pens') - 1 });
-    }
-    if (s.id === 'history' && groups.length) {
-      const stop = stops.push('Safety check') - 1;
-      for (const g of groups) screens.push({ kind: 'safety', stop, group: g, pen: chosen.find((p) => g.slugs?.includes(p.slug)) });
-    }
   }
   screens.push({ kind: 'arrive', stop: stops.length }, { kind: 'fit', stop: stops.length });
   return { stops, screens };
@@ -150,24 +131,18 @@ function because(text: string | undefined, goal: Goal | undefined) {
  * "arriving" moment, the good-fit result, then an account to send it.
  */
 export function Questionnaire({
-  initialPen,
   initialGoal,
   initialRoute,
-  initialPens,
   initialStop,
   back,
 }: {
-  initialPen?: string;
   initialGoal?: string;
   initialRoute?: string;
-  initialPens?: Treatment[];
   /** Open at this part (a section id), e.g. "Change" from the review before sending. */
   initialStop?: string;
   /** Came from the send screen: offer the way straight back to it. */
   back?: boolean;
 }) {
-  const { pens } = useCatalogue(initialPens);
-  const shortlist = useShortlist();
   const { state, update, clear } = useScreening();
   const [problem, setProblem] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -175,63 +150,38 @@ export function Questionnaire({
   const router = useRouter();
   const signedIn = useSignedIn();
 
-  const { add } = shortlist;
-  useEffect(() => {
-    if (initialPen) add(initialPen);
-  }, [initialPen, add]);
-  // The way in decides the route: "Repeat your script" means a script; Find yours, a pen or a goal means new.
+  // The way in decides the route: "Repeat your script" means a script; a goal card means new.
   // It replaces an answer left on this device by an earlier visit, and starts the route again if it changed.
-  const entryRoute = initialRoute === 'repeat' ? ROUTE_REPEAT : initialPen || initialGoal ? ROUTE_NEW : undefined;
+  const entryRoute = initialRoute === 'repeat' ? ROUTE_REPEAT : initialGoal ? ROUTE_NEW : undefined;
   useEffect(() => {
     if (entryRoute) update((s) => (s.answers.route === entryRoute ? {} : { answers: { ...s.answers, route: entryRoute }, step: 0, completedAt: undefined }));
   }, [entryRoute, update]);
 
-  // The men's side only offers the men's range.
   const { side } = useSide();
-  const sideBrand = useBrandForSide();
-  const available = forSide((pens ?? []).map((p) => p.treatment), side, (t) => t.slug);
-  const chosen = shortlist.slugs.map((s) => available.find((t) => t.slug === s)).filter((t): t is Treatment => Boolean(t));
-  // Where they're heading is already known if they came with pens or a goal: never ask twice.
-  // The pens they picked come first, so the story is always about those pens.
-  const known =
-    goalForCategory(chosen[0]?.category) ??
-    goalBySlug(initialGoal) ??
-    goalForCategory(available.find((t) => t.slug === initialPen)?.category);
-  // A destination left on this device from an earlier visit only stands if it still fits the pens.
-  const storedFits = Boolean(state.destination) && (!chosen.length || chosen.some((t) => goalBySlug(state.destination)?.category === t.category));
-  const destination = storedFits ? state.destination : (known?.slug ?? state.destination);
+  // What's going on is already known if they came from a goal card: never ask twice.
+  const known = goalBySlug(initialGoal);
+  const destination = known?.slug ?? state.destination;
   const baseGoal = goalBySlug(destination);
-  // Where the pens live, for choosing them; the rest of the story is told by the pen they lead with.
-  const groupGoal = baseGoal && goalForSide(baseGoal, side);
-  const goal = baseGoal && goalForPen(baseGoal, chosen[0]?.slug, side);
+  const goal = baseGoal && goalForSide(baseGoal, side);
   const knownSlug = known?.slug;
+  const storedDestination = state.destination;
   useEffect(() => {
     const g = goalBySlug(knownSlug);
-    if (storedFits || !g) return;
+    if (!g || storedDestination === g.slug) return;
     update((s) => ({
       destination: g.slug,
       destinationFrom: s.destinationFrom ?? 'known',
       answers: Array.isArray(s.answers.goals) && s.answers.goals.length ? s.answers : { ...s.answers, goals: goalForSide(g, side).intakeGoals },
     }));
-  }, [storedFits, knownSlug, side, update]);
-  // "What would you like help with?" is asked in this side's words, and starts with what the chosen pens are for.
+  }, [storedDestination, knownSlug, side, update]);
   const helpOptions = HELP_OPTIONS[side === 'men' ? 'men' : 'women'];
-  const penHelp = [...new Set(chosen.flatMap((t) => (side === 'men' ? MEN_ANGLES[t.slug]?.help : undefined) ?? PEN_HELP[t.slug] ?? []))].join('|');
-  const helpKey = chosen.length ? `${side ?? 'women'}:${chosen.map((t) => t.slug).join(',')}` : undefined;
-  useEffect(() => {
-    if (!helpKey || state.helpFor === helpKey) return;
-    update((s) => ({ helpFor: helpKey, answers: penHelp ? { ...s.answers, goals: penHelp.split('|') } : s.answers }));
-  }, [helpKey, penHelp, state.helpFor, update]);
   const firstName = typeof state.answers.firstName === 'string' ? state.answers.firstName : '';
 
   const sections = sectionsFor(state.answers);
-  const groups = groupsFor(chosen);
   const { stops, screens } = buildRoute(
     sections,
     state.answers,
-    groups,
-    chosen,
-    // Once asked here it stays on the route, so picking pens later never shifts the steps.
+    // Once asked here it stays on the route.
     state.destinationFrom === 'asked' || (state.destinationFrom !== 'known' && !known),
     !entryRoute,
   );
@@ -247,7 +197,6 @@ export function Questionnaire({
       else answers[id] = v;
       return { answers, completedAt: undefined };
     });
-  const setPen = (id: string, v: string) => update((s) => ({ penAnswers: { ...s.penAnswers, [id]: v }, completedAt: undefined }));
 
   const go = (n: number) => {
     setProblem(null);
@@ -259,8 +208,6 @@ export function Questionnaire({
     switch (sc.kind) {
       case 'destination':
         return destination ? null : 'Choose where you’re heading. You can change it later.';
-      case 'pens':
-        return chosen.length || state.letClinicianSuggest ? null : 'Choose at least one pen, or let your clinician suggest one.';
       case 'section': {
         for (const q of sc.questions) {
           const p = problemWith(onScreen(q), state.answers[q.id], SA_PROVINCES);
@@ -269,12 +216,6 @@ export function Questionnaire({
         }
         return null;
       }
-      case 'safety':
-        for (const q of sc.group.questions) {
-          const p = invalidAnswer(q, state.penAnswers[q.id] ?? '');
-          if (p) return p;
-        }
-        return null;
       default:
         return null;
     }
@@ -318,7 +259,7 @@ export function Questionnaire({
   // "Change" from the review opens the right part, once.
   const opened = useRef(false);
   useEffect(() => {
-    if (opened.current || !initialStop || !pens) return;
+    if (opened.current || !initialStop) return;
     opened.current = true;
     const at = screens.findIndex((sc) => sc.kind === 'section' && sc.section.id === initialStop);
     if (at >= 0) update({ step: at });
@@ -326,9 +267,10 @@ export function Questionnaire({
   // Arriving at the result with something unanswered (an older visit, a changed question): straight back to it.
   const atEnd = screen.kind === 'arrive' || screen.kind === 'fit';
   useEffect(() => {
-    if (atEnd && pens) sendToGap();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (atEnd) sendToGap();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [atEnd, pens]);
+  }, [atEnd]);
   // Single-tap screens move on by themselves; the ref always sees the latest answers.
   const nextRef = useRef(next);
   const stepRef = useRef(step);
@@ -365,7 +307,7 @@ export function Questionnaire({
     }
   };
 
-  const accent = chosen[0] ? worldStyle(sideBrand(penBrand(chosen[0])).colours) : ({ '--accent': goal?.colour ?? 'var(--pink)' } as React.CSSProperties);
+  const accent = { '--accent': goal?.colour ?? 'var(--pink)' } as React.CSSProperties;
   const stopIndex = screen.stop;
   const firstOfStop = screens.findIndex((s) => s.stop === stopIndex) === step;
   const cheer =
@@ -386,7 +328,7 @@ export function Questionnaire({
 
           <section className="intake__screen" key={step}>
             {screen.kind === 'destination' && (
-              <Destination chosen={destination} onChoose={chooseDestination} goals={GOALS.filter((g) => available.some((t) => t.category === g.category)).map((g) => goalForSide(g, side))} men={side === 'men'} />
+              <Destination chosen={destination} onChoose={chooseDestination} goals={GOALS.filter((g) => side !== 'men' || MEN_GOALS.some((m) => m.slug === g.slug)).map((g) => goalForSide(g, side))} men={side === 'men'} />
             )}
 
             {screen.kind === 'section' && (
@@ -400,7 +342,7 @@ export function Questionnaire({
                   </p>
                 )}
                 {screen.section.id === 'why' && screen.part === 0 && goal && (
-                  <PictureIt goal={goal} pen={chosen[0] && sideBrand(penBrand(chosen[0]))} men={side === 'men'} />
+                  <PictureIt goal={goal} />
                 )}
                 <div className="intake__fields">
                   {screen.questions.map((q) => (
@@ -425,49 +367,16 @@ export function Questionnaire({
               </>
             )}
 
-            {screen.kind === 'pens' && (
-              <PensStep
-                repeat={isRepeatRoute(state.answers)}
-                chosen={chosen}
-                available={available}
-                goal={groupGoal}
-                shortlist={shortlist}
-                letClinicianSuggest={state.letClinicianSuggest}
-                onLet={(v) => update({ letClinicianSuggest: v })}
-              />
-            )}
-
-            {screen.kind === 'safety' && (
-              <>
-                <StopHead
-                  eyebrow="Safety check"
-                  title={screen.pen ? `${screen.pen.name}: the safety check.` : screen.group.title}
-                  why={
-                    screen.pen
-                      ? `Every pen on the way to ${goal?.destination ?? 'your goal'} has its own safety rules. These are ${screen.pen.name}’s. They’re required, and your clinician reads every answer.`
-                      : 'Questions just for the pens you picked, so your clinician can plan around you.'
-                  }
-                />
-                {screen.pen && penSafety(screen.pen.slug) && <GoodToKnow name={screen.pen.name} safety={penSafety(screen.pen.slug)!} />}
-                <div className="intake__pen-qs">
-                  {screen.group.questions.map((q) => (
-                    <PenField key={q.id} q={q} value={state.penAnswers[q.id] ?? ''} onChange={(v) => setPen(q.id, v)} />
-                  ))}
-                </div>
-              </>
-            )}
-
-            {screen.kind === 'arrive' && <Arriving pens={chosen} goal={goal} repeat={isRepeatRoute(state.answers)} onDone={() => go(step + 1)} />}
+            {screen.kind === 'arrive' && <Arriving goal={goal} repeat={isRepeatRoute(state.answers)} onDone={() => go(step + 1)} />}
 
             {screen.kind === 'fit' && (
               <>
                 <FitMoment
-                  pens={chosen}
+                  pens={[]}
                   goal={goal}
                   firstName={firstName}
                   vision={typeof state.answers.vision === 'string' ? state.answers.vision : ''}
-                  flagged={flaggedPens(state.penAnswers, chosen)}
-                  needsLook={needsLook(state.answers, state.penAnswers, chosen)}
+                  needsLook={needsLook(state.answers, {}, [])}
                   tooYoung={underAge(state.answers.dateOfBirth)}
                   repeat={isRepeatRoute(state.answers)}
                 />
@@ -512,7 +421,7 @@ export function Questionnaire({
                 </button>
               )}
               {screen.kind !== 'fit' && screen.kind !== 'destination' && (
-                <button type="button" onClick={next} disabled={!pens}>
+                <button type="button" onClick={next}>
                   {screens[step + 1]?.kind === 'arrive' ? 'See where I stand' : 'Next'}
                 </button>
               )}
@@ -526,9 +435,8 @@ export function Questionnaire({
                   type="button"
                   className="link-arrow intake__clear"
                   onClick={() => {
-                    if (window.confirm('Start over? This clears your answers and the pens you picked from this device.')) {
+                    if (window.confirm('Start over? This clears your answers from this device.')) {
                       clear();
-                      shortlist.clear();
                       setProblem(null);
                       // A clean start: forget the way they came in too, so the opening question is asked.
                       router.replace('/start');
@@ -580,18 +488,18 @@ function StopHead({ eyebrow, title, lead, why }: { eyebrow: string; title: strin
 }
 
 /** First stop: where they want to end up. One tap, and it colours everything after it. */
-/** The goals this side has pens for; the men's side shows colour instead of the photos. */
+/** The men's side shows colour instead of the photos. */
 function Destination({ chosen, onChoose, goals, men }: { chosen?: string; onChoose: (slug: string) => void; goals: Goal[]; men: boolean }) {
   return (
     <>
       <div className="stop-head">
-        <p className="eyebrow">Your screening starts here</p>
+        <p className="eyebrow">Your assessment starts here</p>
         <h1 className="display intake__title">
-          Where are you heading?
+          What&apos;s going on?
           <span className="serif-i">Pick the one that matters most right now.</span>
         </h1>
       </div>
-      <div className="destinations" role="radiogroup" aria-label="Where are you heading?">
+      <div className="destinations" role="radiogroup" aria-label="What’s going on?">
         {goals.map((g) => (
           <button
             key={g.slug}
@@ -608,22 +516,18 @@ function Destination({ chosen, onChoose, goals, men }: { chosen?: string; onChoo
         ))}
       </div>
       <button type="button" className="link-arrow intake__unsure" aria-pressed={chosen === 'unsure'} onClick={() => onChoose('unsure')}>
-        Not sure yet. Show me everything.
+        Not sure yet. That’s what the doctor’s for.
       </button>
     </>
   );
 }
 
-/** Their "after", told by the pen they picked (or, with no pen yet, by where they're heading). */
-function PictureIt({ goal, pen, men }: { goal: Goal; pen?: PenBrand; men: boolean }) {
-  const line = pen ? ((men && MEN_ANGLES[pen.slug]?.transformation) || pen.transformation) : goal.picture;
-  const image = pen ? pen.cardImage : goal.image || undefined;
+/** What it's like to finally say it out loud. */
+function PictureIt({ goal }: { goal: Goal }) {
+  const image = goal.image || undefined;
   return (
-    <figure
-      className="picture-it"
-      style={{ '--goal': pen?.colours.deep ?? goal.colour, backgroundImage: image ? `url(${image})` : undefined } as React.CSSProperties}
-    >
-      <figcaption>{line}</figcaption>
+    <figure className="picture-it" style={{ '--goal': goal.colour, backgroundImage: image ? `url(${image})` : undefined } as React.CSSProperties}>
+      <figcaption>{goal.picture}</figcaption>
     </figure>
   );
 }
@@ -634,7 +538,7 @@ function withChosen(options: string[], value: IntakeValue | undefined): string[]
   return [...options, ...extra];
 }
 
-function GoodToKnow({ name, safety }: { name: string; safety: PenSafety }) {
+export function GoodToKnow({ name, safety }: { name: string; safety: PenSafety }) {
   return (
     <aside className="good-to-know" aria-label={`Good to know about ${name}`}>
       <p className="eyebrow">Good to know</p>
@@ -665,11 +569,10 @@ function GoodToKnow({ name, safety }: { name: string; safety: PenSafety }) {
 }
 
 /** A short, honest "working on it" moment: each line is a check that really runs. */
-function Arriving({ pens, goal, repeat, onDone }: { pens: Treatment[]; goal?: Goal; repeat: boolean; onDone: () => void }) {
+function Arriving({ goal, repeat, onDone }: { goal?: Goal; repeat: boolean; onDone: () => void }) {
   const lines = [
     'Reading your answers',
     ...(repeat ? ['Checking your script details'] : []),
-    ...pens.map((p) => `Running the ${p.name} safety check`),
     ...(repeat ? [] : [`Mapping your route to ${goal?.destination ?? 'your goal'}`]),
     'Getting your file ready for your clinician',
   ];
@@ -697,139 +600,6 @@ function Arriving({ pens, goal, repeat, onDone }: { pens: Treatment[]; goal?: Go
           </li>
         ))}
       </ul>
-    </div>
-  );
-}
-
-/**
- * Pens they already picked are confirmed, not sold to: no "add more". Only
- * someone who arrives with none is shown the pens for their goal.
- */
-function PensStep({ repeat, ...props }: Parameters<typeof PensPicker>[0] & { repeat: boolean }) {
-  const { chosen, shortlist, goal } = props;
-  // Decided when the step opens, so removing a pen doesn't turn this into a shop.
-  const [arrivedWithPens] = useState(shortlist.slugs.length > 0);
-  const sideBrand = useBrandForSide();
-  if (arrivedWithPens && shortlist.slugs.length > 0) {
-    return (
-      <>
-        <StopHead
-          eyebrow="Your pens"
-          title={chosen.length === 1 ? 'The pen you’re bringing.' : 'The pens you’re bringing.'}
-          lead="Your clinician reviews each one and decides what’s right for you."
-          why="Each pen comes with its own safety check later on, so you only answer the questions that matter to you."
-        />
-        <ul className="plain screening__pens">
-          {chosen.map((t) => {
-            const b = sideBrand(penBrand(t));
-            return (
-              <li key={t.id} className="screening__pen" style={worldStyle(b.colours)}>
-                <span className="screening__pen-dot" />
-                <span className="screening__pen-name">{t.name}</span>
-                <span className="screening__pen-hook">
-                  <BySide women={b.hook} men={MEN_ANGLES[t.slug]?.hook} />
-                  {penSafety(t.slug) && <span className="pen-pick__safety"> · Includes a safety check</span>}
-                </span>
-                <button type="button" className="secondary small" onClick={() => shortlist.remove(t.slug)} aria-label={`Remove ${t.name}`}>
-                  Remove
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-        <p className="small muted" style={{ margin: 0 }}>
-          Changed your mind about one? Remove it here.
-        </p>
-      </>
-    );
-  }
-  return (
-    <>
-      <StopHead
-        eyebrow="Your pens"
-        title={repeat ? 'Which pens are on your script?' : 'Which pen brings you here?'}
-        lead={repeat ? 'Pick the pens that match your current protocol.' : 'Pick the one you’d like your clinician to consider. Not sure? Let them suggest.'}
-        why={goal ? `These are the pens made for ${goal.destination}. Each one comes with its own safety check later on.` : undefined}
-      />
-      <PensPicker {...props} allowSuggest={!repeat} />
-    </>
-  );
-}
-
-function PensPicker({
-  chosen,
-  available,
-  goal,
-  shortlist,
-  letClinicianSuggest,
-  onLet,
-  allowSuggest = true,
-}: {
-  allowSuggest?: boolean;
-  chosen: Treatment[];
-  available: Treatment[];
-  goal?: Goal;
-  shortlist: ReturnType<typeof useShortlist>;
-  letClinicianSuggest: boolean;
-  onLet: (v: boolean) => void;
-}) {
-  const sideBrand = useBrandForSide();
-  const open = available.filter((t) => t.active && t.public);
-  const forGoal = goal ? open.filter((t) => t.category === goal.category) : open;
-  const others = goal ? open.filter((t) => t.category !== goal.category) : [];
-  const card = (t: Treatment) => {
-    const b = sideBrand(penBrand(t));
-    const on = shortlist.has(t.slug);
-    return (
-      <button
-        key={t.id}
-        type="button"
-        aria-pressed={on}
-        className="pen-pick"
-        style={worldStyle(b.colours)}
-        disabled={!on && shortlist.full}
-        onClick={() => {
-          if (on) shortlist.remove(t.slug);
-          else {
-            shortlist.add(t.slug);
-            onLet(false);
-          }
-        }}
-      >
-        <span className="screening__pen-dot" />
-        <span className="pen-pick__name">
-          {t.name}
-          {b.forHim && <span className="pen-pick__tag">For him</span>}
-          {peptideLine(t) && <span className="pen-pick__peptides">{peptideLine(t)}</span>}
-        </span>
-        <span className="pen-pick__hook"><BySide women={b.hook} men={MEN_ANGLES[t.slug]?.hook} /></span>
-        {penSafety(t.slug) && <span className="pen-pick__safety">Includes a safety check</span>}
-        <span className="pen-pick__tick" aria-hidden="true">
-          {on ? '✓' : '+'}
-        </span>
-      </button>
-    );
-  };
-  return (
-    <div className="stack">
-      <div className="pen-picks">{forGoal.map(card)}</div>
-      {goal?.slug === 'weight' && <ConsultCard variant="inline" />}
-      {others.length > 0 && (
-        <details className="pen-picks__more" open={chosen.some((t) => t.category !== goal?.category)}>
-          <summary>More pens</summary>
-          <div className="pen-picks">{others.map(card)}</div>
-        </details>
-      )}
-      {shortlist.full && <p className="small muted">Your clinician reviews up to {MAX_SHORTLIST} at a time.</p>}
-      {!chosen.length && allowSuggest && (
-        <label className="check">
-          <input type="checkbox" checked={letClinicianSuggest} onChange={(e) => onLet(e.target.checked)} /> Not sure yet. Let my clinician
-          suggest something.
-        </label>
-      )}
-      <p className="small" style={{ margin: 0 }}>
-        Not sure which? <Link href="/find-your-prick">Take the quiz</Link> and come back.
-      </p>
     </div>
   );
 }

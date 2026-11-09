@@ -11,7 +11,7 @@ const serif = Fraunces({ style: ['normal', 'italic'], subsets: ['latin'], variab
 const sans = DM_Sans({ subsets: ['latin'], variable: '--font-sans-loaded', display: 'swap' });
 const hand = Caveat({ subsets: ['latin'], variable: '--font-hand-loaded', display: 'swap' });
 
-const DESCRIPTION = 'Peptide pens for women and men from a SAHPRA-licensed, batch-tested source, with a clinician behind every one. Screening first, always.';
+const DESCRIPTION = 'A doctor-led South African health company with a very rude name. A private assessment first, always.';
 
 /**
  * Before first paint: the side they chose (the theme), the doors if they
@@ -69,7 +69,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body>
         {publicDataMode() === 'demo' && (
-          <div className="demo-bar">Preview build. Pens shown are fictional demo products and can&apos;t be bought yet.</div>
+          <div className="demo-bar">Preview build. Everything here is fictional demo data.</div>
         )}
         {children}
       </body>

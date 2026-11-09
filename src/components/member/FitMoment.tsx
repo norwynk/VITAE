@@ -106,7 +106,7 @@ export function FitMoment({
           </li>
           <li>
             <strong>If approved</strong>
-            <span>{salesOpen() ? 'Order your pen. We check in before it runs out.' : 'Your care team arranges your pen with you.'}</span>
+            <span>{salesOpen() ? 'Your next steps appear in your account.' : 'Your care team arranges the next steps with you.'}</span>
           </li>
         </ol>
       )}

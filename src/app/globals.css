@@ -191,6 +191,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 .marquee { overflow: hidden; background: var(--marquee-bg, #dc2f74); color: var(--cream-ink); padding: 1rem 0; white-space: nowrap; border-block: 1px solid rgb(255 255 255 / 0.18); }
 .marquee__track { display: inline-flex; gap: 3rem; animation: marquee 32s linear infinite; padding-right: 3rem; }
 .marquee__item { font-family: var(--font-display); font-size: var(--step-1); letter-spacing: 0.03em; text-transform: uppercase; display: inline-flex; align-items: center; gap: 3rem; }
+.marquee__crown { height: 0.9em; width: auto; flex: 0 0 auto; transform: rotate(-8deg); }
 .marquee__pen { height: 1.3em; width: 7.65em; margin-block: 0.3em; flex: 0 0 auto; transform: rotate(-8deg); filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.18)); }
 .marquee:hover .marquee__track { animation-play-state: paused; }
 
@@ -209,8 +210,9 @@ button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 .hero__disc { position: absolute; width: min(36vw, 560px); aspect-ratio: 1; border-radius: 50%; background: #ffc6de; }
 .hero__disc.two { width: min(14vw, 200px); background: var(--orange); top: 6%; right: 2%; animation: drift 9s ease-in-out infinite; }
 .hero__disc.three { width: min(9vw, 120px); background: var(--lime); bottom: 10%; left: 4%; animation: drift 11s ease-in-out infinite reverse; }
+.hero__royal { position: relative; z-index: 1; display: block; height: 88%; width: auto; }
 .hero__pen { position: absolute; inset: 0; z-index: 1; }
-.hero__note { position: absolute; right: 0; bottom: 8%; transform: rotate(-6deg); color: var(--ink); }
+.hero__note { position: absolute; z-index: 2; right: 0; bottom: 24%; transform: rotate(-6deg); color: var(--ink); }
 
 @media (max-width: 860px) {
   .hero { min-height: auto; padding-top: var(--space-2); }
@@ -578,6 +580,7 @@ fieldset.nested { background: var(--off-white); }
 .women__title .serif-i { text-transform: none; color: var(--pink); display: block; font-size: 0.42em; line-height: 1.15; margin-top: var(--space-2); }
 .women__body { font-size: var(--step-1); max-width: 34ch; margin-top: var(--space-4); }
 .women__side { display: grid; gap: var(--space-3); }
+.women__royal { display: block; height: clamp(360px, 44vw, 620px); width: auto; justify-self: center; }
 .women__pens { display: grid; grid-template-columns: repeat(3, 1fr); height: clamp(520px, 56vw, 860px); }
 .women__pens .pen-stage { min-width: 0; margin: 0 -30%; width: 160%; }
 .women__pens .pen-stage:nth-child(2) { z-index: 2; }

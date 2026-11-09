@@ -33,9 +33,9 @@ export function forSide<T>(items: T[], side: Side | null, slugOf: (item: T) => s
 
 /** The men's homepage goal cards: colour and a pen instead of a photo. Each opens the quiz like the women's cards. */
 export const MEN_GOALS = [
-  { slug: 'energy', title: 'Recover harder. Train harder.', covers: 'Recovery, deeper sleep and energy for every session', pen: 'rapid-recovery', colour: '#14365f' },
-  { slug: 'hormones', title: 'Back in your prime.', covers: 'Hormones, drive and desire', pen: 'hormone-reset', colour: '#2b2f36' },
-  { slug: 'weight', title: 'Get lean. Look built.', covers: 'Definition, shape and the body you train for', pen: 'body-sculpt', colour: '#1f6fff' },
+  { slug: 'energy', title: 'Slower to bounce back.', covers: 'Recovery, sleep and energy', pen: 'rapid-recovery', colour: '#14365f' },
+  { slug: 'hormones', title: 'Flat. In every sense.', covers: 'Hormones, drive and mood', pen: 'hormone-reset', colour: '#2b2f36' },
+  { slug: 'weight', title: 'Training hard. Not showing.', covers: 'Body composition and weight', pen: 'body-sculpt', colour: '#1f6fff' },
 ];
 
 /**
@@ -153,21 +153,21 @@ export function forMen(brand: PenBrand): PenBrand {
  */
 const MEN_GOAL_STORY: Record<string, Pick<Goal, 'destination' | 'picture' | 'visionExample' | 'intakeGoals'>> = {
   energy: {
-    destination: 'harder training and faster recovery',
-    picture: 'You wake up recovered. You train heavier, bounce back quicker, and it shows.',
-    visionExample: 'I’m lifting heavier and I’m not wrecked the next day.',
+    destination: 'getting clear on your recovery',
+    picture: 'You stop blaming your age. A doctor looks at what’s actually happening.',
+    visionExample: 'I want to stop feeling wrecked the next day.',
     intakeGoals: ['Recovery', 'Sleep', 'Muscle and strength'],
   },
   hormones: {
-    destination: 'getting your edge back',
-    picture: 'Your drive is back: in the gym, at work, at home. You feel like the man you know you are.',
-    visionExample: 'I’ve got my drive back, and my partner has noticed.',
+    destination: 'getting clear on your hormones and drive',
+    picture: 'You say out loud what you’ve been keeping to yourself. A doctor doesn’t flinch.',
+    visionExample: 'I want to feel like myself.',
     intakeGoals: ['Testosterone and drive'],
   },
   weight: {
-    destination: 'the body you’re building',
-    picture: 'You catch yourself in the gym mirror and like what you see. So do they.',
-    visionExample: 'My shirts are tighter in the arms and looser at the waist.',
+    destination: 'getting clear on your body',
+    picture: 'You stop guessing from the internet. A doctor looks at you.',
+    visionExample: 'I want to know why the work isn’t showing.',
     intakeGoals: ['Fat loss and definition', 'Muscle and strength'],
   },
 };

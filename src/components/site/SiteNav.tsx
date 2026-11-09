@@ -4,14 +4,12 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { Side } from '@/brand/sides';
 import { walkThrough } from '@/hooks/useSide';
-import { useShortlist } from '@/hooks/useShortlist';
 import { Logo } from './Logo';
 
 const LINKS = [
-  { href: '/shop', label: 'The pricks' },
-  { href: '/find-your-prick', label: 'Find yours' },
   { href: '/#how-it-works', label: 'How it works' },
   { href: '/royal-prick', label: 'Royal Prick' },
+  { href: '/about', label: 'About us' },
 ];
 
 /**
@@ -40,7 +38,6 @@ function SideSwitch({ className, onDone }: { className?: string; onDone?: () => 
 export function SiteNav({ cta = true }: { cta?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-  const { slugs } = useShortlist();
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
     onScroll();
@@ -60,12 +57,12 @@ export function SiteNav({ cta = true }: { cta?: boolean }) {
         <Logo />
         <div className="site-nav__end">
           <SideSwitch />
-          <Link href={slugs.length ? '/my-pens' : '/app'} className="link-arrow site-nav__pens">
-            {slugs.length ? `My pens (${slugs.length})` : 'Account'}
+          <Link href="/app" className="link-arrow site-nav__pens">
+            Account
           </Link>
           {cta && (
-            <Link href="/find-your-prick" className="btn small">
-              Find your prick
+            <Link href="/start" className="btn small">
+              Get started
             </Link>
           )}
         </div>
@@ -79,8 +76,8 @@ export function SiteNav({ cta = true }: { cta?: boolean }) {
             {l.label}
           </Link>
         ))}
-        <Link href={slugs.length ? '/my-pens' : '/app'} onClick={() => setOpen(false)}>
-          {slugs.length ? `My pens (${slugs.length})` : 'Account'}
+        <Link href="/app" onClick={() => setOpen(false)}>
+          Account
         </Link>
         <SideSwitch className="mobile-menu__switch" onDone={() => setOpen(false)} />
       </nav>

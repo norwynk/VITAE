@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { PURCHASE_BLOCK_MESSAGES, currentApproval, purchaseBlocks } from '@/domain/commands';
 import {
   type Address,
@@ -24,14 +24,15 @@ import {
 import { GOALS } from '@/brand/goals';
 import { penBrand } from '@/brand/pens';
 import { salesOpen } from '@/config';
-import { MAX_SHORTLIST, useShortlist } from '@/hooks/useShortlist';
+import { MAX_SHORTLIST } from '@/hooks/useShortlist';
 import { paymentAdapterFor } from '@/services/payment';
 import { PenStage } from '../brand/Pen';
 import { worldStyle } from '../brand/worldStyle';
 import { Badge, Card, Empty, Notice, fmtDateTime, formValues, humanise } from '../ui';
 import { useWorkspace } from '../workspace-context';
 import { FinishScreening } from './FinishScreening';
-import { PenField } from '../screening/Questionnaire';
+import { GoodToKnow, PenField } from '../screening/Questionnaire';
+import { penSafety } from '@/domain/penSafety';
 import { groupsFor, invalidAnswer } from '@/domain/penQuestions';
 import { latestPenAnswers } from '@/domain/safety';
 import { useScreening } from '@/hooks/useScreening';
@@ -43,15 +44,10 @@ type Tab = (typeof TABS)[number];
 
 export function MemberHome() {
   const { workspace } = useWorkspace();
-  const shortlist = useShortlist();
   const screening = useScreening();
   const [tab, setTab] = useState<Tab>('Overview');
-  // A pen linked from the site (?pen=) joins "My pens". A preference only, never a clinical input.
+  // A pen they opened in their account (?pen=) waits in "My pens", ready for its safety check.
   const linked = useState(() => (typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('pen')))[0];
-  const { add } = shortlist;
-  useEffect(() => {
-    if (linked) add(linked);
-  }, [linked, add]);
 
   const member = workspace.store.members[workspace.actor.uid];
   if (!member) return <Notice tone="error">Your member record could not be found.</Notice>;
@@ -77,7 +73,7 @@ export function MemberHome() {
       </div>
       <div role="tabpanel" id="panel-Overview" aria-labelledby="tab-Overview" hidden={tab !== 'Overview'} className="stack">
         <RenewalDue onGo={() => setTab('Orders')} />
-        <MyPens />
+        <MyPens linked={linked} />
         <Notifications />
       </div>
       <div role="tabpanel" id="panel-Plan" aria-labelledby="tab-Plan" hidden={tab !== 'Plan'} className="stack">
@@ -143,23 +139,14 @@ function RenewalDue({ onGo }: { onGo: () => void }) {
 }
 
 function ScreeningIntro({ resuming }: { resuming: boolean }) {
-  const { workspace } = useWorkspace();
-  const { slugs } = useShortlist();
-  const names = slugs.map((slug) => Object.values(workspace.store.treatments).find((t) => t.slug === slug)?.name).filter(Boolean);
-  const first = Object.values(workspace.store.treatments).find((t) => t.slug === slugs[0]);
-  const brand = first ? penBrand(first) : null;
   return (
-    <section className="screening-intro" style={brand ? worldStyle(brand.colours) : ({ '--accent': 'var(--pink)' } as React.CSSProperties)}>
-      <p className="eyebrow">Health screening{names.length ? ` · ${names.join(', ')}` : ''}</p>
+    <section className="screening-intro" style={{ '--accent': 'var(--pink)' } as React.CSSProperties}>
+      <p className="eyebrow">Health assessment</p>
       <h1 className="display">
         Let&apos;s get to know each other first.
-        <span className="serif-i">The fun part is picking it. The important part is making sure it&apos;s right for you.</span>
+        <span className="serif-i">The important part is making sure anything we do is right for you.</span>
       </h1>
       <ol className="screening-intro__path">
-        <li>
-          <strong>Your pens</strong>
-          <span>{names.length ? 'Already chosen. You can change them.' : 'Pick up to three, or let your clinician suggest.'}</span>
-        </li>
         <li>
           <strong>A few calm questions</strong>
           <span>About you, your health, sleep and lifestyle. One topic at a time.</span>
@@ -167,6 +154,10 @@ function ScreeningIntro({ resuming }: { resuming: boolean }) {
         <li>
           <strong>A clinician reviews</strong>
           <span>They decide what is right for you, and tell you here.</span>
+        </li>
+        <li>
+          <strong>Your options</strong>
+          <span>Once your assessment is in, your options open up in your account.</span>
         </li>
       </ol>
       <div className="trust-row">
@@ -349,14 +340,14 @@ function NextStep({ onGo }: { onGo: (tab: Tab) => void }) {
 }
 
 /** Every pen the member has asked about, with its status, plus room to add more. */
-function MyPens() {
+function MyPens({ linked }: { linked: string | null }) {
   const { workspace, run, busy } = useWorkspace();
   const { store } = workspace;
   const requests = latestRequests(store);
   const active = requests.filter((r) => PENDING_REQUEST_STATUSES.includes(r.status) || r.status === 'APPROVED');
   const asked = new Set(requests.filter((r) => r.status !== 'DECLINED').map((r) => r.treatmentId));
   const addable = Object.values(store.treatments).filter((t) => t.active && t.public && !asked.has(t.id));
-  const [toAdd, setToAdd] = useState('');
+  const [toAdd, setToAdd] = useState(() => addable.find((t) => t.slug === linked)?.id ?? '');
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [problem, setProblem] = useState('');
   const room = active.length < MAX_SHORTLIST;
@@ -406,7 +397,7 @@ function MyPens() {
           }}
         >
           <label style={{ flex: 1 }}>
-            Add another pen
+            {requests.length ? 'Add another pen' : 'Choose a pen'}
             <select value={toAdd} onChange={(e) => choose(e.target.value)}>
               <option value="">Choose…</option>
               {addable.map((t) => (
@@ -416,8 +407,9 @@ function MyPens() {
               ))}
             </select>
           </label>
-          {questions.length > 0 && (
+          {adding && (questions.length > 0 || penSafety(adding.slug)) && (
             <div className="stack my-pens__safety" style={{ flexBasis: '100%' }}>
+              {penSafety(adding.slug) && <GoodToKnow name={adding.name} safety={penSafety(adding.slug)!} />}
               <p className="small">
                 <strong>{adding.name}: the safety check.</strong> Required, and your clinician reads every answer.
               </p>
@@ -439,6 +431,9 @@ function MyPens() {
         </form>
       )}
       {!room && <p className="small muted">You can have up to {MAX_SHORTLIST} pens with your clinician at a time.</p>}
+      <p className="small">
+        <a href="/shop">See all the pens</a> or <a href="/find-your-prick">take the quiz</a>.
+      </p>
     </section>
   );
 }

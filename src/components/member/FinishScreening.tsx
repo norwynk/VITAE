@@ -2,11 +2,9 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { type IntakeAnswers, NONE, intakeQuestion, isRepeatRoute, knownAnswers, medsText, validateIntake } from '@/domain/intake';
-import { MENOPAUSE_STAGES, SA_PROVINCES, type Treatment } from '@/domain/model';
-import { groupsFor, invalidAnswer } from '@/domain/penQuestions';
+import { MENOPAUSE_STAGES, SA_PROVINCES } from '@/domain/model';
 import { IntakeReview } from '../screening/IntakeReview';
 import { useScreening } from '@/hooks/useScreening';
-import { useShortlist } from '@/hooks/useShortlist';
 import { Notice, formValues } from '../ui';
 import { useWorkspace } from '../workspace-context';
 
@@ -39,23 +37,17 @@ function diet(a: IntakeAnswers) {
 /**
  * Last step, once they have an account: surname, ID, mobile and consent.
  * The questionnaire answers come from this device and are sent together.
- * Someone already onboarded (screening again for another pen) just checks and sends.
+ * Someone already onboarded (updating their answers) just checks and sends.
  */
 export function FinishScreening({ again = false }: { again?: boolean }) {
-  const { run, busy, workspace } = useWorkspace();
+  const { run, busy } = useWorkspace();
   const { state, clear } = useScreening();
-  const shortlist = useShortlist();
   const [idType, setIdType] = useState<'SA_ID' | 'PASSPORT'>('SA_ID');
   const [problem, setProblem] = useState<{ text: string; stop?: string } | null>(null);
   const a = state.answers;
-  const chosen = shortlist.slugs
-    .map((slug) => Object.values(workspace.store.treatments).find((t) => t.slug === slug))
-    .filter((t): t is Treatment => Boolean(t));
   const female = s(a, 'sex') === 'Female';
   const repeat = isRepeatRoute(a);
-  const pens = chosen.length
-    ? `Your clinician will review ${chosen.map((t) => t.name).join(' and ')}.`
-    : 'Your clinician will suggest what could suit you.';
+  const pens = 'Your clinician has it from here.';
 
   return (
     <form
@@ -77,13 +69,7 @@ export function FinishScreening({ again = false }: { again?: boolean }) {
           setProblem({ text: gap.problem, stop: gap.questionId && intakeQuestion(gap.questionId)?.s.id });
           return;
         }
-        const penGap = groupsFor(chosen).flatMap((g) => g.questions).find((q) => invalidAnswer(q, state.penAnswers[q.id] ?? ''));
-        if (penGap) {
-          setProblem({ text: invalidAnswer(penGap, state.penAnswers[penGap.id] ?? '')! });
-          return;
-        }
         const v = formValues(form);
-        const penAnswers = groupsFor(chosen).flatMap((g) => g.questions.map((q) => ({ questionId: q.id, answer: state.penAnswers[q.id] ?? '' })));
         const screening = {
           health: {
             conditions: list(a, 'conditions').slice(0, 30),
@@ -116,7 +102,6 @@ export function FinishScreening({ again = false }: { again?: boolean }) {
                 },
               }),
           testingInterest: s(a, 'testingInterest') === 'Yes',
-          penAnswers,
           intake: knownAnswers(a),
         };
         // The repeat-script route skips goals and lifestyle: it's about verifying an existing protocol.
@@ -124,16 +109,15 @@ export function FinishScreening({ again = false }: { again?: boolean }) {
           ? { goals: ['Repeat an existing script'], motivation: s(a, 'protocol').slice(0, 1000) }
           : { goals: list(a, 'goals'), motivation: s(a, 'reason').slice(0, 1000) };
         if (again) {
-          // Already a member: the new answers and the chosen pens go to the clinician together.
+          // Already a member: the new answers go to the clinician.
           const sent = await run(
-            { type: 'rescreen', ...screening, ...(goals.goals.length ? { goals } : {}), treatmentIds: chosen.map((t) => t.id) },
+            { type: 'rescreen', ...screening, ...(goals.goals.length ? { goals } : {}) },
             `Your new answers are in. ${pens}`,
           );
           if (!sent) {
             setProblem({ text: 'This didn’t send. Your answers are still saved on this device, so nothing is lost. Please try again in a minute.' });
             return;
           }
-          shortlist.clear();
           clear();
           return;
         }
@@ -167,8 +151,6 @@ export function FinishScreening({ again = false }: { again?: boolean }) {
           setProblem({ text: 'This didn’t send. Your answers are still saved on this device, so nothing is lost. Please try again in a minute.' });
           return;
         }
-        for (const t of chosen) await run({ type: 'request', treatmentId: t.id, reason: 'Chosen at sign-up' }, `${t.name} sent to your clinician`);
-        shortlist.clear();
         clear();
       }}
     >

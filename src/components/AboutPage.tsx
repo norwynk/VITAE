@@ -33,13 +33,12 @@ export function AboutPage() {
           </p>
           <p>That is where PRICK came from.</p>
           <p>
-            Kylee and Norwyn saw the growing role of peptide treatments and believed there was a better way to introduce people to
-            this world. One that could still be clinically responsible and properly guided, without making the experience feel cold
-            or complicated.
+            Kylee and Norwyn believed there was a better way to look after people. One that could still be clinically responsible
+            and properly guided, without making the experience feel cold or complicated.
           </p>
           <p>So they built PRICK around a different idea:</p>
           <blockquote className="about__idea">
-            <p className="about__idea-main">Start with the person, not the peptide.</p>
+            <p className="about__idea-main">Start with the person, not the prescription.</p>
             <p>Start with what she wants to feel differently.</p>
             <p>What she wants back.</p>
             <p>What she wants more of.</p>
@@ -56,7 +55,7 @@ export function AboutPage() {
           <span className="serif-i">Different everywhere else.</span>
         </p>
         <Link href="/start" className="btn steps__btn">
-          Start your screening
+          Start your assessment
         </Link>
       </article>
     </BrandPage>

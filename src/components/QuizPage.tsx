@@ -305,8 +305,8 @@ export function MatchReveal({ pen, others = [], onRestart }: { pen: BrandedPen; 
                 </p>
               )}
               <div className="row" style={{ marginTop: 'var(--space-3)', gap: 'var(--space-2)' }}>
-                <Link href={`/start?pen=${t.slug}`} className="btn light">
-                  Start my screening
+                <Link href={`/app?pen=${t.slug}`} className="btn light">
+                  Ask my clinician
                 </Link>
                 <Link href={`/pens/${t.slug}`} className="btn ghost">
                   See the pen
