@@ -4,7 +4,6 @@
  * failed is still chased. Reminders name people and waiting times only.
  */
 import { FieldValue, type Firestore, type QuerySnapshot } from 'firebase-admin/firestore';
-import { logger } from 'firebase-functions';
 import { type CollectionName, type MemberRecord, type Store, PENDING_REQUEST_STATUSES, emptyStore, localDate } from '../../src/domain/model';
 import { type WaitingItem, WAITING_LABEL, isSendingHour, reminderDue, waitedLabel, waitingOnClinician, workingHours } from '../../src/domain/waiting';
 
@@ -74,7 +73,7 @@ async function sendClaimed(db: Firestore, claims: string[], mail: StaffMail, to:
     await mail.send(to, subject, text);
     return 1;
   } catch (e) {
-    logger.warn('Waiting reminder failed; will retry', e);
+    console.warn('Waiting reminder failed; will retry', e);
     await Promise.all(claims.map((id) => db.doc(`staffReminders/${id}`).delete()));
     return 0;
   }
