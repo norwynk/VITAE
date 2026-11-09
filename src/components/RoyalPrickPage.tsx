@@ -1,13 +1,18 @@
 'use client';
 import Link from 'next/link';
-import { type CSSProperties, useRef, useState } from 'react';
+import { type CSSProperties, useEffect } from 'react';
 import { PEN_BRANDS } from '@/brand/pens';
 import { SOURCE_LINE } from '@/brand/source';
 import { EditorialStatement } from './brand/Sections';
 import { PenStage } from './brand/Pen';
+import { ScrollFilm } from './brand/ScrollFilm';
 import { BrandPage } from './site/BrandPage';
 
-/** The Royal Prick Experience, the concierge package: we do the heavy lifting. Kept out of search results and not tied to a checkout yet. */
+/**
+ * The Royal Prick Experience, the concierge package: we do the heavy lifting.
+ * It is an optional extra. Nobody needs it, or its blood test, to do an assessment and order a pen.
+ * Kept out of search results and not tied to a checkout yet.
+ */
 const delay = (ms: number) => ({ '--delay': `${ms}ms` }) as CSSProperties;
 
 const TO_DO = [
@@ -59,6 +64,7 @@ const FOR_YOU = ['You’re curious about peptides and don’t know where to star
 const NOT_FOR_YOU = ['You want the cheapest pen in the country', 'You want a pen whatever the doctor says', 'You’d rather skip the bloods'];
 
 const FAQ = [
+  { q: 'Do I need this to get a pen?', a: 'No. This is the extra for people who want it all done for them. Anyone can do the online assessment and order a pen without it, and you don’t need a blood test to do that. Testosterone is the one exception, because your clinician needs your levels first. A clinician can also ask for a test if it matters for you.' },
   { q: 'Where do you come to?', a: 'Tell us where you are and we’ll let you know when a nurse can get to you.' },
   { q: 'What happens if the doctor says no?', a: 'You keep your bloods and you get a straight explanation of why, plus what your doctor would look at instead. No yes, no pen.' },
   { q: 'Why do I start with a screening?', a: 'Labs need a doctor’s request, and some people shouldn’t go further at all. A few minutes on your phone means nobody sends a nurse for nothing.' },
@@ -93,42 +99,28 @@ function RoyalPrick() {
   );
 }
 
-/** The 50-second film. Nothing downloads until they press play. */
+/** The 50-second film. It plays by itself when scrolled to. */
 function Film() {
-  const video = useRef<HTMLVideoElement>(null);
-  const [playing, setPlaying] = useState(false);
-  const play = () => {
-    setPlaying(true);
-    void video.current?.play();
-  };
+  // The homepage links straight here, so land on the film and let it start.
+  useEffect(() => {
+    if (window.location.hash === '#film') document.getElementById('film')?.scrollIntoView({ behavior: 'instant', block: 'start' });
+  }, []);
   return (
-    <section className="pkg-film section" aria-labelledby="film-title">
+    <section id="film" className="pkg-film section" aria-labelledby="film-title">
       <div className="container">
         <h2 id="film-title" className="display pkg-h2" data-reveal>
           Fifty seconds. <span className="serif-i">No lab queue.</span>
         </h2>
         <div className="pkg-film__frame" data-reveal style={delay(120)}>
-          <video
-            ref={video}
+          <ScrollFilm
             className="pkg-film__video"
             src="/video/the-royal-prick-experience.mp4"
             poster="/video/the-royal-prick-experience.jpg"
-            preload="none"
-            playsInline
-            controls={playing}
-            onEnded={() => setPlaying(false)}
             width={1920}
             height={1080}
-            aria-label="The Royal Prick Experience: a 50-second animated film, with captions"
+            length="0:50"
+            label="The Royal Prick Experience: a 50-second animated film, with captions"
           />
-          {!playing && (
-            <button type="button" className="explainer__play" onClick={play} aria-label="Play the film, 50 seconds, with sound">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M8 5.5v13l11-6.5z" />
-              </svg>
-              <span>Play · 0:50</span>
-            </button>
-          )}
         </div>
       </div>
     </section>
@@ -156,6 +148,10 @@ export function RoyalPrickPage() {
               <Link href="/start" className="btn">Get the royal treatment</Link>
               <a href="#included" className="link-arrow">See what&apos;s in it</a>
             </div>
+            <p className="pkg-hero__note">
+              Purely optional. You don&apos;t need this package, or a blood test, to order a pen. Testosterone is the one exception.{' '}
+              <Link href="/find-your-prick">Just here for a pen?</Link>
+            </p>
           </div>
           <RoyalPrick />
         </div>
@@ -166,9 +162,9 @@ export function RoyalPrickPage() {
       <section className="pkg-list section">
         <div className="container pkg-list__grid">
           <div data-reveal>
-            <p className="eyebrow">The usual way</p>
+            <p className="eyebrow">Bloods and a doctor, the usual way</p>
             <h2 className="display pkg-h2">
-              Starting peptides
+              The full works
               <br />
               shouldn&apos;t be a
               <br />
@@ -256,6 +252,7 @@ export function RoyalPrickPage() {
           <div data-reveal style={delay(120)}>
             <h2 className="display pkg-h2">It&apos;s not if</h2>
             <ul className="checklist pkg-fit__no">{NOT_FOR_YOU.map((t) => <li key={t}>{t}</li>)}</ul>
+            <p>Rather skip the bloods? No problem. <Link href="/find-your-prick">Find your prick</Link> and do your assessment online, no package needed.</p>
             <p>Already on a prescribed protocol? <Link href="/start?route=repeat">Repeating your script</Link> is quicker.</p>
           </div>
         </div>
