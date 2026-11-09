@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-/** The way in to the Royal Prick Experience from the homepages. Not placed yet: add it above RepeatScriptBand on both homepages at launch. */
+/** The way in to the Royal Prick Experience from the homepages. */
 export function RoyalPrickBand() {
   return (
     <section className="repeat-script repeat-script--royal" aria-labelledby="royal-prick-title">

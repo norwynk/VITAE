@@ -7,6 +7,7 @@ import { useCatalogue } from '@/hooks/useCatalogue';
 import { rememberSide } from '@/hooks/useSide';
 import { BrandHero } from './brand/BrandHero';
 import { Explainer } from './brand/Explainer';
+import { RoyalPrickBand } from './brand/RoyalPrickBand';
 import { MenGoalCards } from './brand/GoalCards';
 import { Range } from './brand/Range';
 import { RepeatScriptBand } from './brand/RepeatScriptBand';
@@ -46,6 +47,7 @@ export function MenHomePage({ initialPens }: { initialPens?: Treatment[] }) {
           </>
         }
       />
+      <RoyalPrickBand />
       <RepeatScriptBand />
       <EditorialStatement top="A little prick." bottom="A lot more you.">
         <p>Built to perform. Serious enough to need a clinician&apos;s yes.</p>

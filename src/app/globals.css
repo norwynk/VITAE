@@ -1111,13 +1111,15 @@ html.door-through .side-door::after { opacity: 1; }
 .pen-pick__peptides { display: block; font-family: var(--font-sans); text-transform: none; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.02em; margin-top: 0.25rem; opacity: 0.7; }
 
 /* =========================================================================
-   The Royal Prick Experience (preview)
+   The Royal Prick Experience
    ========================================================================= */
 .repeat-script--royal { background: var(--pink); color: var(--black); }
 .repeat-script--royal .eyebrow { color: var(--black); }
 .repeat-script--royal .btn { background: var(--black); border-color: var(--black); }
 
-.pkg-preview { margin: 0; padding: 0.6rem var(--gutter); background: var(--black); color: #fff; text-align: center; font-size: var(--step--1); position: relative; z-index: 1; }
+.pkg-film { background: var(--black); color: #fff; }
+.pkg-film__frame { position: relative; margin-top: var(--space-4); border-radius: var(--radius-l); overflow: hidden; background: var(--pink); }
+.pkg-film__video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; }
 .pkg-h2 { font-size: var(--step-4); margin: 0.4rem 0 0; }
 .pkg-h2 .serif-i { text-transform: none; color: var(--pink); font-size: 0.62em; line-height: 1.05; }
 

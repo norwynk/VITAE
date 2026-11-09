@@ -1,13 +1,13 @@
 'use client';
 import Link from 'next/link';
-import type { CSSProperties } from 'react';
+import { type CSSProperties, useRef, useState } from 'react';
 import { PEN_BRANDS } from '@/brand/pens';
 import { SOURCE_LINE } from '@/brand/source';
 import { EditorialStatement } from './brand/Sections';
 import { PenStage } from './brand/Pen';
 import { BrandPage } from './site/BrandPage';
 
-/** PREVIEW of the Royal Prick Experience, the concierge package: we do the heavy lifting. Set to noindex and not tied to a checkout yet. */
+/** The Royal Prick Experience, the concierge package: we do the heavy lifting. Kept out of search results and not tied to a checkout yet. */
 const delay = (ms: number) => ({ '--delay': `${ms}ms` }) as CSSProperties;
 
 const TO_DO = [
@@ -90,13 +90,51 @@ function Door() {
   );
 }
 
+/** The 50-second film. Nothing downloads until they press play. */
+function Film() {
+  const video = useRef<HTMLVideoElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const play = () => {
+    setPlaying(true);
+    void video.current?.play();
+  };
+  return (
+    <section className="pkg-film section" aria-labelledby="film-title">
+      <div className="container">
+        <h2 id="film-title" className="display pkg-h2" data-reveal>
+          Fifty seconds. <span className="serif-i">No lab queue.</span>
+        </h2>
+        <div className="pkg-film__frame" data-reveal style={delay(120)}>
+          <video
+            ref={video}
+            className="pkg-film__video"
+            src="/video/the-royal-prick-experience.mp4"
+            poster="/video/the-royal-prick-experience.jpg"
+            preload="none"
+            playsInline
+            controls={playing}
+            onEnded={() => setPlaying(false)}
+            width={1920}
+            height={1080}
+            aria-label="The Royal Prick Experience: a 50-second animated film, with captions"
+          />
+          {!playing && (
+            <button type="button" className="explainer__play" onClick={play} aria-label="Play the film, 50 seconds, with sound">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 5.5v13l11-6.5z" />
+              </svg>
+              <span>Play · 0:50</span>
+            </button>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function RoyalPrickPage() {
   return (
     <BrandPage doors={false}>
-      <p className="pkg-preview" role="note">
-        <strong>Preview, not live.</strong>
-      </p>
-
       <section className="pkg-hero">
         <div className="container pkg-hero__grid">
           <div>
@@ -119,6 +157,8 @@ export function RoyalPrickPage() {
           <Door />
         </div>
       </section>
+
+      <Film />
 
       <section className="pkg-list section">
         <div className="container pkg-list__grid">

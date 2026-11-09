@@ -5,6 +5,7 @@ import { useSide } from '@/hooks/useSide';
 import type { Treatment } from '@/domain/model';
 import { BrandHero } from './brand/BrandHero';
 import { Explainer } from './brand/Explainer';
+import { RoyalPrickBand } from './brand/RoyalPrickBand';
 import { GoalCards } from './brand/GoalCards';
 import { Range } from './brand/Range';
 import { RepeatScriptBand } from './brand/RepeatScriptBand';
@@ -52,6 +53,7 @@ export function HomePage({ initialPens }: { initialPens?: Treatment[] }) {
           </>
         }
       />
+      <RoyalPrickBand />
       <RepeatScriptBand />
       <EditorialStatement top="A little prick." bottom="A lot more you.">
         <p>Pretty enough to show off. Serious enough to need a clinician&apos;s yes.</p>

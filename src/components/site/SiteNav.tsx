@@ -11,6 +11,7 @@ const LINKS = [
   { href: '/shop', label: 'The pricks' },
   { href: '/find-your-prick', label: 'Find yours' },
   { href: '/#how-it-works', label: 'How it works' },
+  { href: '/royal-prick', label: 'Royal Prick' },
 ];
 
 /**
