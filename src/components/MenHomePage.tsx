@@ -47,7 +47,7 @@ export function MenHomePage({ initialPens }: { initialPens?: Treatment[] }) {
           </>
         }
       />
-      <RoyalPrickBand />
+      <RoyalPrickBand men />
       <RepeatScriptBand />
       <EditorialStatement top="A little prick." bottom="A lot more you.">
         <p>Built to perform. Serious enough to need a clinician&apos;s yes.</p>

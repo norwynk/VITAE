@@ -616,7 +616,7 @@ test('a man who clears his answers and taps the logo is home on the men’s side
   await expect(page.locator('html')).toHaveAttribute('data-side', 'men');
 });
 
-test('the explainer film sits under the hero on both sides and plays', async ({ page }) => {
+test('the explainer film sits under the hero on both sides and plays by itself when scrolled to', async ({ page }) => {
   for (const path of ['/', '/men']) {
     await page.goto(path);
     const film = page.locator('.explainer');
@@ -624,6 +624,6 @@ test('the explainer film sits under the hero on both sides and plays', async ({ 
     // Straight after the hero and its banner.
     expect(await page.evaluate(() => document.querySelector('.marquee')?.nextElementSibling?.classList.contains('explainer'))).toBe(true);
   }
-  await page.locator('.explainer').getByRole('button', { name: /Play the film/ }).click();
+  await page.locator('.explainer__video').scrollIntoViewIfNeeded();
   await expect.poll(() => page.locator('.explainer__video').evaluate((v: HTMLVideoElement) => v.currentTime)).toBeGreaterThan(0.5);
 });
