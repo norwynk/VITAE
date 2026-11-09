@@ -9,9 +9,7 @@ const DAY = 24 * HOUR;
 // South Africa has one time zone and no daylight saving.
 const SA_OFFSET = 2 * HOUR;
 
-/** A pen reminder goes out for every full working day waited; from the second, the admin hears too. */
-const REMINDER_EVERY_HOURS = 24;
-const TELL_ADMIN_FROM_STAGE = 2;
+/** Overdue means the admin hears: after two working days, or four working hours for an urgent message. */
 const URGENT_HOURS = 4;
 export const OVERDUE_HOURS = 48;
 
@@ -30,12 +28,17 @@ export function workingHours(from: string, to: Date): number {
   return ms / HOUR;
 }
 
-/** Staff reminders only go out on weekdays, 07:00 to 19:00. */
-export function isSendingHour(now: Date): boolean {
+function isWeekdayBetween(now: Date, fromHour: number, toHour: number): boolean {
   const t = now.getTime() + SA_OFFSET;
   const hour = new Date(t).getUTCHours();
-  return isWeekday(t) && hour >= 7 && hour < 19;
+  return isWeekday(t) && hour >= fromHour && hour < toHour;
 }
+
+/** No staff email goes out outside weekdays, 07:00 to 19:00. */
+export const isSendingHour = (now: Date) => isWeekdayBetween(now, 7, 19);
+
+/** The once-a-day emails go out at the start of the day; the extra hours are only there to retry a failed send. */
+export const isSummaryHour = (now: Date) => isWeekdayBetween(now, 7, 10);
 
 export function waitedLabel(hours: number): string {
   if (hours < 1) return 'under an hour';
@@ -85,12 +88,8 @@ export function waitingOnClinician(store: Store, memberId?: string): WaitingItem
   return items.sort((a, b) => a.since.localeCompare(b.since));
 }
 
-/** Which reminder this item has reached, if any. Each stage is sent once. */
-export function reminderDue(item: WaitingItem, now: Date): { stage: number; tellAdmin: boolean } | null {
-  const hours = workingHours(item.since, now);
-  if (item.kind === 'URGENT') return hours < URGENT_HOURS ? null : { stage: 1 + Math.floor(hours / REMINDER_EVERY_HOURS), tellAdmin: true };
-  const stage = Math.floor(hours / REMINDER_EVERY_HOURS);
-  return stage ? { stage, tellAdmin: stage >= TELL_ADMIN_FROM_STAGE } : null;
+export function isOverdue(item: WaitingItem, now: Date): boolean {
+  return workingHours(item.since, now) >= (item.kind === 'URGENT' ? URGENT_HOURS : OVERDUE_HOURS);
 }
 
 /** Who to load first when a clinician has more members than one workspace holds: anyone waiting, then the most recently active. */
