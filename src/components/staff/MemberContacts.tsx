@@ -3,7 +3,7 @@ import { OVERDUE_HOURS, waitedLabel, workingHours } from '@/domain/waiting';
 import { Badge, Card, Empty, fmtDateTime } from '../ui';
 import { useWorkspace } from '../workspace-context';
 
-/** The admin's view of who is waiting and how to reach everyone. Contact details only, never health answers. */
+/** The admin's view of who is waiting, how to reach everyone and which pens they picked. Never health answers or clinical decisions. */
 export function MemberContacts() {
   const { workspace } = useWorkspace();
   const { store } = workspace;
@@ -31,7 +31,7 @@ export function MemberContacts() {
           })}
         </ul>
       </Card>
-      <Card title="Members and contact details">
+      <Card title="Members, contact details and pens picked">
         {!members.length && <Empty>No members yet.</Empty>}
         <div className="table-wrap">
           <table>
@@ -40,6 +40,7 @@ export function MemberContacts() {
                 <th>Name</th>
                 <th>Email</th>
                 <th>Mobile</th>
+                <th>Pens picked</th>
                 <th>Assessment sent</th>
               </tr>
             </thead>
@@ -49,6 +50,7 @@ export function MemberContacts() {
                   <td>{`${m.firstName} ${m.lastName}`.trim() || <span className="muted">Not given yet</span>}</td>
                   <td>{m.email && <a href={`mailto:${m.email}`}>{m.email}</a>}</td>
                   <td>{m.phone ? <a href={`tel:${m.phone.replace(/\s/g, '')}`}>{m.phone}</a> : <span className="muted">Not given yet</span>}</td>
+                  <td>{m.pensPicked?.map((id) => store.treatments[id]?.name ?? 'A pen no longer listed').join(', ') || <span className="muted">None yet</span>}</td>
                   <td>{m.onboardedAt ? fmtDateTime(m.onboardedAt) : <span className="muted">Not finished</span>}</td>
                 </tr>
               ))}

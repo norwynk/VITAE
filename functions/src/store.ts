@@ -17,6 +17,8 @@ import { byAttention } from '../../src/domain/waiting';
 
 export const OPERATIONAL_LIMIT = 250;
 export const AUDIT_LIMIT = 100;
+/** Enough for every pen picked by the members on the admin's list. */
+export const ADMIN_PEN_REQUEST_LIMIT = 2000;
 /** Upper bound on members loaded into one clinician workspace; anyone waiting is always loaded first. */
 export const CLINICIAN_MEMBER_LIMIT = 50;
 
@@ -129,6 +131,8 @@ export async function loadWorkspace(db: Firestore, actor: Actor): Promise<Store>
       await Promise.all([
         r.get(db.collection('members').orderBy('createdAt', 'desc').limit(OPERATIONAL_LIMIT)).then((s) => put(store, 'members', s)),
         r.get(db.collection('penReleases').orderBy('approvedAt', 'desc').limit(OPERATIONAL_LIMIT)).then((s) => put(store, 'penReleases', s)),
+        // Read only to work out which pens each member picked; visible() returns nothing else from these.
+        r.get(db.collection('treatmentRequests').orderBy('createdAt', 'desc').limit(ADMIN_PEN_REQUEST_LIMIT)).then((s) => put(store, 'treatmentRequests', s)),
         loadAll(db, r, store, 'treatments'),
         loadAll(db, r, store, 'inventory'),
         loadAll(db, r, store, 'operationalProfiles', OPERATIONAL_LIMIT),
