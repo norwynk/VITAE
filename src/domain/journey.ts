@@ -2,13 +2,31 @@
  * Where a pen has got to and whose move it is. Dates only: nothing here says
  * what anyone answered, said or decided.
  */
-import { type PenJourney, localDate } from './model';
+import { type MemberRecord, type PenJourney, localDate } from './model';
 import { OVERDUE_HOURS, workingHours } from './waiting';
 
 /** An approved pen should go out within one working day. */
 export const SEND_HOURS = 24;
 /** A sent pen with no confirmation after three working days needs chasing. */
 export const DELIVERY_HOURS = 72;
+
+export const CUSTOMER_STAGES = ['Not finished', 'Screened, no pen yet', 'With the doctor', 'Pen to send', 'Out for delivery', 'Has their pen', 'No pen approved'] as const;
+export type CustomerStage = (typeof CUSTOMER_STAGES)[number];
+
+function penPlace(j: PenJourney): CustomerStage {
+  if (!j.decidedAt) return 'With the doctor';
+  if (!j.approvedAt) return 'No pen approved';
+  if (!j.sentAt) return 'Pen to send';
+  return j.deliveredAt || j.followUpDoneAt ? 'Has their pen' : 'Out for delivery';
+}
+
+/** One place per customer: whichever of their pens still needs something from us. */
+export function customerStage(m: Pick<MemberRecord, 'onboardedAt' | 'penJourneys'>): CustomerStage {
+  if (!m.onboardedAt) return 'Not finished';
+  const places = (m.penJourneys ?? []).map(penPlace);
+  const order: CustomerStage[] = ['With the doctor', 'Pen to send', 'Out for delivery', 'Has their pen', 'No pen approved'];
+  return order.find((s) => places.includes(s)) ?? 'Screened, no pen yet';
+}
 
 export interface JourneyStage {
   label: string;

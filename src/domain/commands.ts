@@ -437,7 +437,7 @@ const COMMAND_ROLES: Record<CommandType, readonly Role[]> = {
   measurement: ['MEMBER'],
   checkout: ['MEMBER'],
   deliveryAddress: ['MEMBER'],
-  message: ['MEMBER', 'CLINICIAN', 'OPERATIONS'],
+  message: ['MEMBER', 'CLINICIAN', 'OPERATIONS', 'SUPER_ADMIN'],
   note: ['CLINICIAN'],
   nutrition: ['CLINICIAN'],
   checkin: ['MEMBER'],
@@ -1320,7 +1320,7 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
         fail('INVALID', 'Conversation does not belong to this member');
       }
       if (actor.role === 'CLINICIAN') requireAssignedClinician(store, actor, thread.memberId);
-      if (actor.role === 'OPERATIONS' && !OPERATIONS_TOPICS.includes(thread.topic)) {
+      if ((actor.role === 'OPERATIONS' || actor.role === 'SUPER_ADMIN') && !OPERATIONS_TOPICS.includes(thread.topic)) {
         fail('FORBIDDEN', 'Operations can only handle general and order or delivery messages');
       }
       targets.push(thread.id, postMessage(store, ctx, actor, thread, command.body));

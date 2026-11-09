@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { runWaitingSweep } from '../functions/src/waiting';
 import { DEMO_ESTABLISHED_MEMBER, createFixtureStore, demoActor } from '../src/domain/fixtures';
 import { type Message, type MessageThread, type OperationalProfile, type Store, type TreatmentRequest, visible } from '../src/domain/model';
-import { journeyStage } from '../src/domain/journey';
+import { customerStage, journeyStage } from '../src/domain/journey';
+import { morningBrief } from '../src/domain/morning';
 import { byAttention, isOverdue, isSendingHour, isSummaryHour, waitingOnClinician, workingHours } from '../src/domain/waiting';
 
 // Times are UTC; South Africa is two hours ahead.
@@ -179,13 +180,76 @@ describe('the prick tracker', () => {
   });
 });
 
+describe('the morning view', () => {
+  const NOW = at('2026-11-09T06:00:00.000Z');
+  const id = DEMO_ESTABLISHED_MEMBER.uid;
+  const j = { requestId: 'r', treatmentId: 't', requestedAt: MON_10, moreInfoAsked: false, missedCalls: 0 };
+  const seen = () => {
+    const s = createFixtureStore();
+    s.penReleases = {};
+    s.messageThreads = {};
+    s.messages = {};
+    s.treatmentRequests = {};
+    return s;
+  };
+  const release = (extra: object) => ({ id: 'p1', memberId: id, approvalId: 'a', treatmentId: 't', treatmentName: 'Sharp Mind', memberName: 'Sam', quantity: 1, dose: '', instructions: '', startDate: '', approvedBy: '', approvedByName: '', approvedAt: MON_10, status: 'TO_SEND' as const, ...extra });
+
+  it('puts each customer in one place, on whichever pen still needs us', () => {
+    const on = { onboardedAt: MON_10 };
+    expect(customerStage({})).toBe('Not finished');
+    expect(customerStage(on)).toBe('Screened, no pen yet');
+    expect(customerStage({ ...on, penJourneys: [j] })).toBe('With the doctor');
+    expect(customerStage({ ...on, penJourneys: [{ ...j, decidedAt: MON_10 }] })).toBe('No pen approved');
+    const sent = { ...j, decidedAt: MON_10, approvedAt: MON_10, sentAt: MON_10 };
+    expect(customerStage({ ...on, penJourneys: [sent] })).toBe('Out for delivery');
+    expect(customerStage({ ...on, penJourneys: [{ ...sent, deliveredAt: MON_10 }] })).toBe('Has their pen');
+    expect(customerStage({ ...on, penJourneys: [{ ...sent, deliveredAt: MON_10 }, j] })).toBe('With the doctor');
+  });
+
+  it('lists what to do, late first', () => {
+    const s = seen();
+    s.penReleases = {
+      p1: release({ id: 'p1', approvedAt: '2026-11-09T05:00:00.000Z', deliveryAddress: {} as never }),
+      p2: release({ id: 'p2', status: 'SENT', sentAt: MON_10, courierReference: 'TRK9' }),
+      p3: release({ id: 'p3', approvedAt: MON_10 }),
+    };
+    s.messageThreads = { t1: { ...thread('t1', { topic: 'ORDER_DELIVERY' }), memberId: id } };
+    s.messages = { a: { ...message('a', 't1', 'MEMBER', '2026-11-09T05:30:00.000Z'), memberId: id, topic: 'ORDER_DELIVERY' } };
+    const b = morningBrief(s, NOW);
+    expect(b.toSend).toBe(2);
+    expect(b.outForDelivery).toBe(1);
+    expect(b.actions.map((a) => a.key).sort()).toEqual(['chase_p2', 'msg_t1', 'send_p1', 'send_p3']);
+    expect(b.actions.slice(0, 2).every((a) => a.late)).toBe(true);
+    expect(b.actions.find((a) => a.key === 'send_p3')?.text).toContain('No delivery address');
+    expect(b.actions.find((a) => a.key === 'chase_p2')?.text).toContain('TRK9');
+  });
+
+  it('stops asking for a reply once the team has answered', () => {
+    const s = seen();
+    s.messageThreads = { t1: { ...thread('t1', { topic: 'ORDER_DELIVERY' }), memberId: id } };
+    s.messages = { a: { ...message('a', 't1', 'MEMBER', MON_10), memberId: id }, b: { ...message('b', 't1', 'SUPER_ADMIN', FRI_16), memberId: id } };
+    expect(morningBrief(s, NOW).actions).toEqual([]);
+  });
+
+  it('shows the admin delivery messages but never clinical ones or a date of birth', () => {
+    const s = seen();
+    s.messageThreads = { t1: { ...thread('t1', { topic: 'ORDER_DELIVERY' }), memberId: id }, t2: { ...thread('t2', { topic: 'CLINICAL' }), memberId: id } };
+    s.messages = { a: { ...message('a', 't1', 'MEMBER', MON_10), topic: 'ORDER_DELIVERY' }, b: { ...message('b', 't2', 'MEMBER', MON_10), topic: 'CLINICAL' } };
+    const v = visible(s, demoActor('SUPER_ADMIN'));
+    expect(Object.keys(v.messageThreads)).toEqual(['t1']);
+    expect(Object.keys(v.messages)).toEqual(['a']);
+    expect(v.members[id].age).toBeGreaterThan(17);
+    expect(v.members[id].dateOfBirth).toBeUndefined();
+  });
+});
+
 describe('what the admin can see', () => {
   it('shows contact details and nothing more', () => {
     const store = createFixtureStore();
     const seen = visible(store, demoActor('SUPER_ADMIN')).members[DEMO_ESTABLISHED_MEMBER.uid];
     expect(seen.email).toBe(store.members[DEMO_ESTABLISHED_MEMBER.uid].email);
     expect(seen.phone).toBe(store.members[DEMO_ESTABLISHED_MEMBER.uid].phone);
-    expect(Object.keys(seen).sort()).toEqual(['createdAt', 'email', 'firstName', 'id', 'lastName', 'memberId', 'onboardedAt', 'penJourneys', 'pensPicked', 'phone', 'updatedAt']);
+    expect(Object.keys(seen).sort()).toEqual(['age', 'city', 'createdAt', 'email', 'firstName', 'id', 'lastName', 'memberId', 'onboardedAt', 'penJourneys', 'pensPicked', 'phone', 'province', 'updatedAt']);
     expect(visible(store, demoActor('SUPER_ADMIN')).medicalHistories).toEqual({});
   });
 

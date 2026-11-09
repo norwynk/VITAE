@@ -379,18 +379,21 @@ test('full journey across roles', async ({ page }) => {
 
   // --- Super admin: the approved pen is ready to send; the screening stays private --
   await switchRole(page, 'Super admin');
+  await page.getByRole('tab', { name: 'Pens' }).click();
   const release = page.getByRole('article', { name: /Release Craving Control for Alex Newby/ });
   await expect(release.getByText('Craving Control × 2')).toBeVisible();
   await expect(release.getByText(/every day/i)).toBeVisible();
   await expect(page.getByText('I want my energy back.')).toHaveCount(0);
   await expect(page.getByText('Vitamin D')).toHaveCount(0);
-  await expect(page.getByText(/sent a screening to the clinician/).first()).toBeVisible();
   await release.getByLabel('Courier reference').fill('DEMO-COURIER-7');
   await release.getByRole('button', { name: 'Mark as sent' }).click();
   await expectToast(page, /Craving Control marked as sent/);
   await expect(page.getByRole('article', { name: /Release Craving Control for Alex Newby/ })).toHaveCount(0);
 
   // --- Super admin: verification gate, then demo catalogue setup -----------------
+  await page.getByRole('tab', { name: 'Today' }).click();
+  await expect(page.getByText(/sent a screening to the clinician/).first()).toBeVisible();
+  await page.getByRole('tab', { name: 'Stock and catalogue' }).click();
   const recovery = page.getByRole('form', { name: /Edit The Glow Up/ });
   await recovery.getByLabel('Purchasable').check();
   await recovery.getByRole('button', { name: /^Save/ }).click();

@@ -921,7 +921,7 @@ export function Thread({
       <ul className="plain small" style={{ margin: '0.5rem 0' }}>
         {messages.map((m) => (
           <li key={m.id}>
-            <strong>{m.authorRole === 'MEMBER' ? 'Member' : humanise(m.authorRole)}</strong>{' '}
+            <strong>{m.authorRole === 'MEMBER' ? 'Member' : m.authorRole === 'SUPER_ADMIN' ? 'PRICK team' : humanise(m.authorRole)}</strong>{' '}
             <span className="muted">{fmtDateTime(m.createdAt)}</span>
             <br />
             {m.body}
