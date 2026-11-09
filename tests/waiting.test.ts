@@ -120,8 +120,23 @@ describe('what the admin can see', () => {
     const seen = visible(store, demoActor('SUPER_ADMIN')).members[DEMO_ESTABLISHED_MEMBER.uid];
     expect(seen.email).toBe(store.members[DEMO_ESTABLISHED_MEMBER.uid].email);
     expect(seen.phone).toBe(store.members[DEMO_ESTABLISHED_MEMBER.uid].phone);
-    expect(Object.keys(seen).sort()).toEqual(['createdAt', 'email', 'firstName', 'id', 'lastName', 'memberId', 'onboardedAt', 'phone', 'updatedAt']);
+    expect(Object.keys(seen).sort()).toEqual(['createdAt', 'email', 'firstName', 'id', 'lastName', 'memberId', 'onboardedAt', 'pensPicked', 'phone', 'updatedAt']);
     expect(visible(store, demoActor('SUPER_ADMIN')).medicalHistories).toEqual({});
+  });
+
+  it('shows which pens someone picked, once each, but not what the clinician decided', () => {
+    const uid = DEMO_ESTABLISHED_MEMBER.uid;
+    const store = createFixtureStore();
+    store.treatmentRequests = {
+      b: request('b', FRI_16, { memberId: uid, treatmentId: 'trt-the-glow-up', status: 'DECLINED', decisionNote: 'private reason' }),
+      a: request('a', MON_10, { memberId: uid, treatmentId: 'trt-sharp-mind' }),
+      c: request('c', FRI_16, { memberId: uid, treatmentId: 'trt-sharp-mind', status: 'APPROVED' }),
+      other: request('other', MON_10, { memberId: 'someone-else', treatmentId: 'trt-gut-reset' }),
+    };
+    const seen = visible(store, demoActor('SUPER_ADMIN'));
+    expect(seen.members[uid].pensPicked).toEqual(['trt-sharp-mind', 'trt-the-glow-up']);
+    expect(seen.treatmentRequests).toEqual({});
+    expect(JSON.stringify(seen.members)).not.toMatch(/private reason|DECLINED|APPROVED/);
   });
 
   it('still hides contact details from operations', () => {

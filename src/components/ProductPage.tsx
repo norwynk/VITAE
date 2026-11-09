@@ -2,6 +2,7 @@
 import type { Treatment } from '@/domain/model';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { PEN_CERTIFICATES } from '@/brand/certificates';
 import { feelingLine } from '@/brand/pens';
 import { MEN_ANGLES, forSide } from '@/brand/sides';
 import { SOURCE, SOURCE_LINE } from '@/brand/source';
@@ -64,6 +65,7 @@ export function ProductPage({ slug, initialPens }: { slug: string; initialPens?:
   const startHref = `/start?pen=${t.slug}`;
   const truth = t.productTruth ?? {};
   const safety = penSafety(t.slug);
+  const certs = PEN_CERTIFICATES[t.slug];
   const related = forSide(pens, side, (p) => p.treatment.slug).filter((p) => p.treatment.id !== t.id && p.treatment.category === t.category);
 
   return (
@@ -238,7 +240,28 @@ export function ProductPage({ slug, initialPens }: { slug: string; initialPens?:
               <h2 className="display">A prick with paperwork.</h2>
             </div>
             <div>
-              {t.certificateOfAnalysisUrl ? (
+              {certs ? (
+                <div className="stack" style={{ gap: 'var(--space-2)' }}>
+                  <ul className="plain stack" style={{ gap: '0.75rem' }}>
+                    {certs.certificates.map((c) => (
+                      <li key={c.file}>
+                        <a href={c.file} className="link-arrow" target="_blank" rel="noopener noreferrer">
+                          View the {c.peptide} certificate
+                        </a>
+                        {c.batch && <span className="small muted"> Batch {c.batch}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                  {certs.still && (
+                    <p className="muted" data-coa="pending" style={{ margin: 0 }}>
+                      The certificate for {certs.still.join(' and ')} will be published here.
+                    </p>
+                  )}
+                  <p className="small muted" style={{ margin: 0 }}>
+                    These certificates cover the raw peptide, before it&apos;s made into a pen.
+                  </p>
+                </div>
+              ) : t.certificateOfAnalysisUrl ? (
                 <a href={t.certificateOfAnalysisUrl} className="link-arrow" target="_blank" rel="noopener noreferrer">
                   View the certificate of analysis
                 </a>

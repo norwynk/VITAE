@@ -159,6 +159,8 @@ export interface MemberRecord {
   heightCm?: number;
   deliveryAddress?: Address;
   onboardedAt?: string;
+  /** Only on the admin's contact view: which pens they asked for, oldest first. Never the clinician's decision. */
+  pensPicked?: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -1098,7 +1100,7 @@ export function visible(store: Store, actor: Actor): Store {
       out.treatments = { ...store.treatments };
       out.inventory = { ...store.inventory };
       out.operationalProfiles = { ...store.operationalProfiles };
-      // Enough to reach someone; ID numbers, dates of birth and addresses stay out.
+      // Enough to reach someone and know what they asked for; ID numbers, dates of birth, addresses and decisions stay out.
       out.members = mapRecords(store.members, (m) => ({
         id: m.id,
         memberId: m.memberId,
@@ -1107,6 +1109,14 @@ export function visible(store: Store, actor: Actor): Store {
         email: m.email,
         ...(m.phone ? { phone: m.phone } : {}),
         ...(m.onboardedAt ? { onboardedAt: m.onboardedAt } : {}),
+        pensPicked: [
+          ...new Set(
+            Object.values(store.treatmentRequests)
+              .filter((r) => r.memberId === m.memberId)
+              .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+              .map((r) => r.treatmentId),
+          ),
+        ],
         createdAt: m.createdAt,
         updatedAt: m.updatedAt,
       }));
