@@ -68,25 +68,28 @@ const FAQ = [
 
 const FINALE = ['the-glow-up', 'slow-and-steady', 'body-sculpt', 'all-day-energy', 'skin-rewind'];
 
-function Door() {
-  const pen = PEN_BRANDS['the-glow-up'];
+/** The crowned pen from the film, standing on the royal carpet. */
+function RoyalPrick() {
   return (
-    <div className="pkg-door" aria-hidden="true">
-      <svg viewBox="0 0 420 600" role="presentation">
-        <rect x="62" y="24" width="296" height="534" rx="14" fill="#111" />
-        <rect x="76" y="38" width="268" height="520" fill="#fff6ec" />
-        <circle cx="228" cy="250" r="118" fill="var(--lime)" />
-        <polygon points="76,38 182,74 182,524 76,558" fill="var(--orange)" />
-        <polygon points="94,80 166,100 166,282 94,290" fill="none" stroke="#111" strokeWidth="4" />
-        <polygon points="94,318 166,312 166,488 94,520" fill="none" stroke="#111" strokeWidth="4" />
-        <circle cx="160" cy="298" r="10" fill="#111" />
-        <polygon points="96,558 324,558 372,596 48,596" fill="#111" />
-        <text x="210" y="584" textAnchor="middle" fill="#fff6ec" style={{ font: '700 18px var(--font-sans)', letterSpacing: '0.16em' }}>WE COME TO YOU</text>
-      </svg>
-      <div className="pkg-door__pen">
-        <PenStage colours={pen.colours} label={pen.penLabel} botanical={pen.botanical} angle={-90} fit={0.95} />
-      </div>
-    </div>
+    <svg className="pkg-royal" viewBox="0 0 180 560" aria-hidden="true">
+      <g stroke="#111" strokeWidth="6" strokeLinejoin="round">
+        <path d="M34 72 L28 18 L62 44 L90 8 L118 44 L152 18 L146 72 Z" fill="#ffc62b" />
+        <circle cx="90" cy="54" r="7" fill="var(--pink)" strokeWidth="4" />
+        <rect x="30" y="72" width="120" height="50" rx="6" fill="#111" />
+        <rect x="36" y="122" width="108" height="298" fill="#fff6ec" />
+        <rect x="36" y="232" width="108" height="46" fill="var(--pink)" />
+        <rect x="36" y="247" width="108" height="16" fill="#b9b9b9" strokeWidth="0" />
+        <rect x="50" y="420" width="80" height="30" rx="4" fill="#111" />
+      </g>
+      <path d="M64 450 V540 M116 450 V540" stroke="#111" strokeWidth="13" />
+      <path d="M50 553 H82 M98 553 H130" stroke="#111" strokeWidth="14" strokeLinecap="round" />
+      <text transform="translate(90 349) rotate(-90)" fill="#111" textAnchor="middle" dominantBaseline="central" style={{ font: '400 62px var(--font-display)' }}>
+        PRICK
+      </text>
+      <text transform="translate(90 177) rotate(-90)" fill="#111" textAnchor="middle" dominantBaseline="central" style={{ font: '700 10px var(--font-sans)', letterSpacing: '0.04em' }}>
+        WE COME TO YOU
+      </text>
+    </svg>
   );
 }
 
@@ -154,7 +157,7 @@ export function RoyalPrickPage() {
               <a href="#included" className="link-arrow">See what&apos;s in it</a>
             </div>
           </div>
-          <Door />
+          <RoyalPrick />
         </div>
       </section>
 
