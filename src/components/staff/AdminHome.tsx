@@ -1,7 +1,7 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { isNontrivialReference } from '@/domain/commands';
-import type { CustomerStage } from '@/domain/journey';
+import { CUSTOMER_STAGES, type CustomerStage } from '@/domain/journey';
 import { type Treatment, REGULATORY_STATUSES, formatRand } from '@/domain/model';
 import { morningBrief } from '@/domain/morning';
 import { waitingOnTeam } from '@/domain/waiting';
@@ -18,16 +18,57 @@ import { StockTable } from './StockTable';
 
 const TABS: AdminTab[] = ['Today', 'Customers', 'Pens', 'Messages', 'Stock and catalogue', 'Behind the scenes'];
 
+interface AdminView {
+  tab: AdminTab;
+  stage: CustomerStage | null;
+  person: string | null;
+}
+
+const isToday = (v: AdminView) => v.tab === 'Today' && !v.stage && !v.person;
+
+/** Where the admin is, from the address bar. Which customer is open stays out of the address, in the browser's history. */
+function currentView(): AdminView {
+  const query = new URLSearchParams(window.location.search);
+  return {
+    tab: TABS.find((t) => t === query.get('view')) ?? 'Today',
+    stage: CUSTOMER_STAGES.find((s) => s === query.get('stage')) ?? null,
+    person: (window.history.state?.adminPerson as string | undefined) ?? null,
+  };
+}
+
 export function AdminHome() {
   const { workspace } = useWorkspace();
-  const [tab, setTab] = useState<AdminTab>('Today');
-  const [stage, setStage] = useState<CustomerStage | null>(null);
-  const go = (next: AdminTab, nextStage: CustomerStage | null = null) => {
-    setTab(next);
-    setStage(nextStage);
+  const [view, setView] = useState<AdminView>(currentView);
+  const { tab, stage, person } = view;
+
+  // The browser's own Back and Forward buttons.
+  useEffect(() => {
+    const sync = () => setView(currentView());
+    window.addEventListener('popstate', sync);
+    return () => window.removeEventListener('popstate', sync);
+  }, []);
+
+  const navigate = (next: AdminView) => {
+    if (next.tab === tab && next.stage === stage && next.person === person) return;
+    const query = new URLSearchParams();
+    if (next.tab !== 'Today') query.set('view', next.tab);
+    if (next.stage) query.set('stage', next.stage);
+    const depth = ((window.history.state?.adminDepth as number | undefined) ?? 0) + 1;
+    window.history.pushState({ adminPerson: next.person, adminDepth: depth }, '', query.toString() ? `?${query}` : window.location.pathname);
+    setView(next);
+    if (next.tab !== tab) window.scrollTo(0, 0);
   };
+  const go = (next: AdminTab, nextStage: CustomerStage | null = null) => navigate({ tab: next, stage: nextStage, person: null });
+  // Opened straight on a page (a refresh or a link) there is nothing behind it, so Back goes to Today.
+  const back = () => (window.history.state?.adminDepth ? window.history.back() : go('Today'));
+
   return (
     <div className="stack">
+      {!isToday(view) && (
+        <button type="button" className="secondary admin-back" onClick={back}>
+          ← Back
+        </button>
+      )}
       <h1>The Morning Prick</h1>
       <div className="member-tabs" role="tablist" aria-label="Administration">
         {TABS.map((t) => (
@@ -37,7 +78,7 @@ export function AdminHome() {
         ))}
       </div>
       {tab === 'Today' && <AdminToday brief={morningBrief(workspace.store, new Date())} onGo={go} />}
-      {tab === 'Customers' && <Customers key={stage ?? 'everyone'} initialStage={stage} />}
+      {tab === 'Customers' && <Customers stage={stage} person={person} onStage={(s) => go('Customers', s)} onPerson={(id) => navigate({ tab, stage, person: id })} />}
       {tab === 'Pens' && <Pens />}
       {tab === 'Messages' && <Messages />}
       {tab === 'Stock and catalogue' && <StockAndCatalogue />}

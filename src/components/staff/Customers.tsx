@@ -9,13 +9,21 @@ import { trail } from './PrickTracker';
 const fullName = (m: MemberRecord) => `${m.firstName} ${m.lastName}`.trim();
 
 /** Who the customers are and where each one has got to. Never health answers or clinical decisions. */
-export function Customers({ initialStage }: { initialStage: CustomerStage | null }) {
+export function Customers({
+  stage,
+  person,
+  onStage,
+  onPerson,
+}: {
+  stage: CustomerStage | null;
+  person: string | null;
+  onStage: (stage: CustomerStage | null) => void;
+  onPerson: (id: string | null) => void;
+}) {
   const { workspace } = useWorkspace();
   const { store } = workspace;
   const now = new Date();
-  const [stage, setStage] = useState<CustomerStage | null>(initialStage);
   const [search, setSearch] = useState('');
-  const [openId, setOpenId] = useState<string | null>(null);
   const needle = search.trim().toLowerCase();
   const pens = (m: MemberRecord) => m.pensPicked?.map((id) => store.treatments[id]?.name ?? 'A pen no longer listed').join(', ') ?? '';
   const all = Object.values(store.members).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -32,11 +40,11 @@ export function Customers({ initialStage }: { initialStage: CustomerStage | null
           <input value={search} onChange={(e) => setSearch(e.target.value)} />
         </label>
         <div className="tabs">
-          <button type="button" aria-pressed={!stage} onClick={() => setStage(null)}>
+          <button type="button" aria-pressed={!stage} onClick={() => onStage(null)}>
             Everyone
           </button>
           {CUSTOMER_STAGES.map((s) => (
-            <button key={s} type="button" aria-pressed={stage === s} onClick={() => setStage(s)}>
+            <button key={s} type="button" aria-pressed={stage === s} onClick={() => onStage(s)}>
               {s} ({count(s)})
             </button>
           ))}
@@ -61,12 +69,12 @@ export function Customers({ initialStage }: { initialStage: CustomerStage | null
                 {shown.flatMap((m) => {
                   const profile = store.operationalProfiles[m.memberId];
                   const journeys = m.penJourneys ?? [];
-                  const isOpen = openId === m.id;
+                  const isOpen = person === m.id;
                   const row = (
                     <tr key={m.id}>
                       <td>
                         {journeys.length ? (
-                          <button type="button" className="link-button" aria-expanded={isOpen} onClick={() => setOpenId(isOpen ? null : m.id)}>
+                          <button type="button" className="link-button" aria-expanded={isOpen} onClick={() => onPerson(isOpen ? null : m.id)}>
                             {fullName(m) || m.email}
                           </button>
                         ) : (
