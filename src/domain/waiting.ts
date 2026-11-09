@@ -51,6 +51,8 @@ export interface WaitingItem {
   memberId: string;
   kind: 'REQUEST' | 'MESSAGE' | 'URGENT';
   since: string;
+  /** A pen request where the call has happened but the decision hasn't been recorded. */
+  spokenAt?: string;
 }
 
 export const WAITING_LABEL: Record<WaitingItem['kind'], string> = { REQUEST: 'pen request', MESSAGE: 'message', URGENT: 'urgent message' };
@@ -73,16 +75,23 @@ function repliedAt(store: Store, request: TreatmentRequest): string | undefined 
 /** Everything the clinician still has to answer, longest wait first. Order and delivery questions go to operations. */
 export function waitingOnClinician(store: Store, memberId?: string): WaitingItem[] {
   const items: WaitingItem[] = [];
+  const lastSpoke = new Map<string, string>();
+  for (const c of Object.values(store.phoneCalls)) {
+    if (c.outcome === 'SPOKE' && c.calledAt > (lastSpoke.get(c.memberId) ?? '')) lastSpoke.set(c.memberId, c.calledAt);
+  }
   for (const r of Object.values(store.treatmentRequests)) {
     if ((memberId && r.memberId !== memberId) || !PENDING_REQUEST_STATUSES.includes(r.status)) continue;
     const since = r.status === 'NEEDS_INFORMATION' ? repliedAt(store, r) : r.createdAt;
-    if (since) items.push({ key: `req_${r.id}`, memberId: r.memberId, kind: 'REQUEST', since });
+    if (!since) continue;
+    const spokenAt = lastSpoke.get(r.memberId);
+    items.push({ key: `req_${r.id}`, memberId: r.memberId, kind: 'REQUEST', since, ...(spokenAt && spokenAt >= since ? { spokenAt } : {}) });
   }
   const messages = Object.values(store.messages).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   for (const t of Object.values(store.messageThreads)) {
     if ((memberId && t.memberId !== memberId) || t.topic === 'ORDER_DELIVERY') continue;
     const thread = messages.filter((m) => m.threadId === t.id);
-    const unanswered = thread.slice(thread.map((m) => m.authorRole !== 'MEMBER').lastIndexOf(true) + 1);
+    // A phone call answers whatever they had sent before it.
+    const unanswered = thread.slice(thread.map((m) => m.authorRole !== 'MEMBER').lastIndexOf(true) + 1).filter((m) => m.createdAt > (lastSpoke.get(t.memberId) ?? ''));
     if (unanswered.length) items.push({ key: `msg_${t.id}`, memberId: t.memberId, kind: t.escalated ? 'URGENT' : 'MESSAGE', since: unanswered[0].createdAt });
   }
   return items.sort((a, b) => a.since.localeCompare(b.since));

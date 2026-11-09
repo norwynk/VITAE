@@ -567,6 +567,16 @@ describe('messages, notes, check-ins and follow-ups', () => {
     expect(() => run(general.store, ops, { type: 'message', threadId: general.resultId!, memberId: NEW, body: 'Checking' })).not.toThrow();
   });
 
+  it('lets only the assigned clinician log a call, and keeps it from the member', () => {
+    const store = onboarded();
+    expectError(() => run(store, otherClinician, { type: 'logCall', memberId: NEW, outcome: 'SPOKE' }), 'FORBIDDEN');
+    expectError(() => run(store, ops, { type: 'logCall', memberId: NEW, outcome: 'SPOKE' }), 'FORBIDDEN');
+    const res = run(store, clinician, { type: 'logCall', memberId: NEW, outcome: 'NO_ANSWER' });
+    expect(visible(res.store, clinician).phoneCalls[res.resultId!]).toMatchObject({ outcome: 'NO_ANSWER' });
+    expect(visible(res.store, member).phoneCalls).toEqual({});
+    expect(visible(res.store, admin).phoneCalls).toEqual({});
+  });
+
   it('keeps clinical notes with the assigned clinician', () => {
     const store = onboarded();
     expectError(() => run(store, otherClinician, { type: 'note', memberId: NEW, body: 'x' }), 'FORBIDDEN');

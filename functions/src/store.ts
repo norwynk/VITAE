@@ -131,8 +131,11 @@ export async function loadWorkspace(db: Firestore, actor: Actor): Promise<Store>
       await Promise.all([
         r.get(db.collection('members').orderBy('createdAt', 'desc').limit(OPERATIONAL_LIMIT)).then((s) => put(store, 'members', s)),
         r.get(db.collection('penReleases').orderBy('approvedAt', 'desc').limit(OPERATIONAL_LIMIT)).then((s) => put(store, 'penReleases', s)),
-        // Read only to work out which pens each member picked; visible() returns nothing else from these.
+        // Read only to work out which pens each member picked and how far each has got; visible() returns dates and nothing else from these.
         r.get(db.collection('treatmentRequests').orderBy('createdAt', 'desc').limit(ADMIN_PEN_REQUEST_LIMIT)).then((s) => put(store, 'treatmentRequests', s)),
+        r.get(db.collection('approvedTreatments').orderBy('createdAt', 'desc').limit(ADMIN_PEN_REQUEST_LIMIT)).then((s) => put(store, 'approvedTreatments', s)),
+        r.get(db.collection('followUps').orderBy('createdAt', 'desc').limit(ADMIN_PEN_REQUEST_LIMIT)).then((s) => put(store, 'followUps', s)),
+        r.get(db.collection('phoneCalls').orderBy('calledAt', 'desc').limit(ADMIN_PEN_REQUEST_LIMIT)).then((s) => put(store, 'phoneCalls', s)),
         loadAll(db, r, store, 'treatments'),
         loadAll(db, r, store, 'inventory'),
         loadAll(db, r, store, 'operationalProfiles', OPERATIONAL_LIMIT),

@@ -339,6 +339,7 @@ export const commandSchema = z.discriminatedUnion('type', [
     body: requiredText(4000),
   }),
   z.object({ type: z.literal('note'), memberId: id, body: requiredText(8000) }),
+  z.object({ type: z.literal('logCall'), memberId: id, outcome: z.enum(['SPOKE', 'NO_ANSWER']) }),
   z.object({
     type: z.literal('nutrition'),
     memberId: id,
@@ -448,6 +449,7 @@ const COMMAND_ROLES: Record<CommandType, readonly Role[]> = {
   screeningDraft: ['MEMBER'],
   repeat: ['MEMBER'],
   releaseSent: ['SUPER_ADMIN', 'OPERATIONS'],
+  logCall: ['CLINICIAN'],
 };
 
 export function allowedRoles(type: CommandType): readonly Role[] {
@@ -478,6 +480,7 @@ export function commandMemberId(command: Command, actor: Actor): string | undefi
     case 'review':
     case 'releaseSent':
     case 'note':
+    case 'logCall':
     case 'nutrition':
     case 'followup':
     case 'orderStatus':
@@ -1311,6 +1314,18 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
       store.clinicalNotes[nid] = { id: nid, memberId: command.memberId, clinicianId: actor.uid, body: command.body, createdAt: at };
       targets.push(nid);
       resultId = nid;
+      break;
+    }
+
+    case 'logCall': {
+      requireAssignedClinician(store, actor, command.memberId);
+      requireMember(store, command.memberId);
+      const callId = ctx.newId('call');
+      store.phoneCalls[callId] = { id: callId, memberId: command.memberId, clinicianId: actor.uid, outcome: command.outcome, calledAt: at };
+      targets.push(callId);
+      refreshOpenRequestCount(store, command.memberId);
+      touchProfile(store, command.memberId, at);
+      resultId = callId;
       break;
     }
 

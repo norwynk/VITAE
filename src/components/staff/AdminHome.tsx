@@ -6,6 +6,7 @@ import { useWorkspace } from '../workspace-context';
 import { EmailCheck } from './EmailCheck';
 import { MemberContacts } from './MemberContacts';
 import { PenReleases, TeamActivity } from './PenReleases';
+import { PrickTracker } from './PrickTracker';
 import { StockTable } from './StockTable';
 
 export function AdminHome() {
@@ -19,6 +20,7 @@ export function AdminHome() {
     <div className="stack">
       <h1>Administration</h1>
       <p className="muted">You see who is where and what to send. Screening answers and clinical notes are only visible to the clinician.</p>
+      <PrickTracker />
       <MemberContacts />
       <PenReleases />
       <TeamActivity />
