@@ -1,11 +1,12 @@
 /**
- * Hourly check for anything left waiting on the clinician. It reads the
- * database rather than relying on the first email, so a request whose email
- * failed is still chased. Reminders name people and waiting times only.
+ * Hourly check for anything left waiting on the clinician. The clinician and
+ * the admin each get one email at the start of the working day, and nothing
+ * more; the only exception is a one-off note to the admin about an unanswered
+ * urgent message. Emails name people and waiting times only.
  */
 import { FieldValue, type Firestore, type QuerySnapshot } from 'firebase-admin/firestore';
 import { type CollectionName, type MemberRecord, type Store, PENDING_REQUEST_STATUSES, emptyStore, localDate } from '../../src/domain/model';
-import { type WaitingItem, WAITING_LABEL, isSendingHour, reminderDue, waitedLabel, waitingOnClinician, workingHours } from '../../src/domain/waiting';
+import { type WaitingItem, WAITING_LABEL, isOverdue, isSendingHour, isSummaryHour, waitedLabel, waitingOnClinician, workingHours } from '../../src/domain/waiting';
 
 const ALREADY_EXISTS = 6;
 const SWEEP_LIMIT = 5000;
@@ -79,16 +80,8 @@ async function sendClaimed(db: Firestore, claims: string[], mail: StaffMail, to:
   }
 }
 
-async function claimAll(db: Firestore, items: WaitingItem[], audience: string, now: Date) {
-  const claimed: { item: WaitingItem; id: string }[] = [];
-  for (const item of items) {
-    const due = reminderDue(item, now);
-    if (!due) continue;
-    const id = `${item.key}_${item.since}_${due.stage}_${audience}`;
-    if (await claim(db, id, now.toISOString())) claimed.push({ item, id });
-  }
-  return claimed;
-}
+/** Urgent messages lead each list; otherwise the longest wait comes first. */
+const urgentFirst = (items: WaitingItem[]) => [...items.filter((i) => i.kind === 'URGENT'), ...items.filter((i) => i.kind !== 'URGENT')];
 
 export async function runWaitingSweep(db: Firestore, now: Date, mail: StaffMail): Promise<WaitingSweepResult> {
   const items = waitingOnClinician(await loadWaitingStore(db));
@@ -100,43 +93,60 @@ export async function runWaitingSweep(db: Firestore, now: Date, mail: StaffMail)
   const members = await Promise.all(memberIds.map((id) => db.doc(`members/${id}`).get()));
   const names = new Map(members.map((m) => [m.id, `${(m.data() as MemberRecord | undefined)?.firstName ?? ''} ${(m.data() as MemberRecord | undefined)?.lastName ?? ''}`.trim() || 'A member']));
   const line = (i: WaitingItem) => `- ${names.get(i.memberId)}: ${WAITING_LABEL[i.kind]}, waiting ${waitedLabel(workingHours(i.since, now))}`;
-  const footer = ['', `Open your workspace: ${SITE}/app`, '', 'For privacy, health details are only in the workspace, never in email.'];
+  const adminFooter = ['', `The full list is on your admin page: ${SITE}/app`];
 
-  const assignments = await db.collection('providerAssignments').where('active', '==', true).limit(SWEEP_LIMIT).get();
-  const clinicians = new Map<string, Set<string>>();
-  for (const a of assignments.docs) clinicians.set(a.get('clinicianId'), (clinicians.get(a.get('clinicianId')) ?? new Set()).add(a.get('memberId')));
+  const overdue = items.filter((i) => isOverdue(i, now));
+  const urgentClaim = (i: WaitingItem) => `urgent_${i.key}_${i.since}`;
 
-  for (const [clinicianId, assigned] of clinicians) {
-    const theirs = items.filter((i) => assigned.has(i.memberId));
-    if (!theirs.length) continue;
-    const email = (await db.doc(`users/${clinicianId}`).get()).get('email') as string | undefined;
-    if (!email) continue;
-    const reminders = await claimAll(db, theirs, clinicianId, now);
-    // The first run of the day is the morning summary, and it includes any reminders that have come due.
-    const summaryId = `summary_${localDate(now)}_${clinicianId}`;
-    const morning = await claim(db, summaryId, now.toISOString());
-    if (!morning && !reminders.length) continue;
-    const listed = morning ? theirs : reminders.map((r) => r.item);
-    result.emails += await sendClaimed(
-      db,
-      [...reminders.map((r) => r.id), ...(morning ? [summaryId] : [])],
-      mail,
-      [email],
-      `${morning ? '' : 'Reminder: '}${listed.length} waiting for your review`,
-      [morning ? 'Good morning. These are waiting for you, longest first:' : 'A reminder that these are still waiting for you:', '', ...listed.map(line), ...footer].join('\n'),
-    );
+  if (isSummaryHour(now)) {
+    const assignments = await db.collection('providerAssignments').where('active', '==', true).limit(SWEEP_LIMIT).get();
+    const clinicians = new Map<string, Set<string>>();
+    for (const a of assignments.docs) clinicians.set(a.get('clinicianId'), (clinicians.get(a.get('clinicianId')) ?? new Set()).add(a.get('memberId')));
+
+    for (const [clinicianId, assigned] of clinicians) {
+      const theirs = items.filter((i) => assigned.has(i.memberId));
+      if (!theirs.length) continue;
+      const email = (await db.doc(`users/${clinicianId}`).get()).get('email') as string | undefined;
+      if (!email) continue;
+      const summaryId = `summary_${localDate(now)}_${clinicianId}`;
+      if (!(await claim(db, summaryId, now.toISOString()))) continue;
+      result.emails += await sendClaimed(
+        db,
+        [summaryId],
+        mail,
+        [email],
+        `${theirs.length} waiting for your review`,
+        ['Good morning. These are waiting for you:', '', ...urgentFirst(theirs).map(line), '', `Open your workspace: ${SITE}/app`, '', 'For privacy, health details are only in the workspace, never in email.'].join('\n'),
+      );
+    }
+
+    const adminSummaryId = `admin_summary_${localDate(now)}`;
+    if (overdue.length && (await claim(db, adminSummaryId, now.toISOString()))) {
+      // Anything urgent on this list has now been flagged, so it gets no separate note.
+      const flagged: string[] = [];
+      for (const i of overdue) if (i.kind === 'URGENT' && (await claim(db, urgentClaim(i), now.toISOString()))) flagged.push(urgentClaim(i));
+      result.emails += await sendClaimed(
+        db,
+        [adminSummaryId, ...flagged],
+        mail,
+        await mail.adminEmails(),
+        `Waiting too long: ${overdue.length} with the clinician`,
+        ['These have not been answered in time:', '', ...urgentFirst(overdue).map(line), ...adminFooter].join('\n'),
+      );
+    }
+    return result;
   }
 
-  const overdue = items.filter((i) => reminderDue(i, now)?.tellAdmin);
-  const alerts = await claimAll(db, overdue, 'admin', now);
-  if (alerts.length) {
+  const newlyUrgent: WaitingItem[] = [];
+  for (const i of overdue) if (i.kind === 'URGENT' && (await claim(db, urgentClaim(i), now.toISOString()))) newlyUrgent.push(i);
+  if (newlyUrgent.length) {
     result.emails += await sendClaimed(
       db,
-      alerts.map((a) => a.id),
+      newlyUrgent.map(urgentClaim),
       mail,
       await mail.adminEmails(),
-      `Waiting too long: ${alerts.length} with the clinician`,
-      ['These have not been answered in time. The clinician has been reminded as well.', '', ...alerts.map((a) => line(a.item)), '', `The full list is on your admin page: ${SITE}/app`].join('\n'),
+      `Urgent message not answered: ${newlyUrgent.length}`,
+      ['An urgent message has not been answered yet:', '', ...newlyUrgent.map(line), ...adminFooter].join('\n'),
     );
   }
   return result;

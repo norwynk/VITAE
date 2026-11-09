@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { runWaitingSweep } from '../functions/src/waiting';
 import { DEMO_ESTABLISHED_MEMBER, createFixtureStore, demoActor } from '../src/domain/fixtures';
 import { type Message, type MessageThread, type OperationalProfile, type Store, type TreatmentRequest, visible } from '../src/domain/model';
-import { byAttention, isSendingHour, reminderDue, waitingOnClinician, workingHours } from '../src/domain/waiting';
+import { byAttention, isOverdue, isSendingHour, isSummaryHour, waitingOnClinician, workingHours } from '../src/domain/waiting';
 
 // Times are UTC; South Africa is two hours ahead.
 const MON_10 = '2026-11-02T08:00:00.000Z';
@@ -64,18 +64,20 @@ describe('the waiting clock', () => {
     expect(isSendingHour(at('2026-11-08T08:00:00.000Z'))).toBe(false); // Sunday
   });
 
-  it('reminds the clinician after a working day and the admin too after two', () => {
-    const item = { key: 'req_1', memberId: 'm1', kind: 'REQUEST' as const, since: MON_10 };
-    expect(reminderDue(item, at('2026-11-03T07:59:00.000Z'))).toBeNull();
-    expect(reminderDue(item, at('2026-11-03T08:00:00.000Z'))).toEqual({ stage: 1, tellAdmin: false });
-    expect(reminderDue(item, at('2026-11-04T08:00:00.000Z'))).toEqual({ stage: 2, tellAdmin: true });
-    expect(reminderDue(item, at('2026-11-05T08:00:00.000Z'))).toEqual({ stage: 3, tellAdmin: true });
+  it('keeps the once-a-day emails to the start of a weekday', () => {
+    expect(isSummaryHour(at('2026-11-09T05:00:00.000Z'))).toBe(true); // Monday 07:00
+    expect(isSummaryHour(at('2026-11-09T07:59:00.000Z'))).toBe(true); // Monday 09:59
+    expect(isSummaryHour(at('2026-11-09T08:00:00.000Z'))).toBe(false); // Monday 10:00
+    expect(isSummaryHour(at('2026-11-07T05:00:00.000Z'))).toBe(false); // Saturday
   });
 
-  it('tells the admin about an urgent message after four working hours', () => {
-    const item = { key: 'msg_1', memberId: 'm1', kind: 'URGENT' as const, since: MON_10 };
-    expect(reminderDue(item, at('2026-11-02T11:59:00.000Z'))).toBeNull();
-    expect(reminderDue(item, at('2026-11-02T12:00:00.000Z'))).toEqual({ stage: 1, tellAdmin: true });
+  it('calls a request overdue after two working days and an urgent message after four working hours', () => {
+    const item = { key: 'req_1', memberId: 'm1', kind: 'REQUEST' as const, since: MON_10 };
+    expect(isOverdue(item, at('2026-11-04T07:59:00.000Z'))).toBe(false);
+    expect(isOverdue(item, at('2026-11-04T08:00:00.000Z'))).toBe(true);
+    const urgent = { ...item, kind: 'URGENT' as const };
+    expect(isOverdue(urgent, at('2026-11-02T11:59:00.000Z'))).toBe(false);
+    expect(isOverdue(urgent, at('2026-11-02T12:00:00.000Z'))).toBe(true);
   });
 });
 
@@ -211,24 +213,48 @@ describe('the hourly reminder sweep', () => {
   });
 
   it('sends the morning summary once a day', async () => {
-    await sweep('2026-11-02T09:00:00.000Z');
-    await sweep('2026-11-02T10:00:00.000Z');
+    await sweep('2026-11-02T05:20:00.000Z');
+    await sweep('2026-11-02T06:20:00.000Z');
     expect(to(clinicianMail)).toHaveLength(1);
     expect(to(clinicianMail)[0][2]).toContain('Sam Example: pen request');
   });
 
-  it('reminds the clinician at one working day, then the admin as well at two, once each', async () => {
-    await sweep('2026-11-03T05:00:00.000Z'); // Tuesday morning summary, not yet a day
-    await sweep('2026-11-03T08:00:00.000Z'); // one working day
-    await sweep('2026-11-03T09:00:00.000Z'); // nothing new
+  it('emails the clinician once a day however long it waits, and the admin once a day from two working days', async () => {
+    const day = async (date: string) => {
+      for (const time of ['05:20', '06:20', '08:20', '12:20', '16:20']) await sweep(`${date}T${time}:00.000Z`);
+    };
+    await day('2026-11-03'); // about one working day
+    expect(to(clinicianMail)).toHaveLength(1);
+    expect(to(adminMail)).toHaveLength(0);
+    await day('2026-11-04'); // two working days pass mid-morning, after the morning email
     expect(to(clinicianMail)).toHaveLength(2);
     expect(to(adminMail)).toHaveLength(0);
-    await sweep('2026-11-04T05:00:00.000Z'); // Wednesday morning summary
-    await sweep('2026-11-04T08:00:00.000Z'); // two working days
-    await sweep('2026-11-04T09:00:00.000Z');
-    expect(to(clinicianMail)).toHaveLength(4);
+    await day('2026-11-05');
+    expect(to(clinicianMail)).toHaveLength(3);
     expect(to(adminMail)).toHaveLength(1);
     expect(to(adminMail)[0][2]).toContain('Sam Example');
+  });
+
+  it('does not email anyone about something that arrives later in the day', async () => {
+    data.treatmentRequests.r1.createdAt = '2026-11-02T11:00:00.000Z';
+    await sweep('2026-11-02T12:20:00.000Z');
+    await sweep('2026-11-02T15:20:00.000Z');
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it('tells only the admin about an unanswered urgent message, once, then lists it in the morning', async () => {
+    data.treatmentRequests = {};
+    data.messageThreads = { t1: { ...thread('t1', { topic: 'SIDE_EFFECT_CONCERN', escalated: true }) } };
+    data.messages = { a: { ...message('a', 't1', 'MEMBER', MON_10) } };
+    await sweep('2026-11-02T12:20:00.000Z'); // over four working hours
+    await sweep('2026-11-02T13:20:00.000Z');
+    await sweep('2026-11-02T16:20:00.000Z');
+    expect(to(adminMail)).toHaveLength(1);
+    expect(to(clinicianMail)).toHaveLength(0);
+    await sweep('2026-11-03T05:20:00.000Z');
+    await sweep('2026-11-03T12:20:00.000Z');
+    expect(to(adminMail)).toHaveLength(2);
+    expect(to(clinicianMail)).toHaveLength(1);
   });
 
   it('sends nothing at the weekend but keeps the admin list right', async () => {
@@ -246,15 +272,15 @@ describe('the hourly reminder sweep', () => {
 
   it('tries again next hour if the email fails', async () => {
     send.mockRejectedValueOnce(new Error('Gmail down'));
-    await sweep('2026-11-03T08:00:00.000Z');
-    await sweep('2026-11-03T09:00:00.000Z');
+    await sweep('2026-11-03T05:20:00.000Z');
+    await sweep('2026-11-03T06:20:00.000Z');
     expect(to(clinicianMail)).toHaveLength(2);
   });
 
   it('never puts message text or the pen in an email', async () => {
     data.messageThreads = { t1: { ...thread('t1') } };
     data.messages = { a: { ...message('a', 't1', 'MEMBER', MON_10) } };
-    await sweep('2026-11-05T08:00:00.000Z');
+    await sweep('2026-11-05T05:20:00.000Z');
     expect(send).toHaveBeenCalled();
     for (const [, subject, text] of send.mock.calls) expect(`${subject} ${text}`).not.toContain('private words');
   });
