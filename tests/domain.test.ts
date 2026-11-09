@@ -567,6 +567,16 @@ describe('messages, notes, check-ins and follow-ups', () => {
     expect(() => run(general.store, ops, { type: 'message', threadId: general.resultId!, memberId: NEW, body: 'Checking' })).not.toThrow();
   });
 
+  it('lets only the assigned clinician log a call, and keeps it from the member', () => {
+    const store = onboarded();
+    expectError(() => run(store, otherClinician, { type: 'logCall', memberId: NEW, outcome: 'SPOKE' }), 'FORBIDDEN');
+    expectError(() => run(store, ops, { type: 'logCall', memberId: NEW, outcome: 'SPOKE' }), 'FORBIDDEN');
+    const res = run(store, clinician, { type: 'logCall', memberId: NEW, outcome: 'NO_ANSWER' });
+    expect(visible(res.store, clinician).phoneCalls[res.resultId!]).toMatchObject({ outcome: 'NO_ANSWER' });
+    expect(visible(res.store, member).phoneCalls).toEqual({});
+    expect(visible(res.store, admin).phoneCalls).toEqual({});
+  });
+
   it('keeps clinical notes with the assigned clinician', () => {
     const store = onboarded();
     expectError(() => run(store, otherClinician, { type: 'note', memberId: NEW, body: 'x' }), 'FORBIDDEN');
@@ -1080,6 +1090,48 @@ describe('approval releases the pen to the team', () => {
     expect(sent.penReleases[r.id]).toMatchObject({ status: 'SENT', courierReference: 'TRK-1', sentBy: admin.uid });
     expect(Object.values(sent.notifications).some((n) => n.memberId === NEW && /on its way/.test(n.title))).toBe(true);
     expectError(() => run(sent, ops, cmd), 'CONFLICT');
+  });
+
+  it('needs a courier reference to mark a pen as sent', () => {
+    expect(() => parseCommand({ type: 'releaseSent', memberId: NEW, releaseId: 'rel_1' })).toThrow();
+    expect(() => parseCommand({ type: 'releaseSent', memberId: NEW, releaseId: 'rel_1', courierReference: '  ' })).toThrow();
+  });
+
+  it('lets the team confirm delivery only after sending, and only once', () => {
+    const { store } = approved();
+    const r = Object.values(store.penReleases)[0];
+    const cmd = { type: 'releaseDelivered' as const, memberId: NEW, releaseId: r.id };
+    expectError(() => run(store, ops, cmd), 'PRECONDITION');
+    const sent = run(store, ops, { type: 'releaseSent', memberId: NEW, releaseId: r.id, courierReference: 'TRK-1' }).store;
+    expectError(() => run(sent, member, cmd), 'FORBIDDEN');
+    expectError(() => run(sent, clinician, cmd), 'FORBIDDEN');
+    const done = run(sent, ops, cmd).store;
+    expect(done.penReleases[r.id]).toMatchObject({ deliveredAt: NOW.toISOString(), deliveredBy: ops.uid });
+    expect(done.penReleases[r.id].memberConfirmedAt).toBeUndefined();
+    expectError(() => run(done, admin, cmd), 'CONFLICT');
+  });
+
+  it('lets a member confirm their own pen, which also counts as delivered', () => {
+    const { store } = approved();
+    const r = Object.values(store.penReleases)[0];
+    const cmd = { type: 'penReceived' as const, releaseId: r.id };
+    expectError(() => run(store, member, cmd), 'PRECONDITION');
+    const sent = run(store, ops, { type: 'releaseSent', memberId: NEW, releaseId: r.id, courierReference: 'TRK-1' }).store;
+    expectError(() => run(sent, established, cmd), 'NOT_FOUND');
+    expectError(() => run(sent, ops, cmd), 'FORBIDDEN');
+    const done = run(sent, member, cmd).store;
+    expect(done.penReleases[r.id]).toMatchObject({ memberConfirmedAt: NOW.toISOString(), deliveredAt: NOW.toISOString(), deliveredBy: NEW });
+    expectError(() => run(done, member, cmd), 'CONFLICT');
+  });
+
+  it('keeps the courier\'s delivery date when the member confirms afterwards', () => {
+    const { store } = approved();
+    const r = Object.values(store.penReleases)[0];
+    const sent = run(store, ops, { type: 'releaseSent', memberId: NEW, releaseId: r.id, courierReference: 'TRK-1' }).store;
+    const delivered = run(sent, ops, { type: 'releaseDelivered', memberId: NEW, releaseId: r.id }).store;
+    const later = new Date(NOW.getTime() + 86_400_000);
+    const done = run(delivered, member, { type: 'penReceived', releaseId: r.id }, 'demo', later).store;
+    expect(done.penReleases[r.id]).toMatchObject({ deliveredAt: NOW.toISOString(), deliveredBy: ops.uid, memberConfirmedAt: later.toISOString() });
   });
 
   it('the repeat-script route skips lifestyle and still onboards', () => {

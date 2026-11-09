@@ -29,14 +29,16 @@ function put(store: Store, collection: CollectionName, snap: QuerySnapshot) {
 
 async function loadWaitingStore(db: Firestore): Promise<Store> {
   const store = emptyStore();
-  const [requests, threads, messages] = await Promise.all([
+  const [requests, threads, messages, calls] = await Promise.all([
     db.collection('treatmentRequests').where('status', 'in', [...PENDING_REQUEST_STATUSES]).limit(SWEEP_LIMIT).get(),
     db.collection('messageThreads').orderBy('lastMessageAt', 'desc').limit(SWEEP_LIMIT).get(),
     db.collection('messages').orderBy('createdAt', 'desc').limit(SWEEP_LIMIT).get(),
+    db.collection('phoneCalls').orderBy('calledAt', 'desc').limit(SWEEP_LIMIT).get(),
   ]);
   put(store, 'treatmentRequests', requests);
   put(store, 'messageThreads', threads);
   put(store, 'messages', messages);
+  put(store, 'phoneCalls', calls);
   // A new screening also counts as answering "needs information".
   const asked = new Set(Object.values(store.treatmentRequests).filter((r) => r.status === 'NEEDS_INFORMATION').map((r) => r.memberId));
   await Promise.all([...asked].map(async (id) => put(store, 'healthAssessments', await db.collection('healthAssessments').where('memberId', '==', id).get())));
@@ -92,7 +94,7 @@ export async function runWaitingSweep(db: Firestore, now: Date, mail: StaffMail)
   const memberIds = [...new Set(items.map((i) => i.memberId))];
   const members = await Promise.all(memberIds.map((id) => db.doc(`members/${id}`).get()));
   const names = new Map(members.map((m) => [m.id, `${(m.data() as MemberRecord | undefined)?.firstName ?? ''} ${(m.data() as MemberRecord | undefined)?.lastName ?? ''}`.trim() || 'A member']));
-  const line = (i: WaitingItem) => `- ${names.get(i.memberId)}: ${WAITING_LABEL[i.kind]}, waiting ${waitedLabel(workingHours(i.since, now))}`;
+  const line = (i: WaitingItem) => `- ${names.get(i.memberId)}: ${WAITING_LABEL[i.kind]}, waiting ${waitedLabel(workingHours(i.since, now))}${i.spokenAt ? ' (spoken to by phone, decision not recorded yet)' : ''}`;
   const adminFooter = ['', `The full list is on your admin page: ${SITE}/app`];
 
   const overdue = items.filter((i) => isOverdue(i, now));

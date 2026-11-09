@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { runWaitingSweep } from '../functions/src/waiting';
 import { DEMO_ESTABLISHED_MEMBER, createFixtureStore, demoActor } from '../src/domain/fixtures';
 import { type Message, type MessageThread, type OperationalProfile, type Store, type TreatmentRequest, visible } from '../src/domain/model';
+import { journeyStage } from '../src/domain/journey';
 import { byAttention, isOverdue, isSendingHour, isSummaryHour, waitingOnClinician, workingHours } from '../src/domain/waiting';
 
 // Times are UTC; South Africa is two hours ahead.
@@ -39,7 +40,9 @@ const message = (id: string, threadId: string, authorRole: Message['authorRole']
   createdAt,
 });
 
-function storeWith(parts: Partial<Pick<Store, 'treatmentRequests' | 'messageThreads' | 'messages' | 'healthAssessments'>>): Store {
+const call = (outcome: 'SPOKE' | 'NO_ANSWER', calledAt: string) => ({ id: `c_${calledAt}`, memberId: 'm1', clinicianId: 'dr', outcome, calledAt });
+
+function storeWith(parts: Partial<Pick<Store, 'treatmentRequests' | 'messageThreads' | 'messages' | 'healthAssessments' | 'phoneCalls'>>): Store {
   const s = createFixtureStore();
   s.treatmentRequests = {};
   s.messageThreads = {};
@@ -103,6 +106,25 @@ describe('what counts as waiting', () => {
     expect(waitingOnClinician(storeWith({ messageThreads: { t1: thread('t1') }, messages: answered }))).toHaveLength(0);
   });
 
+  it('treats a phone call as answering what was sent before it, but not what comes after', () => {
+    const urgent = { t1: thread('t1', { topic: 'SIDE_EFFECT_CONCERN', escalated: true }) };
+    const a = message('a', 't1', 'MEMBER', MON_10);
+    const later = '2026-11-02T10:00:00.000Z';
+    expect(waitingOnClinician(storeWith({ messageThreads: urgent, messages: { a }, phoneCalls: { c: call('NO_ANSWER', later) } }))).toHaveLength(1);
+    const spoke = { c: call('SPOKE', later) };
+    expect(waitingOnClinician(storeWith({ messageThreads: urgent, messages: { a }, phoneCalls: spoke }))).toHaveLength(0);
+    const b = message('b', 't1', 'MEMBER', '2026-11-02T11:00:00.000Z');
+    expect(waitingOnClinician(storeWith({ messageThreads: urgent, messages: { a, b }, phoneCalls: spoke }))[0]).toMatchObject({ kind: 'URGENT', since: b.createdAt });
+  });
+
+  it('keeps a pen request open after the call, marked as spoken to, until the decision is recorded', () => {
+    const later = '2026-11-02T10:00:00.000Z';
+    const [item] = waitingOnClinician(storeWith({ treatmentRequests: { r1: request('r1', MON_10) }, phoneCalls: { c: call('SPOKE', later) } }));
+    expect(item).toMatchObject({ kind: 'REQUEST', since: MON_10, spokenAt: later });
+    const [missed] = waitingOnClinician(storeWith({ treatmentRequests: { r1: request('r1', MON_10) }, phoneCalls: { c: call('NO_ANSWER', later) } }));
+    expect(missed.spokenAt).toBeUndefined();
+  });
+
   it('marks side-effect concerns urgent and leaves delivery questions to operations', () => {
     const messages = { a: message('a', 't1', 'MEMBER', MON_10), b: message('b', 't2', 'MEMBER', MON_10) };
     const threads = { t1: thread('t1', { topic: 'SIDE_EFFECT_CONCERN', escalated: true }), t2: thread('t2', { topic: 'ORDER_DELIVERY' }) };
@@ -116,13 +138,54 @@ describe('what counts as waiting', () => {
   });
 });
 
+describe('the prick tracker', () => {
+  const base = { requestId: 'r1', treatmentId: 't1', requestedAt: MON_10, moreInfoAsked: false, missedCalls: 0 };
+  const WED_11 = at('2026-11-04T09:00:00.000Z');
+  const stage = (extra: object, now = at('2026-11-02T12:00:00.000Z')) => journeyStage({ ...base, ...extra }, now);
+
+  it('says whose move it is at each step', () => {
+    expect(stage({})).toMatchObject({ label: 'Doctor to call', who: 'Doctor', late: false, open: true });
+    expect(stage({ missedCalls: 2 })).toMatchObject({ label: 'Doctor tried calling (2), no answer', who: 'Doctor' });
+    expect(stage({ spokenAt: MON_10 })).toMatchObject({ label: 'Spoken to, decision not recorded', who: 'Doctor' });
+    expect(stage({ moreInfoAsked: true })).toMatchObject({ label: 'More information requested', who: 'Member' });
+    expect(stage({ decidedAt: MON_10 })).toMatchObject({ label: 'Decision recorded', open: false });
+    expect(stage({ decidedAt: MON_10, approvedAt: MON_10 })).toMatchObject({ label: 'Pen to send', who: 'Team', open: true });
+    expect(stage({ decidedAt: MON_10, approvedAt: MON_10, sentAt: MON_10 })).toMatchObject({ label: 'Pen sent, delivery not confirmed', who: 'Team', open: true });
+    expect(stage({ decidedAt: MON_10, approvedAt: MON_10, sentAt: MON_10, deliveredAt: MON_10 })).toMatchObject({ label: 'Pen delivered', open: false });
+    expect(stage({ decidedAt: MON_10, approvedAt: MON_10, sentAt: MON_10, deliveredAt: MON_10, followUpDue: '2026-11-30' })).toMatchObject({ label: 'Pen delivered, follow-up due 2026-11-30', who: 'Doctor', open: true });
+    expect(stage({ decidedAt: MON_10, approvedAt: MON_10, sentAt: MON_10, followUpDue: '2026-11-30', followUpDoneAt: '2026-11-30T08:00:00.000Z' })).toMatchObject({ label: 'Follow-up done', open: false });
+  });
+
+  it('flags what has gone past its target', () => {
+    expect(stage({}, WED_11).late).toBe(true);
+    expect(stage({ spokenAt: MON_10 }, WED_11).late).toBe(true);
+    expect(stage({ decidedAt: MON_10, approvedAt: MON_10 }, at('2026-11-03T07:59:00.000Z')).late).toBe(false);
+    expect(stage({ decidedAt: MON_10, approvedAt: MON_10 }, at('2026-11-03T08:00:00.000Z')).late).toBe(true);
+    const sent = { decidedAt: MON_10, approvedAt: MON_10, sentAt: MON_10 };
+    expect(stage(sent, at('2026-11-05T07:59:00.000Z')).late).toBe(false);
+    expect(stage(sent, at('2026-11-05T08:00:00.000Z')).late).toBe(true);
+    expect(stage({ decidedAt: MON_10, approvedAt: MON_10, sentAt: MON_10, deliveredAt: MON_10, followUpDue: '2026-11-03' }, WED_11)).toMatchObject({ label: 'Follow-up overdue since 2026-11-03', late: true });
+  });
+
+  it('gives the admin dates only, never what was decided or said', () => {
+    const s = createFixtureStore();
+    const id = DEMO_ESTABLISHED_MEMBER.uid;
+    s.treatmentRequests = { r9: { ...request('r9', MON_10, { status: 'DECLINED', reviewedAt: FRI_16, decisionNote: 'private reason' }), memberId: id } };
+    s.phoneCalls = { c: { ...call('SPOKE', '2026-11-03T08:00:00.000Z'), memberId: id }, d: { ...call('NO_ANSWER', '2026-11-02T09:00:00.000Z'), memberId: id } };
+    const seen = visible(s, demoActor('SUPER_ADMIN'));
+    expect(seen.members[id].penJourneys).toEqual([{ requestId: 'r9', treatmentId: 't1', requestedAt: MON_10, moreInfoAsked: false, missedCalls: 1, spokenAt: '2026-11-03T08:00:00.000Z', decidedAt: FRI_16 }]);
+    expect(JSON.stringify(seen)).not.toContain('private reason');
+    expect(JSON.stringify(seen.members[id])).not.toContain('DECLINED');
+  });
+});
+
 describe('what the admin can see', () => {
   it('shows contact details and nothing more', () => {
     const store = createFixtureStore();
     const seen = visible(store, demoActor('SUPER_ADMIN')).members[DEMO_ESTABLISHED_MEMBER.uid];
     expect(seen.email).toBe(store.members[DEMO_ESTABLISHED_MEMBER.uid].email);
     expect(seen.phone).toBe(store.members[DEMO_ESTABLISHED_MEMBER.uid].phone);
-    expect(Object.keys(seen).sort()).toEqual(['createdAt', 'email', 'firstName', 'id', 'lastName', 'memberId', 'onboardedAt', 'pensPicked', 'phone', 'updatedAt']);
+    expect(Object.keys(seen).sort()).toEqual(['createdAt', 'email', 'firstName', 'id', 'lastName', 'memberId', 'onboardedAt', 'penJourneys', 'pensPicked', 'phone', 'updatedAt']);
     expect(visible(store, demoActor('SUPER_ADMIN')).medicalHistories).toEqual({});
   });
 

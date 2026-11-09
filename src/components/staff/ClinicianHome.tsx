@@ -21,13 +21,16 @@ export function ClinicianHome() {
   const { workspace } = useWorkspace();
   const { store, actor } = workspace;
   // Whoever has waited longest comes first.
-  const waitingSince = new Map(waitingOnClinician(store).reverse().map((i) => [i.memberId, i.since]));
+  const waiting = waitingOnClinician(store);
+  const waitingSince = new Map([...waiting].reverse().map((i) => [i.memberId, i.since]));
   const memberIds = [...activeAssignedMemberIds(store, actor.uid)]
     .filter((id) => store.members[id])
     .sort((a, b) => (waitingSince.get(a) ?? '9999').localeCompare(waitingSince.get(b) ?? '9999'));
   const now = new Date();
   const [selected, setSelected] = useState<string | null>(memberIds[0] ?? null);
-  const escalated = Object.values(store.messageThreads).filter((t) => t.escalated);
+  // Only while still unanswered: once they've been replied to or called, the alert goes.
+  const urgent = new Set(waiting.filter((i) => i.kind === 'URGENT').map((i) => i.key));
+  const escalated = Object.values(store.messageThreads).filter((t) => urgent.has(`msg_${t.id}`));
   const openRequests = Object.values(store.treatmentRequests).filter((r) => PENDING_REQUEST_STATUSES.includes(r.status));
 
   return (
@@ -120,6 +123,7 @@ function MemberChart({ memberId }: { memberId: string }) {
           ))}
         </Notice>
       )}
+      <Calls memberId={memberId} />
       <div className="grid">
         <Card title={`${m.firstName} ${m.lastName}`}>
           {!m.onboardedAt ? (
@@ -501,6 +505,38 @@ function ReviewForm({ request, store }: { request: TreatmentRequest; store: Stor
   );
 }
 
+/** One tap after every call, so everyone knows it happened and what comes next. */
+function Calls({ memberId }: { memberId: string }) {
+  const { workspace, run, busy } = useWorkspace();
+  const calls = Object.values(workspace.store.phoneCalls)
+    .filter((c) => c.memberId === memberId)
+    .sort((a, b) => b.calledAt.localeCompare(a.calledAt));
+  return (
+    <Card title="Phone calls">
+      <p className="muted small" style={{ marginTop: 0 }}>
+        Tap after every call. Speaking to them clears any message they sent before the call. A pen request stays open until you record your decision below. Anything clinical goes in your notes.
+      </p>
+      <div className="row">
+        <button type="button" disabled={busy} onClick={() => void run({ type: 'logCall', memberId, outcome: 'SPOKE' }, 'Call logged. Record your decision on any open request.')}>
+          I spoke to them
+        </button>
+        <button type="button" className="secondary" disabled={busy} onClick={() => void run({ type: 'logCall', memberId, outcome: 'NO_ANSWER' }, 'Missed call logged')}>
+          No answer
+        </button>
+      </div>
+      {calls.length > 0 && (
+        <ul className="plain small" style={{ marginTop: '0.75rem' }}>
+          {calls.slice(0, 5).map((c) => (
+            <li key={c.id}>
+              {c.outcome === 'SPOKE' ? 'Spoke to them' : 'No answer'} <span className="muted">{fmtDateTime(c.calledAt)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
 function Plans({ memberId }: { memberId: string }) {
   const { workspace } = useWorkspace();
   const { store } = workspace;
@@ -517,6 +553,7 @@ function Plans({ memberId }: { memberId: string }) {
           const events = Object.values(store.adherenceEvents).filter((e) => e.approvalId === a.id);
           const taken = events.filter((e) => e.action === 'TAKEN').length;
           const missed = events.filter((e) => e.action === 'MISSED').length;
+          const release = Object.values(store.penReleases).find((p) => p.approvalId === a.id);
           return (
             <li key={a.id}>
               <strong>{store.treatments[a.treatmentId]?.name}</strong>{' '}
@@ -524,6 +561,7 @@ function Plans({ memberId }: { memberId: string }) {
               <br />
               {regimen && `${regimen.dose} ${regimen.doseUnit}, ${describeSchedule(regimen.schedule)}. `}
               {a.startDate} to {a.expiresOn}. {a.remainingQuantity}/{a.approvedQuantity} packs left. Taken {taken}, missed {missed}.
+              {release?.memberConfirmedAt && ` Has the pen since ${fmtDateTime(release.memberConfirmedAt)}.`}
             </li>
           );
         })}

@@ -339,6 +339,7 @@ export const commandSchema = z.discriminatedUnion('type', [
     body: requiredText(4000),
   }),
   z.object({ type: z.literal('note'), memberId: id, body: requiredText(8000) }),
+  z.object({ type: z.literal('logCall'), memberId: id, outcome: z.enum(['SPOKE', 'NO_ANSWER']) }),
   z.object({
     type: z.literal('nutrition'),
     memberId: id,
@@ -394,7 +395,9 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('readNotification'), notificationId: id }),
   screeningDraftSchema,
   repeatSchema,
-  z.object({ type: z.literal('releaseSent'), memberId: id, releaseId: id, courierReference: text(80).optional() }),
+  z.object({ type: z.literal('releaseSent'), memberId: id, releaseId: id, courierReference: requiredText(80) }),
+  z.object({ type: z.literal('releaseDelivered'), memberId: id, releaseId: id }),
+  z.object({ type: z.literal('penReceived'), releaseId: id }),
 ]);
 
 export type Command = z.infer<typeof commandSchema>;
@@ -448,6 +451,9 @@ const COMMAND_ROLES: Record<CommandType, readonly Role[]> = {
   screeningDraft: ['MEMBER'],
   repeat: ['MEMBER'],
   releaseSent: ['SUPER_ADMIN', 'OPERATIONS'],
+  releaseDelivered: ['SUPER_ADMIN', 'OPERATIONS'],
+  penReceived: ['MEMBER'],
+  logCall: ['CLINICIAN'],
 };
 
 export function allowedRoles(type: CommandType): readonly Role[] {
@@ -477,7 +483,9 @@ export function commandMemberId(command: Command, actor: Actor): string | undefi
   switch (command.type) {
     case 'review':
     case 'releaseSent':
+    case 'releaseDelivered':
     case 'note':
+    case 'logCall':
     case 'nutrition':
     case 'followup':
     case 'orderStatus':
@@ -1172,14 +1180,34 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
       const release = store.penReleases[command.releaseId];
       if (!release || release.memberId !== command.memberId) fail('NOT_FOUND', 'Release not found');
       if (release.status === 'SENT') fail('CONFLICT', 'This pen is already marked as sent');
-      Object.assign(release, {
-        status: 'SENT',
-        sentAt: at,
-        sentBy: actor.uid,
-        ...(command.courierReference ? { courierReference: command.courierReference } : {}),
-      });
+      Object.assign(release, { status: 'SENT', sentAt: at, sentBy: actor.uid, courierReference: command.courierReference });
       targets.push(release.id);
       targets.push(notify(store, ctx, release.memberId, 'ORDER', `Your ${release.treatmentName} is on its way`, 'Your care team has sent your pen. Open your dashboard for your plan.'));
+      touchProfile(store, release.memberId, at);
+      resultId = release.id;
+      break;
+    }
+
+    case 'releaseDelivered': {
+      const release = store.penReleases[command.releaseId];
+      if (!release || release.memberId !== command.memberId) fail('NOT_FOUND', 'Release not found');
+      if (release.status !== 'SENT') fail('PRECONDITION', 'Mark this pen as sent first');
+      if (release.deliveredAt) fail('CONFLICT', 'This pen is already marked as delivered');
+      Object.assign(release, { deliveredAt: at, deliveredBy: actor.uid });
+      targets.push(release.id);
+      touchProfile(store, release.memberId, at);
+      resultId = release.id;
+      break;
+    }
+
+    case 'penReceived': {
+      const release = store.penReleases[command.releaseId];
+      if (!release || release.memberId !== actor.uid) fail('NOT_FOUND', 'Release not found');
+      if (release.status !== 'SENT') fail('PRECONDITION', 'This pen has not been sent yet');
+      if (release.memberConfirmedAt) fail('CONFLICT', 'You have already confirmed this pen');
+      release.memberConfirmedAt = at;
+      if (!release.deliveredAt) Object.assign(release, { deliveredAt: at, deliveredBy: actor.uid });
+      targets.push(release.id);
       touchProfile(store, release.memberId, at);
       resultId = release.id;
       break;
@@ -1311,6 +1339,18 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
       store.clinicalNotes[nid] = { id: nid, memberId: command.memberId, clinicianId: actor.uid, body: command.body, createdAt: at };
       targets.push(nid);
       resultId = nid;
+      break;
+    }
+
+    case 'logCall': {
+      requireAssignedClinician(store, actor, command.memberId);
+      requireMember(store, command.memberId);
+      const callId = ctx.newId('call');
+      store.phoneCalls[callId] = { id: callId, memberId: command.memberId, clinicianId: actor.uid, outcome: command.outcome, calledAt: at };
+      targets.push(callId);
+      refreshOpenRequestCount(store, command.memberId);
+      touchProfile(store, command.memberId, at);
+      resultId = callId;
       break;
     }
 

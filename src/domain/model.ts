@@ -68,6 +68,7 @@ export const COLLECTIONS = [
   'screeningDrafts',
   'repeatDeliveries',
   'penReleases',
+  'phoneCalls',
 ] as const;
 export type CollectionName = (typeof COLLECTIONS)[number];
 
@@ -104,6 +105,7 @@ export const MEMBER_COLLECTIONS = [
   'screeningDrafts',
   'repeatDeliveries',
   'penReleases',
+  'phoneCalls',
 ] as const satisfies readonly CollectionName[];
 export type MemberCollectionName = (typeof MEMBER_COLLECTIONS)[number];
 
@@ -161,6 +163,8 @@ export interface MemberRecord {
   onboardedAt?: string;
   /** Only on the admin's contact view: which pens they asked for, oldest first. Never the clinician's decision. */
   pensPicked?: string[];
+  /** Only on the admin's view: when each step happened for each pen. Never what was said or decided. */
+  penJourneys?: PenJourney[];
   createdAt: string;
   updatedAt: string;
 }
@@ -632,6 +636,11 @@ export interface PenRelease {
   sentAt?: string;
   sentBy?: string;
   courierReference?: string;
+  /** The first confirmation of arrival, from the courier's proof (team) or the member. */
+  deliveredAt?: string;
+  deliveredBy?: string;
+  /** The member tapped "I've got my pen". */
+  memberConfirmedAt?: string;
 }
 
 export interface ProviderAssignment {
@@ -675,6 +684,32 @@ export interface ClinicalNote {
   clinicianId: string;
   body: string;
   createdAt: string;
+}
+
+/** That a call happened and whether they picked up. Anything clinical goes in the clinician's notes. */
+export interface PhoneCall {
+  id: string;
+  memberId: string;
+  clinicianId: string;
+  outcome: 'SPOKE' | 'NO_ANSWER';
+  calledAt: string;
+}
+
+/** The steps one pen request has reached, as dates only. */
+export interface PenJourney {
+  requestId: string;
+  treatmentId: string;
+  requestedAt: string;
+  moreInfoAsked: boolean;
+  spokenAt?: string;
+  missedCalls: number;
+  decidedAt?: string;
+  approvedAt?: string;
+  sentAt?: string;
+  deliveredAt?: string;
+  memberConfirmedAt?: string;
+  followUpDue?: string;
+  followUpDoneAt?: string;
 }
 
 export interface FollowUp {
@@ -808,6 +843,7 @@ export interface CollectionTypes {
   screeningDrafts: ScreeningDraft;
   repeatDeliveries: RepeatDelivery;
   penReleases: PenRelease;
+  phoneCalls: PhoneCall;
 }
 
 export type Store = { [K in CollectionName]: Record<string, CollectionTypes[K]> };
@@ -1025,6 +1061,44 @@ export function activeAssignedMemberIds(store: Store, clinicianId: string): Set<
   );
 }
 
+/** When each step happened for each of a member's pens, for the admin's tracker. */
+function penJourneys(store: Store, memberId: string): PenJourney[] {
+  const calls = Object.values(store.phoneCalls)
+    .filter((c) => c.memberId === memberId)
+    .sort((a, b) => a.calledAt.localeCompare(b.calledAt));
+  return Object.values(store.treatmentRequests)
+    .filter((r) => r.memberId === memberId)
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    .map((r) => {
+      const after = calls.filter((c) => c.calledAt >= r.createdAt);
+      const spokenAt = after.find((c) => c.outcome === 'SPOKE')?.calledAt;
+      const decided = !PENDING_REQUEST_STATUSES.includes(r.status);
+      const approval = Object.values(store.approvedTreatments).find((a) => a.requestId === r.id);
+      const release = approval && Object.values(store.penReleases).find((p) => p.approvalId === approval.id);
+      const followUps = approval ? Object.values(store.followUps).filter((f) => f.approvalId === approval.id).sort((a, b) => a.dueDate.localeCompare(b.dueDate)) : [];
+      const followUp = followUps.find((f) => f.status === 'SCHEDULED') ?? followUps[followUps.length - 1];
+      const journey: PenJourney = {
+        requestId: r.id,
+        treatmentId: r.treatmentId,
+        requestedAt: r.createdAt,
+        moreInfoAsked: r.status === 'NEEDS_INFORMATION',
+        missedCalls: after.filter((c) => c.outcome === 'NO_ANSWER' && (!spokenAt || c.calledAt <= spokenAt)).length,
+      };
+      if (spokenAt) journey.spokenAt = spokenAt;
+      if (decided && r.reviewedAt) journey.decidedAt = r.reviewedAt;
+      // Approved before pen releases existed means there is nothing left to track.
+      if (release) journey.approvedAt = release.approvedAt;
+      if (release?.sentAt) journey.sentAt = release.sentAt;
+      if (release?.deliveredAt) journey.deliveredAt = release.deliveredAt;
+      if (release?.memberConfirmedAt) journey.memberConfirmedAt = release.memberConfirmedAt;
+      if (release && followUp) {
+        journey.followUpDue = followUp.dueDate;
+        if (followUp.completedAt) journey.followUpDoneAt = followUp.completedAt;
+      }
+      return journey;
+    });
+}
+
 /**
  * Role-scoped projection applied to every workspace response. It is a second
  * line of defence: the Firebase loader already limits what it reads.
@@ -1037,7 +1111,7 @@ export function visible(store: Store, actor: Actor): Store {
     case 'MEMBER': {
       const own = (r: { memberId: string }) => r.memberId === actor.uid;
       for (const c of MEMBER_COLLECTIONS) {
-        if (c === 'clinicalNotes' || c === 'operationalProfiles' || c === 'providerAssignments') continue;
+        if (c === 'clinicalNotes' || c === 'operationalProfiles' || c === 'providerAssignments' || c === 'phoneCalls') continue;
         (out as Record<string, unknown>)[c] = filterRecords(store, c, own as never);
       }
       out.treatments = publicTreatments;
@@ -1117,6 +1191,7 @@ export function visible(store: Store, actor: Actor): Store {
               .map((r) => r.treatmentId),
           ),
         ],
+        penJourneys: penJourneys(store, m.memberId),
         createdAt: m.createdAt,
         updatedAt: m.updatedAt,
       }));

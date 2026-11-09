@@ -66,6 +66,7 @@ export function MemberHome() {
 
   return (
     <div className="stack member">
+      <FirstPrick />
       <NextStep onGo={setTab} />
       <div className="member-tabs" role="tablist" aria-label="Your account">
         {TABS.map((t) => (
@@ -202,6 +203,36 @@ function latestRequests(store: Store): TreatmentRequest[] {
 }
 
 /** The one thing to do now, worked out from where the member is. */
+/** Where the QR code in the welcome pack lands: confirms the pen arrived and puts their plan in front of them. */
+function FirstPrick() {
+  const { workspace, run, busy } = useWorkspace();
+  const { store } = workspace;
+  const now = today();
+  const release = Object.values(store.penReleases)
+    .filter((r) => {
+      const approval = store.approvedTreatments[r.approvalId];
+      return r.status === 'SENT' && !r.memberConfirmedAt && approval?.status === 'ACTIVE' && now <= approval.expiresOn;
+    })
+    .sort((a, b) => (a.sentAt ?? '').localeCompare(b.sentAt ?? ''))[0];
+  if (!release) return null;
+  return (
+    <Card title="Ready for your first prick?">
+      <p style={{ marginTop: 0 }}>
+        Your {release.treatmentName} is on its way to you. Once it&apos;s in your hands, tell us so your care team knows it landed.
+      </p>
+      <ul className="plain small">
+        <li>Your dose: {release.dose}</li>
+        <li>Starting: {release.startDate}</li>
+        {release.instructions && <li>From your clinician: {release.instructions}</li>}
+        {release.courierReference && <li>Courier reference: {release.courierReference}</li>}
+      </ul>
+      <button type="button" disabled={busy} onClick={() => void run({ type: 'penReceived', releaseId: release.id }, "Got it. Your care team knows it landed, and your plan is under the Plan tab.")}>
+        I&apos;ve got my pen
+      </button>
+    </Card>
+  );
+}
+
 function NextStep({ onGo }: { onGo: (tab: Tab) => void }) {
   const { workspace } = useWorkspace();
   const { store, actor } = workspace;
