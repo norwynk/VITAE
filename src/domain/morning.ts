@@ -13,13 +13,15 @@ export interface BriefAction {
   text: string;
   who: 'Team' | 'Doctor';
   late: boolean;
-  tab: 'Pens' | 'Messages';
+  tab: 'Pens' | 'Messages' | 'Royal Summons';
 }
 
 export interface MorningBrief {
   actions: BriefAction[];
   withDoctor: number;
   toSend: number;
+  /** People who asked for the Royal Prick and haven't been phoned. */
+  summons: number;
   outForDelivery: number;
   deliveredThisWeek: number;
   newThisWeek: number;
@@ -32,12 +34,20 @@ export function morningBrief(store: Store, now: Date): MorningBrief {
   const releases = Object.values(store.penReleases);
   const toSend = releases.filter((r) => r.status === 'TO_SEND');
   const out = releases.filter((r) => r.status === 'SENT' && !r.deliveredAt);
+  const summons = Object.values(store.royalSummons).filter((s) => s.status === 'NEW');
   const name = (memberId: string) => {
     const m = store.members[memberId];
     return (m && `${m.firstName} ${m.lastName}`.trim()) || store.operationalProfiles[memberId]?.displayName || 'A member';
   };
 
   const actions: BriefAction[] = [
+    ...summons.map((s): BriefAction => ({
+      key: `summons_${s.id}`,
+      text: `Phone ${s.name} about the Royal Prick (${s.area})`,
+      who: 'Team',
+      late: workingHours(s.createdAt, now) >= TEAM_REPLY_HOURS,
+      tab: 'Royal Summons',
+    })),
     ...toSend.map((r): BriefAction => ({
       key: `send_${r.id}`,
       text: `Send ${r.treatmentName} to ${r.memberName}${r.deliveryAddress ? '' : '. No delivery address yet, so phone them first'}`,
@@ -79,6 +89,7 @@ export function morningBrief(store: Store, now: Date): MorningBrief {
     actions,
     withDoctor: members.reduce((n, m) => n + (m.penJourneys ?? []).filter((j) => !j.decidedAt).length, 0),
     toSend: toSend.length,
+    summons: summons.length,
     outForDelivery: out.length,
     deliveredThisWeek: releases.filter((r) => r.deliveredAt && r.deliveredAt >= weekAgo).length,
     newThisWeek: members.filter((m) => m.createdAt >= weekAgo).length,

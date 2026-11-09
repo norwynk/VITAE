@@ -5,13 +5,14 @@ import { PEN_BRANDS } from '@/brand/pens';
 import { SOURCE_LINE } from '@/brand/source';
 import { EditorialStatement } from './brand/Sections';
 import { PenStage } from './brand/Pen';
+import { RoyalSummonsForm } from './brand/RoyalSummonsForm';
 import { ScrollFilm } from './brand/ScrollFilm';
 import { BrandPage } from './site/BrandPage';
 
 /**
  * The Royal Prick Experience, the concierge package: we do the heavy lifting.
  * It is an optional extra. Nobody needs it, or its blood test, to do an assessment and order a pen.
- * Kept out of search results and not tied to a checkout yet.
+ * Kept out of search results. No booking or payment yet: the form at the end asks us to phone them.
  */
 const delay = (ms: number) => ({ '--delay': `${ms}ms` }) as CSSProperties;
 
@@ -145,7 +146,7 @@ export function RoyalPrickPage() {
               they say yes, your pen comes to you and we stay with you after that. You don&apos;t go anywhere.
             </p>
             <div className="pkg-actions">
-              <Link href="/start" className="btn">Get the royal treatment</Link>
+              <a href="#summon" className="btn">Get the royal treatment</a>
               <a href="#included" className="link-arrow">See what&apos;s in it</a>
             </div>
             <p className="pkg-hero__note">
@@ -279,8 +280,8 @@ export function RoyalPrickPage() {
             <br />
             is the <span className="pop">door</span>.
           </h2>
-          <div style={{ marginTop: 'var(--space-4)' }} data-reveal>
-            <Link href="/start" className="btn light">Get the royal treatment</Link>
+          <div data-reveal>
+            <RoyalSummonsForm />
           </div>
           <div className="final-cta__pens" data-reveal>
             {FINALE.map((slug) => PEN_BRANDS[slug]).map((b, i) => (

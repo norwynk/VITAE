@@ -69,6 +69,7 @@ export const COLLECTIONS = [
   'repeatDeliveries',
   'penReleases',
   'phoneCalls',
+  'royalSummons',
 ] as const;
 export type CollectionName = (typeof COLLECTIONS)[number];
 
@@ -689,6 +690,21 @@ export interface ClinicalNote {
 }
 
 /** That a call happened and whether they picked up. Anything clinical goes in the clinician's notes. */
+export const SUMMONS_STATUSES = ['NEW', 'PHONED', 'BOOKED', 'NOT_GOING_AHEAD'] as const;
+export type SummonsStatus = (typeof SUMMONS_STATUSES)[number];
+
+/** Someone asking to be phoned about the Royal Prick Experience. Contact details only. */
+export interface RoyalSummons {
+  id: string;
+  name: string;
+  phone: string;
+  area: string;
+  status: SummonsStatus;
+  createdAt: string;
+  updatedAt: string;
+  phonedAt?: string;
+}
+
 export interface PhoneCall {
   id: string;
   memberId: string;
@@ -846,6 +862,7 @@ export interface CollectionTypes {
   repeatDeliveries: RepeatDelivery;
   penReleases: PenRelease;
   phoneCalls: PhoneCall;
+  royalSummons: RoyalSummons;
 }
 
 export type Store = { [K in CollectionName]: Record<string, CollectionTypes[K]> };
@@ -1173,6 +1190,7 @@ export function visible(store: Store, actor: Actor): Store {
     }
     case 'SUPER_ADMIN': {
       out.penReleases = { ...store.penReleases };
+      out.royalSummons = { ...store.royalSummons };
       out.treatments = { ...store.treatments };
       out.inventory = { ...store.inventory };
       out.operationalProfiles = { ...store.operationalProfiles };

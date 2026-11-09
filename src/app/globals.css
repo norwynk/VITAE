@@ -1136,6 +1136,16 @@ html.door-through .side-door::after { opacity: 1; }
 }
 .film-sound svg { flex: none; width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 #film { scroll-margin-top: 80px; }
+.summons { display: grid; gap: var(--space-2); max-width: 440px; margin: var(--space-4) auto 0; text-align: left; scroll-margin-top: 100px; }
+.summons label { display: grid; gap: 0.3rem; font-weight: 600; color: #fff; }
+.summons input { width: 100%; color: var(--black); background: #fff; }
+.summons .btn { justify-self: stretch; text-align: center; }
+.summons .small { margin: 0; color: #fff; opacity: 0.8; }
+.summons .small a { color: inherit; text-decoration: underline; }
+.summons__trap { position: absolute; left: -9999px; }
+.summons__error { margin: 0; color: var(--pink); font-weight: 600; }
+.summons__done { font-family: var(--font-display); font-size: var(--step-3); text-transform: uppercase; margin: 0; text-align: center; }
+[role="status"].summons { text-align: center; }
 .pkg-hero__note { max-width: 46ch; margin: var(--space-3) 0 0; font-weight: 600; }
 .pkg-hero__note a { color: inherit; text-decoration: underline; }
 .pkg-film { background: var(--black); color: #fff; }

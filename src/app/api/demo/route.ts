@@ -12,6 +12,7 @@ import {
   demoPublicCatalogue,
   demoReset,
   demoSignUp,
+  demoSummons,
   demoWorkspace,
   openSession,
   sealSession,
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
   const origin = request.headers.get('origin');
   if (origin && !sameHost(origin, request)) return error(403, 'Cross-origin request refused');
 
-  let body: { action?: string; role?: string; persona?: string; command?: unknown };
+  let body: { action?: string; role?: string; persona?: string; command?: unknown; summons?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -86,6 +87,16 @@ export async function POST(request: NextRequest) {
   }
 
   if (body.action === 'catalogue') return json({ treatments: await demoPublicCatalogue() });
+
+  if (body.action === 'royalSummons') {
+    try {
+      await demoSummons(body.summons);
+      return json({ ok: true });
+    } catch (e) {
+      if (e instanceof DomainError) return error(STATUS[e.code], e.message, e.code);
+      throw e;
+    }
+  }
 
   if (body.action === 'signOut') {
     jar.delete({ name: DEMO_COOKIE, path: '/api/demo' });
