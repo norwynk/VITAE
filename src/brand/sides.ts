@@ -3,12 +3,12 @@
  * always been; the men's side shows only the pens chosen for men. Which door
  * someone took is remembered in this browser (see useSide).
  */
-import { type Goal, PEN_STORY } from './goals';
+import type { Goal } from './goals';
 import { type PenBrand, PEN_BRANDS, coloursFor } from './pens';
+import { type Side, goalForSide } from './side';
 
-export type Side = 'women' | 'men';
-
-export const SIDE_KEY = 'prick:side';
+export { SIDE_KEY, MEN_GOALS, goalForSide } from './side';
+export type { Side } from './side';
 
 /** The men's range, in the order it leads. Change it here and every men's page follows. */
 export const MEN_PENS = [
@@ -30,13 +30,6 @@ export function isForMen(slug: string): boolean {
 export function forSide<T>(items: T[], side: Side | null, slugOf: (item: T) => string): T[] {
   return side === 'men' ? items.filter((i) => isForMen(slugOf(i))) : items;
 }
-
-/** The men's homepage goal cards: colour and a pen instead of a photo. Each opens the quiz like the women's cards. */
-export const MEN_GOALS = [
-  { slug: 'energy', title: 'Slower to bounce back.', covers: 'Recovery, sleep and energy', pen: 'rapid-recovery', colour: '#14365f' },
-  { slug: 'hormones', title: 'Flat. In every sense.', covers: 'Hormones, drive and mood', pen: 'hormone-reset', colour: '#2b2f36' },
-  { slug: 'weight', title: 'Training hard. Not showing.', covers: 'Body composition and weight', pen: 'body-sculpt', colour: '#1f6fff' },
-];
 
 /**
  * A pen told the men's way: same pen, same facts, a different angle on the
@@ -147,38 +140,6 @@ export function forMen(brand: PenBrand): PenBrand {
   return colour ? { ...brand, colours: coloursFor(colour), botanical: 'leaf', cardImage: undefined } : brand;
 }
 
-/**
- * Where a man is heading, in his words: the screening's destination, the
- * "Picture it" line and the example answer. No photos on the men's side.
- */
-const MEN_GOAL_STORY: Record<string, Pick<Goal, 'destination' | 'picture' | 'visionExample' | 'intakeGoals'>> = {
-  energy: {
-    destination: 'getting clear on your recovery',
-    picture: 'You stop blaming your age. A doctor looks at what’s actually happening.',
-    visionExample: 'I want to stop feeling wrecked the next day.',
-    intakeGoals: ['Recovery', 'Sleep', 'Muscle and strength'],
-  },
-  hormones: {
-    destination: 'getting clear on your hormones and drive',
-    picture: 'You say out loud what you’ve been keeping to yourself. A doctor doesn’t flinch.',
-    visionExample: 'I want to feel like myself.',
-    intakeGoals: ['Testosterone and drive'],
-  },
-  weight: {
-    destination: 'getting clear on your body',
-    picture: 'You stop guessing from the internet. A doctor looks at you.',
-    visionExample: 'I want to know why the work isn’t showing.',
-    intakeGoals: ['Fat loss and definition', 'Muscle and strength'],
-  },
-};
-
-/** A goal as this side tells it: the men's title, story and colour, and no photo. */
-export function goalForSide(goal: Goal, side: Side | null): Goal {
-  const card = side === 'men' ? MEN_GOALS.find((g) => g.slug === goal.slug) : undefined;
-  if (!card) return goal;
-  return { ...goal, ...MEN_GOAL_STORY[goal.slug], title: card.title, covers: card.covers, colour: card.colour, image: '' };
-}
-
 /** The screening told by the pen they lead with: its headline, its why and its example answer, on their side. */
 export function goalForPen(goal: Goal, slug: string | undefined, side: Side | null): Goal {
   const sided = goalForSide(goal, side);
@@ -188,3 +149,45 @@ export function goalForPen(goal: Goal, slug: string | undefined, side: Side | nu
   const title = men?.hook ?? PEN_BRANDS[slug ?? '']?.hook ?? sided.title;
   return { ...sided, title, destination: story.destination, visionExample: story.example };
 }
+
+/** What each pen helps with, as the women's side answers "What would you like help with?". */
+export const PEN_HELP: Record<string, string[]> = {
+  'craving-control': ['Weight management'],
+  'slow-and-steady': ['Weight management'],
+  momentum: ['Weight management'],
+  'body-sculpt': ['Body shape'],
+  'the-glow-up': ['Skin and appearance'],
+  'skin-rewind': ['Skin and appearance'],
+  'skin-rewind-reserve': ['Skin and appearance'],
+  'holiday-tan': ['Skin and appearance'],
+  'all-day-energy': ['Energy'],
+  'deep-sleep-rebuild': ['Sleep', 'Recovery'],
+  'rapid-recovery': ['Recovery'],
+  'full-throttle': ['Testosterone and drive'],
+  'age-defiance': ['Energy', 'General wellbeing'],
+  'hormone-reset': ['Hormones'],
+  'bedroom-confidence': ['Libido'],
+  'sharp-mind': ['Focus'],
+  'gut-reset': ['Gut health'],
+};
+
+/** Each pen's own story in the screening, women's side: what it's heading for, and an example answer. */
+export const PEN_STORY: Record<string, { destination: string; example: string }> = {
+  'craving-control': { destination: 'quieter cravings', example: 'I walk past the biscuit tin and don’t even notice it.' },
+  'slow-and-steady': { destination: 'your goal weight', example: 'I get dressed without overthinking it.' },
+  momentum: { destination: 'your goal weight', example: 'The scale is moving again, and so am I.' },
+  'body-sculpt': { destination: 'a shape you love', example: 'My jeans sit right and I want to be seen in them.' },
+  'the-glow-up': { destination: 'your glow', example: 'People keep asking what I’m doing to my skin.' },
+  'skin-rewind': { destination: 'younger-looking skin', example: 'I leave the house without foundation and feel good.' },
+  'skin-rewind-reserve': { destination: 'younger-looking skin', example: 'My skin looks rested, even when I’m not.' },
+  'holiday-tan': { destination: 'your holiday glow', example: 'I look like I’ve just come back from somewhere warm.' },
+  'all-day-energy': { destination: 'all-day energy', example: 'I’ve still got energy for me at 9pm.' },
+  'deep-sleep-rebuild': { destination: 'deep, restful sleep', example: 'I wake up before the alarm, looking rested.' },
+  'rapid-recovery': { destination: 'faster recovery', example: 'I train again the next day and my body keeps up.' },
+  'full-throttle': { destination: 'your drive and energy', example: 'I get through a full day with energy to spare.' },
+  'age-defiance': { destination: 'ageing on your terms', example: 'I feel younger than the number on my ID.' },
+  'hormone-reset': { destination: 'feeling like you again', example: 'My moods are steady and I feel like me again.' },
+  'bedroom-confidence': { destination: 'getting your spark back', example: 'I want my partner again, and they’ve noticed.' },
+  'sharp-mind': { destination: 'a clearer head', example: 'I get through my to-do list without the fog.' },
+  'gut-reset': { destination: 'a calmer gut', example: 'I eat out without worrying about the bloat.' },
+};

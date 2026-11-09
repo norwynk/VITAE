@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import type { Side } from '@/brand/sides';
+import type { Side } from '@/brand/side';
 import { walkThrough } from '@/hooks/useSide';
 import { Logo } from './Logo';
 

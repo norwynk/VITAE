@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { type PenBrand, penBrand, sortRange } from '@/brand/pens';
 import type { Treatment } from '@/domain/model';
 import { repository } from '@/services/repository';
-import { useBrandForSide } from './useSide';
+import { useBrandForSide } from './useBrandForSide';
 
 export interface BrandedPen {
   treatment: Treatment;

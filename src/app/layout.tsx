@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { Anton, Caveat, DM_Sans, Fraunces } from 'next/font/google';
-import { SIDE_KEY } from '@/brand/sides';
+import { SIDE_KEY } from '@/brand/side';
 import { SERVICE_NAME, indexable, publicDataMode, siteUrl } from '@/config';
 import './globals.css';
 

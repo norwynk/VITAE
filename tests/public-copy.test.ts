@@ -32,7 +32,14 @@ const ingredients = RANGE.products.flatMap((p) => p.active_ingredient.split(/[+/
 const names = RANGE.products.map((p) => p.name);
 const goalCopy = JSON.stringify([...GOALS, ...GOALS.map((g) => goalForSide(g, 'men')), ...MEN_GOALS]);
 
+/** Code every visitor downloads. It must not carry the pen list, even out of sight. */
+const PUBLIC_CODE = ['src/brand/side.ts', 'src/brand/goals.ts', 'src/hooks/useSide.ts', 'src/components/screening/Questionnaire.tsx', 'src/components/member/FitMoment.tsx', 'src/components/brand/GoalCards.tsx'];
+
 describe('what a visitor can read', () => {
+  it.each(PUBLIC_CODE)('%s carries no pen data', (file) => {
+    expect(read(file)).not.toMatch(/brand\/pens|brand\/sides'|from '\.\/sides'|range\.json|penQuestions|penSafety|useCatalogue|useShortlist/);
+  });
+
   it.each(PUBLIC_SOURCES)('%s names no pen, ingredient or peptide', (file) => {
     const text = read(file);
     for (const word of [...names, ...ingredients, 'SAHPRA']) expect(text, word).not.toContain(word);

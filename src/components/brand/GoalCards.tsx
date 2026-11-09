@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { GOALS } from '@/brand/goals';
-import { MEN_GOALS } from '@/brand/sides';
+import { MEN_GOALS } from '@/brand/side';
 
 const Head = () => (
   <div className="section-head" data-reveal>

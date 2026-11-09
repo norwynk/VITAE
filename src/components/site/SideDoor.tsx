@@ -1,7 +1,7 @@
 'use client';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
-import type { Side } from '@/brand/sides';
+import type { Side } from '@/brand/side';
 import { walkThrough } from '@/hooks/useSide';
 
 const OPEN_MS = 950;

@@ -20,13 +20,11 @@ import {
   validateIntake,
   visibleQuestions,
 } from '@/domain/intake';
-import { SA_PROVINCES, type Treatment, ageOn, localDate } from '@/domain/model';
-import { type PenQuestion, NONE_OF_THESE, groupsFor, isFlagged, splitMulti } from '@/domain/penQuestions';
-import type { PenSafety } from '@/domain/penSafety';
+import { SA_PROVINCES, ageOn, localDate } from '@/domain/model';
 import { useScreening } from '@/hooks/useScreening';
 import { useSignedIn } from '@/hooks/useSignedIn';
 import { useSide } from '@/hooks/useSide';
-import { MEN_GOALS, goalForSide } from '@/brand/sides';
+import { MEN_GOALS, goalForSide } from '@/brand/side';
 import { demoRepository } from '@/services/repository';
 import { FitMoment } from '../member/FitMoment';
 import { SiteNav } from '../site/SiteNav';
@@ -38,16 +36,9 @@ export function underAge(dob: IntakeValue | undefined): boolean {
   return typeof dob === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dob) && ageOn(dob, localDate(new Date())) < 18;
 }
 
-/** Pens whose pen-specific answers have something for the clinician to look at. */
-export function flaggedPens(penAnswers: Record<string, string>, pens: Treatment[]): Treatment[] {
-  return pens.filter((p) => groupsFor([p]).some((g) => g.questions.some((q) => isFlagged(q, penAnswers[q.id] ?? ''))));
-}
-
 /** Whether anything in the answers should be pointed out to the clinician first. */
-export function needsLook(answers: IntakeAnswers, penAnswers: Record<string, string>, pens: Treatment[]): boolean {
-  return (
-    flaggedPens(penAnswers, pens).length > 0 || answers.pregnant === 'Yes' || answers.pregnant === 'Not sure' || answers.breastfeeding === 'Yes'
-  );
+function needsLook(answers: IntakeAnswers): boolean {
+  return answers.pregnant === 'Yes' || answers.pregnant === 'Not sure' || answers.breastfeeding === 'Yes';
 }
 
 type Screen =
@@ -372,11 +363,10 @@ export function Questionnaire({
             {screen.kind === 'fit' && (
               <>
                 <FitMoment
-                  pens={[]}
                   goal={goal}
                   firstName={firstName}
                   vision={typeof state.answers.vision === 'string' ? state.answers.vision : ''}
-                  needsLook={needsLook(state.answers, {}, [])}
+                  needsLook={needsLook(state.answers)}
                   tooYoung={underAge(state.answers.dateOfBirth)}
                   repeat={isRepeatRoute(state.answers)}
                 />
@@ -538,36 +528,6 @@ function withChosen(options: string[], value: IntakeValue | undefined): string[]
   return [...options, ...extra];
 }
 
-export function GoodToKnow({ name, safety }: { name: string; safety: PenSafety }) {
-  return (
-    <aside className="good-to-know" aria-label={`Good to know about ${name}`}>
-      <p className="eyebrow">Good to know</p>
-      <p>
-        <strong>What’s in it:</strong> {safety.contains}
-      </p>
-      <div>
-        <strong>{name} is not for you if:</strong>
-        <ul>
-          {safety.notFor.map((x) => (
-            <li key={x}>{x}</li>
-          ))}
-        </ul>
-      </div>
-      <details>
-        <summary>Things your clinician needs to know about ({safety.tellUs.length})</summary>
-        <ul>
-          {safety.tellUs.map((x) => (
-            <li key={x}>{x}</li>
-          ))}
-        </ul>
-      </details>
-      <p>
-        <strong>What a course looks like:</strong> {safety.course} Your clinician sets your dose.
-      </p>
-    </aside>
-  );
-}
-
 /** A short, honest "working on it" moment: each line is a check that really runs. */
 function Arriving({ goal, repeat, onDone }: { goal?: Goal; repeat: boolean; onDone: () => void }) {
   const lines = [
@@ -601,53 +561,6 @@ function Arriving({ goal, repeat, onDone }: { goal?: Goal; repeat: boolean; onDo
         ))}
       </ul>
     </div>
-  );
-}
-
-export function PenField({ q, value, onChange }: { q: PenQuestion; value: string; onChange: (v: string) => void }) {
-  const head = (
-    <>
-      <span className="qf__label">
-        {q.question}
-        {!q.required && <span className="qf__opt"> (optional)</span>}
-      </span>
-      {q.hint && <span className="qf__hint">{q.hint}</span>}
-    </>
-  );
-  if (q.kind === 'yesNo' || q.kind === 'choice' || q.kind === 'multi') {
-    const picked = q.kind === 'multi' ? splitMulti(value) : [value];
-    return (
-      <div className="qf qf--chips" data-q={`pen:${q.id}`}>
-        {head}
-        <div className="qf__chips">
-          {q.options!.map((o) => {
-            const on = picked.includes(o);
-            return (
-              <button
-                key={o}
-                type="button"
-                aria-pressed={on}
-                className="qf__chip"
-                onClick={() => {
-                  if (q.kind !== 'multi') return onChange(on ? '' : o);
-                  // "None of these" stands alone.
-                  const next = on ? picked.filter((x) => x !== o) : o === NONE_OF_THESE ? [o] : [...picked.filter((x) => x !== NONE_OF_THESE), o];
-                  onChange((q.options ?? []).filter((x) => next.includes(x)).join(', '));
-                }}
-              >
-                {o}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-  return (
-    <label className="qf" data-q={`pen:${q.id}`}>
-      {head}
-      <input type={q.kind === 'number' ? 'number' : 'text'} min={q.min} max={q.max} step="any" maxLength={500} value={value} onChange={(e) => onChange(e.target.value)} />
-    </label>
   );
 }
 

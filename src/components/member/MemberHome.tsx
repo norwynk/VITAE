@@ -31,7 +31,7 @@ import { worldStyle } from '../brand/worldStyle';
 import { Badge, Card, Empty, Notice, fmtDateTime, formValues, humanise } from '../ui';
 import { useWorkspace } from '../workspace-context';
 import { FinishScreening } from './FinishScreening';
-import { GoodToKnow, PenField } from '../screening/Questionnaire';
+import { GoodToKnow, PenField } from './PenSafety';
 import { penSafety } from '@/domain/penSafety';
 import { groupsFor, invalidAnswer } from '@/domain/penQuestions';
 import { latestPenAnswers } from '@/domain/safety';
