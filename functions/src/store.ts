@@ -141,6 +141,7 @@ export async function loadWorkspace(db: Firestore, actor: Actor): Promise<Store>
         r.get(db.collection('followUps').orderBy('createdAt', 'desc').limit(ADMIN_RECORD_LIMIT)).then((s) => put(store, 'followUps', s)),
         r.get(db.collection('phoneCalls').orderBy('calledAt', 'desc').limit(ADMIN_RECORD_LIMIT)).then((s) => put(store, 'phoneCalls', s)),
         r.get(db.collection('royalSummons').orderBy('createdAt', 'desc').limit(ADMIN_RECORD_LIMIT)).then((s) => put(store, 'royalSummons', s)),
+        r.get(db.collection('prickList').orderBy('createdAt', 'desc').limit(ADMIN_RECORD_LIMIT)).then((s) => put(store, 'prickList', s)),
         loadAll(db, r, store, 'treatments'),
         loadAll(db, r, store, 'inventory'),
         loadAll(db, r, store, 'operationalProfiles', ADMIN_RECORD_LIMIT),

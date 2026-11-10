@@ -399,6 +399,7 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('releaseDelivered'), memberId: id, releaseId: id }),
   z.object({ type: z.literal('penReceived'), releaseId: id }),
   z.object({ type: z.literal('summonsStatus'), summonsId: id, status: z.enum(['PHONED', 'BOOKED', 'NOT_GOING_AHEAD']) }),
+  z.object({ type: z.literal('prickListLeave'), entryId: id }),
 ]);
 
 export type Command = z.infer<typeof commandSchema>;
@@ -456,6 +457,7 @@ const COMMAND_ROLES: Record<CommandType, readonly Role[]> = {
   penReceived: ['MEMBER'],
   logCall: ['CLINICIAN'],
   summonsStatus: ['SUPER_ADMIN'],
+  prickListLeave: ['SUPER_ADMIN'],
 };
 
 export function allowedRoles(type: CommandType): readonly Role[] {
@@ -498,6 +500,7 @@ export function commandMemberId(command: Command, actor: Actor): string | undefi
     case 'catalogueCreate':
     case 'stockAdjust':
     case 'summonsStatus':
+    case 'prickListLeave':
       return undefined;
     default:
       return actor.uid;
@@ -1354,6 +1357,15 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
       refreshOpenRequestCount(store, command.memberId);
       touchProfile(store, command.memberId, at);
       resultId = callId;
+      break;
+    }
+
+    case 'prickListLeave': {
+      const entry = store.prickList[command.entryId];
+      if (!entry) fail('NOT_FOUND', 'That person is no longer on the list');
+      store.prickList[command.entryId] = { ...entry, status: 'OUT', updatedAt: at };
+      targets.push(command.entryId);
+      resultId = command.entryId;
       break;
     }
 

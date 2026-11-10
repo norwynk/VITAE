@@ -70,6 +70,7 @@ export const COLLECTIONS = [
   'penReleases',
   'phoneCalls',
   'royalSummons',
+  'prickList',
 ] as const;
 export type CollectionName = (typeof COLLECTIONS)[number];
 
@@ -705,6 +706,19 @@ export interface RoyalSummons {
   phonedAt?: string;
 }
 
+/** Someone on The Prick List: a first name, one way to reach them, where they came from and when they said yes. */
+export interface PrickListEntry {
+  id: string;
+  name: string;
+  contact: string;
+  kind: 'EMAIL' | 'PHONE';
+  source: string;
+  status: 'IN' | 'OUT';
+  consentAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface PhoneCall {
   id: string;
   memberId: string;
@@ -863,6 +877,7 @@ export interface CollectionTypes {
   penReleases: PenRelease;
   phoneCalls: PhoneCall;
   royalSummons: RoyalSummons;
+  prickList: PrickListEntry;
 }
 
 export type Store = { [K in CollectionName]: Record<string, CollectionTypes[K]> };
@@ -1191,6 +1206,7 @@ export function visible(store: Store, actor: Actor): Store {
     case 'SUPER_ADMIN': {
       out.penReleases = { ...store.penReleases };
       out.royalSummons = { ...store.royalSummons };
+      out.prickList = { ...store.prickList };
       out.treatments = { ...store.treatments };
       out.inventory = { ...store.inventory };
       out.operationalProfiles = { ...store.operationalProfiles };

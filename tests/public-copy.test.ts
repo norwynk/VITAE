@@ -26,6 +26,8 @@ const PUBLIC_SOURCES = [
   'src/components/site/SiteNav.tsx',
   'src/components/site/SiteFooter.tsx',
   'src/components/site/Marquee.tsx',
+  'src/components/PrickListPage.tsx',
+  'src/app/the-prick-list/page.tsx',
   'src/components/brand/Explainer.tsx',
   'src/brand/housePens.ts',
 ];
