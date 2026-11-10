@@ -29,7 +29,7 @@ export function MenHomePage() {
       <MenGoalCards />
       <SourceSection />
       <PeptideProtocols men />
-      <RoyalPrickBand men />
+      <RoyalPrickBand />
       <RepeatScriptBand />
       <EditorialStatement top="A little prick." bottom="A lot more you.">
         <p>Built to perform. Serious enough to need a clinician&apos;s yes.</p>

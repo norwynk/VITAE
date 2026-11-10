@@ -13,7 +13,7 @@ import { Marquee } from './site/Marquee';
 import { HOUSE_PENS } from '@/brand/housePens';
 
 /** The brand band: standards, with the source story slipped in. */
-export const SOURCE_MARQUEE = ['A prick with standards', 'Months of doses in one pen', 'Know where your prick has been', 'Tested. Every. Batch.', 'A clinician in your corner'];
+export const SOURCE_MARQUEE = ['A prick with standards', 'One little prick at a time', 'Know where your prick has been', 'Tested. Every. Batch.', 'A clinician in your corner'];
 const MARQUEE = [...SOURCE_MARQUEE, 'Designed for women'];
 const MARQUEE_PENS = HOUSE_PENS;
 

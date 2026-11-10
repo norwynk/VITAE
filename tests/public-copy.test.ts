@@ -48,6 +48,14 @@ describe('what a visitor can read', () => {
     expect(text).not.toMatch(/\b(Ozempic|Mounjaro)\b/);
   });
 
+  it.each([...PUBLIC_SOURCES, 'src/brand/source.ts'])('%s talks about protocols, never selling a pen', (file) => {
+    // Comments are for developers, so only the words visitors see are checked.
+    const text = read(file).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    expect(text).not.toMatch(/\b(a|your|the|every|next|first|one|no|order|buy|get|cheapest|fewer|peptide)\s+pens?\b/i);
+    expect(text).not.toMatch(/\bpens?\s+(delivered|ships|comes|at your door|is right)/i);
+    expect(text).not.toMatch(/testosterone/i);
+  });
+
   it.each(PUBLIC_SOURCES)('%s does not pull in the range', (file) => {
     expect(read(file)).not.toMatch(/brand\/pens|range\.json|server\/catalogue|useCatalogue/);
   });

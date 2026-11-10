@@ -24,7 +24,7 @@ export function EditorialStatement({ top, bottom, children }: { top: string; bot
 const STEPS = [
   { title: 'Pick your prick.', body: 'Weight, skin, energy or hormones. Start with the feeling, not the formula.' },
   { title: 'Tell us everything.', body: 'A private health screening about you, your history and your goals. Only your clinician sees it.' },
-  { title: 'A clinician says yes. Or no.', body: 'They read every answer and decide what is right for you, if anything. No yes, no pen.' },
+  { title: 'A clinician says yes. Or no.', body: 'They read every answer and decide what is right for you, if anything. No yes, no prick.' },
   { title: 'Then the fun starts.', body: 'If you are approved, your plan, reminders and check-ins live in your account.' },
 ];
 
@@ -170,12 +170,12 @@ export function PeptideProtocols({ men = false }: { men?: boolean }) {
  * batch testing, cold chain) are confirmed by the founders; see brand/source.
  */
 const TRUST = [
-  { title: "Don't take pricks from strangers.", body: 'Every pen comes from a SAHPRA-licensed supplier, every batch is tested, and a full cold chain brings it to your door.', colour: 'var(--pink)' },
+  { title: "Don't take pricks from strangers.", body: 'Every peptide comes from a SAHPRA-licensed supplier, every batch is tested, and a full cold chain brings it to your door.', colour: 'var(--pink)' },
   { title: 'A prick with standards.', body: 'A clinician assigned to you reads every answer and makes the call.', colour: 'var(--orange)' },
   { title: 'Made to measure.', body: 'If approved, your clinician sets your plan. It is personal, not a one-size pack.', colour: 'var(--blue)' },
   { title: "We don't ghost.", body: 'Reminders, check-ins and booked follow-ups. Flag a concern and it goes straight to your clinician.', colour: 'var(--lime)' },
   { title: 'What happens here stays here.', body: 'Your health details are seen by your clinician, not by delivery or support staff.', colour: 'var(--sky)' },
-  { title: 'No yes, no pen.', body: 'Every request starts with a private health screening, and you cannot get a pen a clinician has not approved for you.', colour: 'var(--blush)' },
+  { title: 'No yes, no prick.', body: 'Every protocol starts with a private health screening, and nothing is prescribed until a clinician has said yes.', colour: 'var(--blush)' },
 ];
 
 export function ClinicalTrustPanel() {
@@ -248,9 +248,9 @@ export function SubscriptionPanel({ pens = HOUSE_PENS.slice(0, 3) }: { pens?: Ho
                 <li>Check-ins whenever something feels off</li>
                 <li>Follow-ups booked by your clinician</li>
                 <li>Your plan, orders and messages in one place</li>
-                <li>On repeat: a quick check-in before you run out, then your next pen ships</li>
+                <li>On repeat: a quick check-in before you run out, then your next delivery ships</li>
               </ul>
-              <p className="small muted">Switch on repeat after your first pen. Pause, skip or stop any time.</p>
+              <p className="small muted">Switch on repeat after your first delivery. Pause, skip or stop any time.</p>
             </div>
           </div>
         </div>
@@ -338,7 +338,7 @@ export function BuiltForMen() {
             <span className="serif-i">Built for men. Recovery, drive, body and sleep.</span>
           </h2>
           <p className="women__body">
-            Fewer pens, chosen for men. Your screening includes questions just for men, so your clinician gets the full
+            Protocols chosen for men. Your screening includes questions just for men, so your clinician gets the full
             picture before anything is approved.
           </p>
         </div>

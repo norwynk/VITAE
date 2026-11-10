@@ -1,5 +1,6 @@
 import { useId, type CSSProperties } from 'react';
 import type { Botanical, PenColours } from '@/brand/colours';
+import { HOUSE_LABEL } from '@/brand/housePens';
 import { Motif } from './Botanicals';
 
 /**
@@ -14,6 +15,8 @@ export function Pen({ colours, label, botanical = 'leaf', className, style, titl
   const g = (name: string) => `${name}-${id}`;
   // Product name sits between the divider (x 520) and the window (x 790).
   const LABEL_WIDTH = 230;
+  // Public pages show a protocol, never a product.
+  const house = label === HOUSE_LABEL;
   const labelSize = Math.min(30, LABEL_WIDTH / Math.max(label.length * 0.62, 1));
   const estimated = label.length * labelSize * 0.74;
   const body = 'M95 28 H860 V142 H95 A57 57 0 0 1 95 28 Z';
@@ -109,7 +112,7 @@ export function Pen({ colours, label, botanical = 'leaf', className, style, titl
           PRICK
         </text>
         <text x="463" y="106" textAnchor="middle" style={{ fontFamily: 'var(--font-sans), sans-serif', fontSize: 8.5, fontWeight: 700, letterSpacing: 2.6 }}>
-          PEPTIDE PENS
+          {house ? 'PEPTIDE PROTOCOLS' : 'PEPTIDE PENS'}
         </text>
         <rect x="519" y="58" width="1.4" height="54" opacity="0.4" />
         <text
@@ -122,7 +125,7 @@ export function Pen({ colours, label, botanical = 'leaf', className, style, titl
           {label}
         </text>
         <text x="653" y="108" textAnchor="middle" style={{ fontFamily: 'var(--font-serif), Georgia, serif', fontStyle: 'italic', fontSize: 15 }}>
-          Peptide Pen
+          {house ? 'Prescribed for you' : 'Peptide Pen'}
         </text>
       </g>
 

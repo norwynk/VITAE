@@ -42,7 +42,7 @@ export function BrandHero({ men = false, who = 'Designed for women.' }: { men?: 
           <span className="hero__disc" />
           <span className="hero__disc two" />
           <span className="hero__disc three" />
-          <PenStage colours={hero.colours} label={hero.penLabel} botanical={hero.botanical} angle={-48} fit={0.98} className="hero__pen pen-stage--float" title="A PRICK peptide pen" />
+          <PenStage colours={hero.colours} label={hero.penLabel} botanical={hero.botanical} angle={-48} fit={0.98} className="hero__pen pen-stage--float" title="PRICK: peptide protocols, prescribed for you" />
           <p className="hand hero__note">this one&apos;s yours?</p>
         </div>
       </div>

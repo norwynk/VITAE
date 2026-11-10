@@ -11,7 +11,10 @@ export interface HousePen {
   botanical: Botanical;
 }
 
-const pen = (slug: string, hex: string, botanical: Botanical): HousePen => ({ slug, penLabel: 'Your protocol', colours: coloursFor(hex), botanical });
+/** The label every public pen carries. The pen artwork reads it to print "Peptide protocols" instead of "Peptide pens". */
+export const HOUSE_LABEL = 'Your protocol';
+
+const pen = (slug: string, hex: string, botanical: Botanical): HousePen => ({ slug, penLabel: HOUSE_LABEL, colours: coloursFor(hex), botanical });
 
 export const HOUSE_PENS: HousePen[] = [
   pen('pink', '#FF0F78', 'blossom'),
