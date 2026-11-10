@@ -31,7 +31,7 @@ export function Explainer() {
             poster={POSTER}
             width={720}
             height={1280}
-            length="0:39"
+            length="0:40"
             label="Don't take pricks from strangers: a 40-second animated film about PRICK, with captions"
           />
         </div>
