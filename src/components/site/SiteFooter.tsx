@@ -20,6 +20,7 @@ export function SiteFooter() {
               <li><Link href="/start">Find your prick</Link></li>
               <li><Link href="/#protocols">Peptide protocols</Link></li>
               <li><Link href="/royal-prick">The Royal Prick Experience</Link></li>
+              <li><Link href="/the-prick-list">The Prick List</Link></li>
             </ul>
           </div>
           <div>

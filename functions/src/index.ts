@@ -20,6 +20,7 @@ import {
   type OperationalProfile,
   type ProviderAssignment,
   type Role,
+  type PrickListEntry,
   type RoyalSummons,
   type UserRecord,
   MFA_REQUIRED_ROLES,
@@ -37,6 +38,7 @@ import {
   toFirestoreData,
 } from '../../src/domain/commands';
 import { parseSummons, summonsRecord } from '../../src/domain/summons';
+import { listRecord, parseListEntry } from '../../src/domain/prickList';
 import { SIGNED_URL_TTL_MS, assertDocumentAccess, validateDocumentRegistration } from '../../src/domain/documents';
 import { loadCatalogueScope, loadMemberScope, loadWorkspace } from './store';
 import { runReminderSweep } from './reminders';
@@ -172,6 +174,10 @@ export const executeCommand = onCall({ ...callableOptions, secrets: [MAIL_LOGIN]
     const memberId = commandMemberId(command, who);
     const result = await db.runTransaction(async (tx) => {
       const before = memberId ? await loadMemberScope(db, memberId, tx) : await loadCatalogueScope(db, tx);
+      if (command.type === 'prickListLeave') {
+        const entry = await tx.get(db.doc(`prickList/${command.entryId}`));
+        if (entry.exists) before.prickList[entry.id] = { ...(entry.data() as PrickListEntry), id: entry.id };
+      }
       if (command.type === 'summonsStatus') {
         const summons = await tx.get(db.doc(`royalSummons/${command.summonsId}`));
         if (summons.exists) before.royalSummons[summons.id] = { ...(summons.data() as RoyalSummons), id: summons.id };
@@ -198,6 +204,27 @@ export const executeCommand = onCall({ ...callableOptions, secrets: [MAIL_LOGIN]
  * App Check keeps scripts out, and one record per number keeps the list clean.
  * The answer is the same whether or not they were already on the list.
  */
+/**
+ * The other public write: joining The Prick List from a social bio. Same
+ * guards as the Royal Summons, and the same answer whether or not they were
+ * already on it.
+ */
+export const joinPrickList = onCall(callableOptions, async (request) => {
+  try {
+    const entry = parseListEntry(request.data);
+    if (entry) {
+      const ref = db.doc(`prickList/${entry.id}`);
+      await db.runTransaction(async (tx) => {
+        const record = listRecord(entry, (await tx.get(ref)).data() as PrickListEntry | undefined, new Date());
+        if (record) tx.set(ref, toFirestoreData(record));
+      });
+    }
+    return { ok: true };
+  } catch (e) {
+    throw toHttpsError(e);
+  }
+});
+
 export const summonRoyalPrick = onCall(callableOptions, async (request) => {
   try {
     const summons = parseSummons(request.data);

@@ -22,6 +22,8 @@ export interface MorningBrief {
   toSend: number;
   /** People who asked for the Royal Prick and haven't been phoned. */
   summons: number;
+  /** Everyone on The Prick List, and how many joined this week. */
+  prickList: { total: number; thisWeek: number };
   outForDelivery: number;
   deliveredThisWeek: number;
   newThisWeek: number;
@@ -90,6 +92,10 @@ export function morningBrief(store: Store, now: Date): MorningBrief {
     withDoctor: members.reduce((n, m) => n + (m.penJourneys ?? []).filter((j) => !j.decidedAt).length, 0),
     toSend: toSend.length,
     summons: summons.length,
+    prickList: (() => {
+      const on = Object.values(store.prickList).filter((e) => e.status === 'IN');
+      return { total: on.length, thisWeek: on.filter((e) => e.createdAt >= weekAgo).length };
+    })(),
     outForDelivery: out.length,
     deliveredThisWeek: releases.filter((r) => r.deliveredAt && r.deliveredAt >= weekAgo).length,
     newThisWeek: members.filter((m) => m.createdAt >= weekAgo).length,

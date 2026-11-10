@@ -6,6 +6,7 @@
 import type { CommandInput, DataMode } from '@/domain/commands';
 import type { Actor, Role, Store, Treatment } from '@/domain/model';
 import type { SummonsInput } from '@/domain/summons';
+import type { PrickListInput } from '@/domain/prickList';
 import { publicDataMode } from '@/config';
 
 export interface Workspace {
@@ -110,6 +111,12 @@ export const firebaseRepository: Repository & {
 export async function summonRoyalPrick(input: SummonsInput): Promise<void> {
   if (publicDataMode() === 'live') await callable('summonRoyalPrick', input);
   else await demoPost({ action: 'royalSummons', summons: input });
+}
+
+/** Joins The Prick List. Works without an account. */
+export async function joinPrickList(input: PrickListInput): Promise<void> {
+  if (publicDataMode() === 'live') await callable('joinPrickList', input);
+  else await demoPost({ action: 'prickList', entry: input });
 }
 
 export function repository(): Repository {

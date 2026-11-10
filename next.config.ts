@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
     return [
       { source: '/first-prick', destination: '/app', permanent: false },
       { source: '/my-pens', destination: '/app', permanent: false },
+      // Short enough for a bio: prick.co.za/list?from=instagram
+      { source: '/list', destination: '/the-prick-list', permanent: false },
     ];
   },
   async headers() {

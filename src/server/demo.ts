@@ -12,6 +12,7 @@ import path from 'node:path';
 import { type CommandResult, applyCommand, randomIdFactory } from '@/domain/commands';
 import { DEMO_ESTABLISHED_MEMBER, DEMO_USERS, createFixtureStore } from '@/domain/fixtures';
 import { parseSummons, summonsRecord } from '@/domain/summons';
+import { listRecord, parseListEntry } from '@/domain/prickList';
 import { type Actor, type Role, type Store, ROLES, emptyStore, visible } from '@/domain/model';
 
 export const DEMO_COOKIE = 'demo_session';
@@ -179,6 +180,18 @@ export function demoSignUp(): Promise<Actor> {
     store.providerAssignments[`pa-${uid}`] = { id: `pa-${uid}`, memberId: uid, clinicianId: DEMO_USERS.CLINICIAN.uid, active: true, createdAt: at };
     await writeStore(store);
     return { uid, role: 'MEMBER' as const };
+  });
+}
+
+export function demoPrickList(input: unknown): Promise<void> {
+  return exclusive(async () => {
+    const entry = parseListEntry(input);
+    if (!entry) return;
+    const store = await readStore();
+    const record = listRecord(entry, store.prickList[entry.id], new Date());
+    if (!record) return;
+    store.prickList[record.id] = record;
+    await writeStore(store);
   });
 }
 

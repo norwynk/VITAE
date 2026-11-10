@@ -1168,6 +1168,16 @@ html.door-through .side-door::after { opacity: 1; }
 .protocols__small { margin: var(--space-4) 0 0; opacity: 0.6; max-width: 70ch; }
 @media (max-width: 960px) { .protocols__grid, .protocols__grid--three { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .protocols__grid, .protocols__grid--three { grid-template-columns: 1fr; } }
+.prick-list { background: var(--black); color: #fff; min-height: 80svh; }
+.prick-list__grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: var(--space-5); align-items: center; }
+.prick-list .eyebrow { color: var(--pink); }
+.prick-list__title { font-size: var(--step-4); line-height: 0.88; margin: 0.4rem 0 0; }
+.prick-list__title .serif-i { display: block; text-transform: none; color: var(--pink); font-size: 0.42em; line-height: 1.1; margin-top: 0.6rem; }
+.prick-list__lead { font-size: var(--step-1); line-height: 1.5; opacity: 0.9; max-width: 44ch; }
+.prick-list__form { margin: 0; max-width: 460px; width: 100%; justify-self: end; }
+.prick-list__consent { display: flex !important; gap: 0.6rem; align-items: flex-start; font-weight: 500 !important; }
+.prick-list__consent input { width: auto; margin-top: 0.25rem; flex: none; }
+@media (max-width: 860px) { .prick-list__grid { grid-template-columns: 1fr; } .prick-list__form { justify-self: stretch; } }
 .pkg-film { background: var(--black); color: #fff; }
 .pkg-film__frame { position: relative; margin-top: var(--space-4); border-radius: var(--radius-l); overflow: hidden; background: var(--pink); }
 .pkg-film__video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; }
