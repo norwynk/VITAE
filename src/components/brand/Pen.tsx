@@ -1,5 +1,6 @@
 import { useId, type CSSProperties } from 'react';
-import type { Botanical, PenColours } from '@/brand/pens';
+import type { Botanical, PenColours } from '@/brand/colours';
+import { HOUSE_LABEL } from '@/brand/housePens';
 import { Motif } from './Botanicals';
 
 /**
@@ -14,6 +15,8 @@ export function Pen({ colours, label, botanical = 'leaf', className, style, titl
   const g = (name: string) => `${name}-${id}`;
   // Product name sits between the divider (x 520) and the window (x 790).
   const LABEL_WIDTH = 230;
+  // Public pages show a protocol, never a product.
+  const house = label === HOUSE_LABEL;
   const labelSize = Math.min(30, LABEL_WIDTH / Math.max(label.length * 0.62, 1));
   const estimated = label.length * labelSize * 0.74;
   const body = 'M95 28 H860 V142 H95 A57 57 0 0 1 95 28 Z';
@@ -71,6 +74,9 @@ export function Pen({ colours, label, botanical = 'leaf', className, style, titl
         <filter id={g('paint')} x="-5%" y="-20%" width="110%" height="140%">
           <feGaussianBlur stdDeviation="0.8" />
         </filter>
+        <filter id={g('soft')} x="-5%" y="-100%" width="110%" height="300%">
+          <feGaussianBlur stdDeviation="2.2" />
+        </filter>
         <clipPath id={g('clip')}>
           <path d={body} />
         </clipPath>
@@ -87,6 +93,10 @@ export function Pen({ colours, label, botanical = 'leaf', className, style, titl
         {/* Soft panel so the print stays legible over the painting. */}
         <rect x="408" y="44" width="372" height="82" rx="41" fill={colours.mist} opacity="0.72" />
         <rect x="0" y="0" width="1000" height="170" fill={`url(#${g('round')})`} />
+        {/* Studio light: a sharp highlight along the top, a soft bounce along the bottom. */}
+        <rect x="70" y="40" width="790" height="7" rx="3.5" fill="#fff" opacity="0.7" filter={`url(#${g('soft')})`} />
+        <rect x="90" y="126" width="770" height="5" rx="2.5" fill="#fff" opacity="0.22" filter={`url(#${g('soft')})`} />
+        <ellipse cx="70" cy="62" rx="22" ry="12" fill="#fff" opacity="0.35" filter={`url(#${g('soft')})`} />
       </g>
 
       {/* Coloured pill on the grip end */}
@@ -102,7 +112,7 @@ export function Pen({ colours, label, botanical = 'leaf', className, style, titl
           PRICK
         </text>
         <text x="463" y="106" textAnchor="middle" style={{ fontFamily: 'var(--font-sans), sans-serif', fontSize: 8.5, fontWeight: 700, letterSpacing: 2.6 }}>
-          PEPTIDE PENS
+          {house ? 'PEPTIDE PROTOCOLS' : 'PEPTIDE PENS'}
         </text>
         <rect x="519" y="58" width="1.4" height="54" opacity="0.4" />
         <text
@@ -115,7 +125,7 @@ export function Pen({ colours, label, botanical = 'leaf', className, style, titl
           {label}
         </text>
         <text x="653" y="108" textAnchor="middle" style={{ fontFamily: 'var(--font-serif), Georgia, serif', fontStyle: 'italic', fontSize: 15 }}>
-          Peptide Pen
+          {house ? 'Prescribed for you' : 'Peptide Pen'}
         </text>
       </g>
 
@@ -128,6 +138,7 @@ export function Pen({ colours, label, botanical = 'leaf', className, style, titl
       <rect x="858" y="30" width="8" height="110" fill={`url(#${g('bronze')})`} />
       <path d="M866 26 H935 A28 59 0 0 1 935 144 H866 Z" fill={`url(#${g('cap')})`} />
       <rect x="866" y="38" width="84" height="6" rx="3" fill="#fff" opacity="0.35" />
+      <rect x="866" y="128" width="78" height="4" rx="2" fill="#fff" opacity="0.18" />
     </svg>
   );
 }

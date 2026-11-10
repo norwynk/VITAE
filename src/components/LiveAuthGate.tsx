@@ -185,7 +185,7 @@ export function LiveAuthGate({ onReady, error }: { onReady: () => Promise<void>;
       lead={
         signup
           ? 'Your answers are waiting. Make an account to send them to your clinician.'
-          : 'Sign in to see your pens and your clinician’s replies.'
+          : 'Sign in to see your care and your clinician’s replies.'
       }
     >
       {note}

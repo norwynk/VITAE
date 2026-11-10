@@ -2,29 +2,22 @@
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useSide } from '@/hooks/useSide';
-import type { Treatment } from '@/domain/model';
 import { BrandHero } from './brand/BrandHero';
 import { Explainer } from './brand/Explainer';
 import { RoyalPrickBand } from './brand/RoyalPrickBand';
 import { GoalCards } from './brand/GoalCards';
-import { Range } from './brand/Range';
 import { RepeatScriptBand } from './brand/RepeatScriptBand';
-import { ClinicalTrustPanel, CoFounderQuote, EditorialStatement, FinalCta, HowItWorks, DesignedForWomen, LifestylePanel, Reviews, SourceSection, SubscriptionPanel } from './brand/Sections';
+import { ClinicalTrustPanel, CoFounderQuote, EditorialStatement, FinalCta, HowItWorks, DesignedForWomen, LifestylePanel, PeptideProtocols, Reviews, SourceSection, SubscriptionPanel } from './brand/Sections';
 import { BrandPage } from './site/BrandPage';
 import { Marquee } from './site/Marquee';
-import { useCatalogue } from '@/hooks/useCatalogue';
-import { PEN_BRANDS } from '@/brand/pens';
-
-/** Pens that lead the homepage, across categories, whatever order the shop uses. */
-const HOME_PENS = ['slow-and-steady', 'craving-control', 'body-sculpt', 'the-glow-up', 'skin-rewind', 'skin-rewind-reserve'];
+import { HOUSE_PENS } from '@/brand/housePens';
 
 /** The brand band: standards, with the source story slipped in. */
-export const SOURCE_MARQUEE = ['A prick with standards', 'Months of doses in one pen', 'Know where your prick has been', 'Tested. Every. Batch.', 'A clinician in your corner'];
+export const SOURCE_MARQUEE = ['A prick with standards', 'One little prick at a time', 'Know where your prick has been', 'Tested. Every. Batch.', 'A clinician in your corner'];
 const MARQUEE = [...SOURCE_MARQUEE, 'Designed for women'];
-const MARQUEE_PENS = HOME_PENS.map((s) => PEN_BRANDS[s]).filter(Boolean);
+const MARQUEE_PENS = HOUSE_PENS;
 
-export function HomePage({ initialPens }: { initialPens?: Treatment[] }) {
-  const { pens, error } = useCatalogue(initialPens);
+export function HomePage() {
   // A man who lands here from a link inside the site (no full page load) goes home to his own side.
   const { side } = useSide();
   const router = useRouter();
@@ -34,25 +27,13 @@ export function HomePage({ initialPens }: { initialPens?: Treatment[] }) {
     if (side === 'men' && html.dataset.side === 'men' && html.dataset.pendingSide !== 'women') router.replace('/men' + window.location.search + window.location.hash);
   }, [side, router]);
   return (
-    <BrandPage revealKey={pens}>
+    <BrandPage>
       <BrandHero />
       <Marquee items={MARQUEE} pens={MARQUEE_PENS} />
       <Explainer />
       <GoalCards />
       <SourceSection />
-      <Range
-        pens={pens}
-        error={error}
-        limit={6}
-        featured={HOME_PENS}
-        title={
-          <>
-            Meet the
-            <br />
-            pricks.
-          </>
-        }
-      />
+      <PeptideProtocols />
       <RoyalPrickBand />
       <RepeatScriptBand />
       <EditorialStatement top="A little prick." bottom="A lot more you.">

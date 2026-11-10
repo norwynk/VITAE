@@ -11,6 +11,7 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { type CommandResult, applyCommand, randomIdFactory } from '@/domain/commands';
 import { DEMO_ESTABLISHED_MEMBER, DEMO_USERS, createFixtureStore } from '@/domain/fixtures';
+import { parseSummons, summonsRecord } from '@/domain/summons';
 import { type Actor, type Role, type Store, ROLES, emptyStore, visible } from '@/domain/model';
 
 export const DEMO_COOKIE = 'demo_session';
@@ -178,6 +179,18 @@ export function demoSignUp(): Promise<Actor> {
     store.providerAssignments[`pa-${uid}`] = { id: `pa-${uid}`, memberId: uid, clinicianId: DEMO_USERS.CLINICIAN.uid, active: true, createdAt: at };
     await writeStore(store);
     return { uid, role: 'MEMBER' as const };
+  });
+}
+
+export function demoSummons(input: unknown): Promise<void> {
+  return exclusive(async () => {
+    const summons = parseSummons(input);
+    if (!summons) return;
+    const store = await readStore();
+    const record = summonsRecord(summons, store.royalSummons[summons.id], new Date());
+    if (!record) return;
+    store.royalSummons[record.id] = record;
+    await writeStore(store);
   });
 }
 

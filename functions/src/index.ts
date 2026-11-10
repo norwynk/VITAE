@@ -20,6 +20,7 @@ import {
   type OperationalProfile,
   type ProviderAssignment,
   type Role,
+  type RoyalSummons,
   type UserRecord,
   MFA_REQUIRED_ROLES,
   ROLES,
@@ -35,6 +36,7 @@ import {
   randomIdFactory,
   toFirestoreData,
 } from '../../src/domain/commands';
+import { parseSummons, summonsRecord } from '../../src/domain/summons';
 import { SIGNED_URL_TTL_MS, assertDocumentAccess, validateDocumentRegistration } from '../../src/domain/documents';
 import { loadCatalogueScope, loadMemberScope, loadWorkspace } from './store';
 import { runReminderSweep } from './reminders';
@@ -170,6 +172,10 @@ export const executeCommand = onCall({ ...callableOptions, secrets: [MAIL_LOGIN]
     const memberId = commandMemberId(command, who);
     const result = await db.runTransaction(async (tx) => {
       const before = memberId ? await loadMemberScope(db, memberId, tx) : await loadCatalogueScope(db, tx);
+      if (command.type === 'summonsStatus') {
+        const summons = await tx.get(db.doc(`royalSummons/${command.summonsId}`));
+        if (summons.exists) before.royalSummons[summons.id] = { ...(summons.data() as RoyalSummons), id: summons.id };
+      }
       // The acting user's own record, so approvals carry the clinician's name.
       const self = await tx.get(db.doc(`users/${who.uid}`));
       if (self.exists) before.users[who.uid] = { ...(self.data() as UserRecord), id: who.uid };
@@ -182,6 +188,27 @@ export const executeCommand = onCall({ ...callableOptions, secrets: [MAIL_LOGIN]
     // Emails to the clinician and the team (never health details). Best effort.
     await notifyTeam(db, command, memberId, result.resultId, who.role);
     return { ok: true, ...result };
+  } catch (e) {
+    throw toHttpsError(e);
+  }
+});
+
+/**
+ * The one public write: someone asking to be phoned about the Royal Prick.
+ * App Check keeps scripts out, and one record per number keeps the list clean.
+ * The answer is the same whether or not they were already on the list.
+ */
+export const summonRoyalPrick = onCall(callableOptions, async (request) => {
+  try {
+    const summons = parseSummons(request.data);
+    if (summons) {
+      const ref = db.doc(`royalSummons/${summons.id}`);
+      await db.runTransaction(async (tx) => {
+        const record = summonsRecord(summons, (await tx.get(ref)).data() as RoyalSummons | undefined, new Date());
+        if (record) tx.set(ref, toFirestoreData(record));
+      });
+    }
+    return { ok: true };
   } catch (e) {
     throw toHttpsError(e);
   }

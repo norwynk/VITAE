@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'PRICK',
     short_name: 'PRICK',
-    description: 'Peptide pens with a clinician behind every one.',
+    description: 'Peptide protocols with a clinician behind every one.',
     start_url: '/app',
     display: 'standalone',
     background_color: '#fbf6ee',

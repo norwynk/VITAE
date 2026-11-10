@@ -137,6 +137,7 @@ const ACTIVITY: Record<string, (who: string) => string> = {
   releaseSent: (who) => `Pen sent to ${who}`,
   releaseDelivered: (who) => `Pen delivered to ${who}`,
   penReceived: (who) => `${who} confirmed they have their pen`,
+  summonsStatus: () => 'The team moved a Royal Summons on',
 };
 
 /** What happened, without what anyone said. */
@@ -155,6 +156,7 @@ export function TeamActivity() {
       text: ACTIVITY[e.action](name(e.memberId)),
     })),
     ...approvals,
+    ...Object.values(store.royalSummons).map((s) => ({ at: s.createdAt, text: `${s.name} summoned the Royal Prick` })),
   ]
     .sort((a, b) => b.at.localeCompare(a.at))
     .slice(0, 30);

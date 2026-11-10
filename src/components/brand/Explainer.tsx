@@ -20,7 +20,7 @@ export function Explainer() {
             from strangers.
           </h2>
           <p className="serif-i explainer__lead">Know where you&apos;re getting your peptides from.</p>
-          <Link href="/find-your-prick" className="btn">
+          <Link href="/start" className="btn">
             Find your prick
           </Link>
         </div>
@@ -31,7 +31,7 @@ export function Explainer() {
             poster={POSTER}
             width={720}
             height={1280}
-            length="0:39"
+            length="0:40"
             label="Don't take pricks from strangers: a 40-second animated film about PRICK, with captions"
           />
         </div>

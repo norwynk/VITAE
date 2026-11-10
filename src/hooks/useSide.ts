@@ -1,7 +1,6 @@
 'use client';
 import { useCallback, useSyncExternalStore } from 'react';
-import type { PenBrand } from '@/brand/pens';
-import { SIDE_KEY, type Side, forMen } from '@/brand/sides';
+import { SIDE_KEY, type Side } from '@/brand/side';
 
 /**
  * Which door they took, remembered in this browser. The page's theme comes
@@ -72,10 +71,3 @@ export function useSide() {
   const choose = useCallback((s: Side) => rememberSide(s), []);
   return { side, choose };
 }
-
-/** The pen as this side shows it (the men's side may give a pen its own colour). */
-export function useBrandForSide(): (brand: PenBrand) => PenBrand {
-  const { side } = useSide();
-  return side === 'men' ? forMen : same;
-}
-const same = (brand: PenBrand) => brand;

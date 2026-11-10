@@ -63,8 +63,8 @@ const str = (a: IntakeAnswers, id: string) => (typeof a[id] === 'string' ? (a[id
 export const isFemale = (a: IntakeAnswers) => str(a, 'sex') === 'Female';
 export const isMale = (a: IntakeAnswers) => str(a, 'sex') === 'Male';
 
-/** Two ways in: new to peptides (the full journey), or already on a prescribed protocol. */
-export const ROUTE_NEW = 'I’m new to peptides';
+/** Two ways in: new here (the full journey), or already on a prescribed treatment. */
+export const ROUTE_NEW = 'I’m new here';
 export const ROUTE_REPEAT = 'I already have a script';
 export const isRepeatRoute = (a: IntakeAnswers) => str(a, 'route') === ROUTE_REPEAT;
 export const isNewRoute = (a: IntakeAnswers) => !isRepeatRoute(a);
@@ -90,7 +90,7 @@ export const INTAKE: IntakeSection[] = [
   {
     id: 'start',
     label: 'How you’re starting',
-    title: 'Is this your first time with peptides?',
+    title: 'Is this your first time with us?',
     questions: [{ id: 'route', kind: 'choice', label: 'How are you starting?', options: [ROUTE_NEW, ROUTE_REPEAT] }],
   },
   {
@@ -98,7 +98,7 @@ export const INTAKE: IntakeSection[] = [
     label: 'Your script',
     title: 'Your current script.',
     lead: 'You know your protocol. Tell us what you’re on, and your clinician will verify it with you before anything is released.',
-    why: 'A pen can only be released against a valid script, checked by a registered clinician. Your clinician will also ask you for a copy.',
+    why: 'Nothing can be released without a valid script, checked by a registered clinician. Your clinician will also ask you for a copy.',
     showIf: isRepeatRoute,
     questions: [
       { id: 'prescriber', kind: 'text', label: 'Who prescribed it?', hint: 'Your doctor’s name and practice.', required: true, maxLength: 160 },
@@ -108,7 +108,7 @@ export const INTAKE: IntakeSection[] = [
         id: 'protocol',
         kind: 'long',
         label: 'Your current protocol',
-        hint: 'Each peptide, the dose and how often. For example: “BPC-157 0.25 mg once a day”.',
+        hint: 'Each treatment, the dose and how often, as it appears on your script.',
         required: true,
         maxLength: 1000,
       },
@@ -122,10 +122,10 @@ export const INTAKE: IntakeSection[] = [
     showIf: isNewRoute,
     label: 'Your why',
     title: 'Picture it.',
-    lead: 'A few months from now, it’s working. Hold that thought for a second.',
+    lead: 'Forget the medical words for a second. What do you want to be different?',
     why: 'Your clinician reads this first. It’s how they know what {goal} really means to you.',
     questions: [
-      { id: 'vision', kind: 'long', label: 'What’s different when it’s working?', hint: 'A sentence is plenty. Say it the way you’d say it to a friend.', maxLength: 500 },
+      { id: 'vision', kind: 'long', label: 'What would you like to be different?', hint: 'A sentence is plenty. Say it the way you’d say it to a friend.', maxLength: 500 },
       { id: 'goals', kind: 'multi', label: 'What would you like help with?', options: GOALS, openOptions: true, required: true },
       { id: 'reason', kind: 'long', label: 'What made you reach out now?', hint: 'Your main health concerns, and what you’d love to change.', required: true, maxLength: 1000 },
       { id: 'mainWorry', kind: 'long', label: 'What concerns you most of the time?', maxLength: 1000 },
@@ -137,7 +137,7 @@ export const INTAKE: IntakeSection[] = [
     label: 'About you',
     title: 'Let’s get to know each other.',
     lead: 'The basics. Your surname, ID and number come right at the end.',
-    why: 'So your clinician knows exactly who they’re looking after, and every pen fits your body.',
+    why: 'So your clinician knows exactly who they’re looking after, and everything fits your body.',
     questions: [
       { id: 'firstName', kind: 'text', label: 'First name', required: true, maxLength: 80 },
       { id: 'dateOfBirth', kind: 'date', label: 'Date of birth', required: true },
@@ -157,7 +157,7 @@ export const INTAKE: IntakeSection[] = [
     id: 'pregnancy',
     label: 'Pregnancy',
     title: 'A quick safety check.',
-    why: 'Several pens aren’t safe in pregnancy, so these come first and are never skipped.',
+    why: 'Several treatments aren’t safe in pregnancy, so these come first and are never skipped.',
     showIf: isFemale,
     questions: [
       { id: 'pregnant', kind: 'choice', label: 'Are you pregnant, or might you be?', options: ['Yes', 'No', 'Not sure'], required: true },
@@ -170,7 +170,7 @@ export const INTAKE: IntakeSection[] = [
     label: 'Health history',
     title: 'Your health story.',
     lead: 'Tap what applies, add anything else in your own words, or tick none. Only your clinician sees this.',
-    why: 'This is what keeps the road to {goal} safe. Your clinician checks every pen against it.',
+    why: 'This is what keeps the road to {goal} safe. Your clinician checks every treatment against it.',
     questions: [
       {
         id: 'conditions',
@@ -229,7 +229,7 @@ export const INTAKE: IntakeSection[] = [
     label: 'Lifestyle',
     title: 'How you live.',
     lead: 'No judgement. It just helps your clinician see the full picture.',
-    why: 'Pens work with your habits, not instead of them. This shows your clinician where you’re starting from.',
+    why: 'Your habits are part of your health. This shows your clinician where you’re starting from.',
     questions: [
       { id: 'smoking', kind: 'choice', label: 'Do you smoke or vape?', options: ['Yes', 'No', 'I’ve quit'], required: true },
       { id: 'alcohol', kind: 'choice', label: 'Alcohol', options: ['None', 'Socially', 'Regularly'], required: true },
@@ -248,7 +248,7 @@ export const INTAKE: IntakeSection[] = [
     showIf: isNewRoute,
     label: 'Sleep',
     title: 'Sleep. The good stuff.',
-    why: 'Sleep is when your body does its repair work, so it matters for every pen.',
+    why: 'Sleep is when your body does its repair work, so it matters for everyone.',
     questions: [
       { id: 'sleepHours', kind: 'number', label: 'Hours of sleep a night (roughly)', required: true, min: 0, max: 24 },
       { id: 'fallAsleep', kind: 'choice', label: 'How long does it take you to fall asleep?', options: ['Under 15 minutes', '15 to 30 minutes', '30 to 60 minutes', 'Over an hour'] },
@@ -265,7 +265,7 @@ export const INTAKE: IntakeSection[] = [
     title: 'Your body, your cycle.',
     lead: 'Only your clinician sees these.',
     showIf: isFemale,
-    why: 'Your cycle and hormones help your clinician choose and time the right pen.',
+    why: 'Your cycle and hormones help your clinician choose and time the right care.',
     questions: [
       { id: 'beenPregnant', kind: 'choice', label: 'Have you ever been pregnant?', options: YN },
       { id: 'firstPeriodAge', kind: 'number', label: 'Roughly how old were you at your first period?', min: 7, max: 25 },

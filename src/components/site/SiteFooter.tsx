@@ -15,10 +15,11 @@ export function SiteFooter() {
         </div>
         <div className="site-footer__grid">
           <div>
-            <p className="eyebrow">Shop</p>
+            <p className="eyebrow">Start</p>
             <ul>
-              <li><Link href="/shop">Meet the pricks</Link></li>
-              <li><Link href="/find-your-prick">Find your prick</Link></li>
+              <li><Link href="/start">Find your prick</Link></li>
+              <li><Link href="/#protocols">Peptide protocols</Link></li>
+              <li><Link href="/royal-prick">The Royal Prick Experience</Link></li>
             </ul>
           </div>
           <div>
@@ -32,8 +33,8 @@ export function SiteFooter() {
           <div>
             <p className="eyebrow">The serious bit</p>
             <p className="small" style={{ opacity: 0.75 }}>
-              {SOURCE_LINE} Every pen starts with a health screening and a clinician&apos;s review. If a pen isn&apos;t
-              right for you, we&apos;ll say so.
+              {SOURCE_LINE} Every protocol starts with a health screening and a clinician&apos;s review. If it isn&apos;t right
+              for you, we&apos;ll say so.
             </p>
           </div>
         </div>
@@ -44,8 +45,8 @@ export function SiteFooter() {
         <div className="site-footer__legal">
           © {new Date().getFullYear()} PRICK.{' '}
           {publicDataMode() === 'demo'
-            ? 'Preview build: products are fictional demos, not available to buy, and nothing here is medical advice.'
-            : 'Every pen needs a clinician’s approval, and nothing on this site is medical advice.'}{' '}
+            ? 'Preview build: everything here is fictional demo data, and nothing here is medical advice.'
+            : 'Every treatment needs a clinician’s approval, and nothing on this site is medical advice.'}{' '}
           In an emergency call 10177. <Link href="/privacy">Privacy</Link> · <Link href="/terms">Terms</Link>
         </div>
       </div>

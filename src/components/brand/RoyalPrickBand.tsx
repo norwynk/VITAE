@@ -4,7 +4,7 @@ import Link from 'next/link';
  * The way in to the Royal Prick Experience from the homepages.
  * It is an optional extra, so this always says a pen doesn't depend on it.
  */
-export function RoyalPrickBand({ men = false }: { men?: boolean }) {
+export function RoyalPrickBand() {
   return (
     <section className="repeat-script repeat-script--royal" aria-labelledby="royal-prick-title">
       <div className="container repeat-script__inner">
@@ -17,14 +17,13 @@ export function RoyalPrickBand({ men = false }: { men?: boolean }) {
           </div>
           <p>
             The Royal Prick Experience is our do-it-all-for-you package: a nurse at your door for your bloods, a doctor who talks you through them, your
-            pen delivered if it&apos;s right for you, and every follow-up handled. You just open the door.
+            protocol delivered if it&apos;s right for you, and every follow-up handled. You just open the door.
           </p>
           <Link href="/royal-prick" className="btn">
             Get the royal treatment
           </Link>
           <p className="royal-band__note">
-            Purely optional. You don&apos;t need this package, or a blood test, to order a pen.
-            {men && ' Testosterone is the one exception: your clinician needs your levels first.'}
+            Purely optional. You don&apos;t need this package, or a blood test, to start a peptide protocol. Some protocols do need bloods first, and your clinician will tell you if yours does.
           </p>
         </div>
         <Link href="/royal-prick#film" className="royal-band__film" aria-label="Watch the 50-second film about the Royal Prick Experience">

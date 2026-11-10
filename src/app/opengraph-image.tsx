@@ -16,7 +16,7 @@ export default function OpenGraphImage() {
           <span style={{ color: '#111' }}>Not all pricks</span>
           <span style={{ color: '#ff1f78' }}>are created equal.</span>
         </div>
-        <div style={{ display: 'flex', marginTop: 36, fontSize: 34, color: '#333' }}>Peptide pens with a clinician behind every single one.</div>
+        <div style={{ display: 'flex', marginTop: 36, fontSize: 34, color: '#333' }}>Peptide protocols with a clinician behind every single one.</div>
       </div>
     ),
     size,

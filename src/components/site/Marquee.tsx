@@ -1,8 +1,8 @@
-import type { PenBrand } from '@/brand/pens';
+import type { HousePen } from '@/brand/housePens';
 import { Pen } from '../brand/Pen';
 
 /** Brand band between sections: short lines separated by our own pens, scrolling on a deep pink field. */
-export function Marquee({ items, pens }: { items: string[]; pens: PenBrand[] }) {
+export function Marquee({ items, pens }: { items: string[]; pens: HousePen[] }) {
   const run = [...items, ...items];
   return (
     <div className="marquee" aria-hidden="true">

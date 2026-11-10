@@ -398,6 +398,7 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('releaseSent'), memberId: id, releaseId: id, courierReference: requiredText(80) }),
   z.object({ type: z.literal('releaseDelivered'), memberId: id, releaseId: id }),
   z.object({ type: z.literal('penReceived'), releaseId: id }),
+  z.object({ type: z.literal('summonsStatus'), summonsId: id, status: z.enum(['PHONED', 'BOOKED', 'NOT_GOING_AHEAD']) }),
 ]);
 
 export type Command = z.infer<typeof commandSchema>;
@@ -454,6 +455,7 @@ const COMMAND_ROLES: Record<CommandType, readonly Role[]> = {
   releaseDelivered: ['SUPER_ADMIN', 'OPERATIONS'],
   penReceived: ['MEMBER'],
   logCall: ['CLINICIAN'],
+  summonsStatus: ['SUPER_ADMIN'],
 };
 
 export function allowedRoles(type: CommandType): readonly Role[] {
@@ -495,6 +497,7 @@ export function commandMemberId(command: Command, actor: Actor): string | undefi
     case 'catalogue':
     case 'catalogueCreate':
     case 'stockAdjust':
+    case 'summonsStatus':
       return undefined;
     default:
       return actor.uid;
@@ -1351,6 +1354,15 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
       refreshOpenRequestCount(store, command.memberId);
       touchProfile(store, command.memberId, at);
       resultId = callId;
+      break;
+    }
+
+    case 'summonsStatus': {
+      const summons = store.royalSummons[command.summonsId];
+      if (!summons) fail('NOT_FOUND', 'That summons no longer exists');
+      store.royalSummons[command.summonsId] = { ...summons, status: command.status, updatedAt: at, ...(command.status === 'PHONED' ? { phonedAt: at } : {}) };
+      targets.push(command.summonsId);
+      resultId = command.summonsId;
       break;
     }
 

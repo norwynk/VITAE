@@ -1,15 +1,15 @@
 'use client';
 import Link from 'next/link';
 import { useRef } from 'react';
-import { PEN_BRANDS } from '@/brand/pens';
+import { HOUSE_PENS, MEN_HOUSE_PENS } from '@/brand/housePens';
 import { useParallax } from '@/hooks/useReveal';
 import { PenStage } from './Pen';
 
-/** `pen` leads the hero; `who` is the sign-off under the trust line ("Designed for women."). */
-export function BrandHero({ pen = 'the-glow-up', who = 'Designed for women.' }: { pen?: string; who?: string }) {
+/** `men` paints the hero pen in the men's colours; `who` is the sign-off under the trust line ("Designed for women."). */
+export function BrandHero({ men = false, who = 'Designed for women.' }: { men?: boolean; who?: string }) {
   const stage = useRef<HTMLDivElement>(null);
   useParallax(stage, 0.12);
-  const hero = PEN_BRANDS[pen];
+  const hero = (men ? MEN_HOUSE_PENS : HOUSE_PENS)[0];
   return (
     <section className="hero">
       <div className="container hero__grid">
@@ -19,13 +19,13 @@ export function BrandHero({ pen = 'the-glow-up', who = 'Designed for women.' }: 
             <span className="split-line pop"><span style={{ '--delay': '140ms' } as React.CSSProperties}>are created equal.</span></span>
           </h1>
           <p className="serif-i hero__sub" data-reveal style={{ '--delay': '300ms' } as React.CSSProperties}>
-            Peptide pens with a clinician behind every single one.
+            Peptide protocols with a clinician behind every single one.
           </p>
           <div className="hero__ctas" data-reveal style={{ '--delay': '420ms' } as React.CSSProperties}>
-            <Link href="/find-your-prick" className="btn">
+            <Link href="/start" className="btn">
               Find your prick
             </Link>
-            <Link href="/shop" className="link-arrow">
+            <Link href="/#protocols" className="link-arrow">
               Meet the pricks
             </Link>
           </div>
@@ -42,7 +42,7 @@ export function BrandHero({ pen = 'the-glow-up', who = 'Designed for women.' }: 
           <span className="hero__disc" />
           <span className="hero__disc two" />
           <span className="hero__disc three" />
-          <PenStage colours={hero.colours} label={hero.penLabel} botanical={hero.botanical} angle={-48} fit={0.98} className="hero__pen pen-stage--float" title={`PRICK ${hero.penLabel} pen`} />
+          <PenStage colours={hero.colours} label={hero.penLabel} botanical={hero.botanical} angle={-48} fit={0.98} className="hero__pen pen-stage--float" title="PRICK: peptide protocols, prescribed for you" />
           <p className="hand hero__note">this one&apos;s yours?</p>
         </div>
       </div>

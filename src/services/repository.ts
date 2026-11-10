@@ -5,6 +5,7 @@
  */
 import type { CommandInput, DataMode } from '@/domain/commands';
 import type { Actor, Role, Store, Treatment } from '@/domain/model';
+import type { SummonsInput } from '@/domain/summons';
 import { publicDataMode } from '@/config';
 
 export interface Workspace {
@@ -104,6 +105,12 @@ export const firebaseRepository: Repository & {
   sendTeamTestEmail: () => callable('sendTeamTestEmail', {}),
   registerPushToken: (token) => callable('registerPushToken', { token }),
 };
+
+/** Asks us to phone about the Royal Prick. Works without an account. */
+export async function summonRoyalPrick(input: SummonsInput): Promise<void> {
+  if (publicDataMode() === 'live') await callable('summonRoyalPrick', input);
+  else await demoPost({ action: 'royalSummons', summons: input });
+}
 
 export function repository(): Repository {
   return publicDataMode() === 'live' ? firebaseRepository : demoRepository;

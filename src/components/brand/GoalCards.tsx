@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import { GOALS } from '@/brand/goals';
-import { PEN_BRANDS } from '@/brand/pens';
-import { MEN_GOALS, forMen } from '@/brand/sides';
+import { MEN_HOUSE_PENS } from '@/brand/housePens';
+import { MEN_GOALS } from '@/brand/side';
 import { PenStage } from './Pen';
 
-/** "Start here": pick what you want first, then the quiz finds the pens. */
+/** "Start here": pick what's going on, then straight into the screening. */
 export function GoalCards() {
   return (
     <section className="goals section" aria-labelledby="goals-title">
@@ -18,12 +18,12 @@ export function GoalCards() {
               you after?
             </h2>
           </div>
-          <p className="goals__lead">Pick one. A few quick questions, then we show you the pricks that fit.</p>
+          <p className="goals__lead">Pick one. A few quick questions, then a clinician takes it from there.</p>
         </div>
         <ul className="goals__grid">
           {GOALS.map((g, i) => (
             <li key={g.slug} data-reveal style={{ '--delay': `${i * 90}ms`, '--goal': g.colour } as React.CSSProperties}>
-              <Link href={`/find-your-prick?goal=${g.slug}`} className="goal-card">
+              <Link href={`/start?goal=${g.slug}`} className="goal-card">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={g.image} alt="" width={1136} height={1408} loading="lazy" />
                 <span className="goal-card__text">
@@ -56,14 +56,14 @@ export function MenGoalCards() {
               you after?
             </h2>
           </div>
-          <p className="goals__lead">Pick one. A few quick questions, then we show you the pricks that fit.</p>
+          <p className="goals__lead">Pick one. A few quick questions, then a clinician takes it from there.</p>
         </div>
         <ul className="goals__grid goals__grid--three">
           {MEN_GOALS.map((g, i) => {
-            const pen = forMen(PEN_BRANDS[g.pen]);
+            const pen = MEN_HOUSE_PENS[i];
             return (
               <li key={g.slug} data-reveal style={{ '--delay': `${i * 90}ms`, '--goal': g.colour } as React.CSSProperties}>
-                <Link href={`/find-your-prick?goal=${g.slug}`} className="goal-card goal-card--pen">
+                <Link href={`/start?goal=${g.slug}`} className="goal-card goal-card--pen">
                   <span className="goal-card__pen" aria-hidden="true">
                     <PenStage colours={pen.colours} label={pen.penLabel} botanical={pen.botanical} angle={-62} fit={0.92} />
                   </span>
