@@ -11,7 +11,7 @@ const serif = Fraunces({ style: ['normal', 'italic'], subsets: ['latin'], variab
 const sans = DM_Sans({ subsets: ['latin'], variable: '--font-sans-loaded', display: 'swap' });
 const hand = Caveat({ subsets: ['latin'], variable: '--font-hand-loaded', display: 'swap' });
 
-const DESCRIPTION = 'A doctor-led South African health company with a very rude name. A private assessment first, always.';
+const DESCRIPTION = 'Doctor-led peptide protocols for women and men, from a SAHPRA-licensed, batch-tested source, with a clinician behind every one. Screening first, always.';
 
 /**
  * Before first paint: the side they chose (the theme), the doors if they

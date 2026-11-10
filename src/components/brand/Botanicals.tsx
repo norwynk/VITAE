@@ -1,4 +1,4 @@
-import type { Botanical, PenColours } from '@/brand/pens';
+import type { Botanical, PenColours } from '@/brand/colours';
 
 /**
  * Painted botanical motifs for the pen wrap and cards. Pure decoration in the

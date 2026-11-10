@@ -7,6 +7,7 @@ import { walkThrough } from '@/hooks/useSide';
 import { Logo } from './Logo';
 
 const LINKS = [
+  { href: '/#protocols', label: 'Peptide protocols' },
   { href: '/#how-it-works', label: 'How it works' },
   { href: '/royal-prick', label: 'Royal Prick' },
   { href: '/about', label: 'About us' },
@@ -62,7 +63,7 @@ export function SiteNav({ cta = true }: { cta?: boolean }) {
           </Link>
           {cta && (
             <Link href="/start" className="btn small">
-              Get started
+              Find your prick
             </Link>
           )}
         </div>

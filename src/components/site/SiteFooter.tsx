@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { SOURCE_LINE } from '@/brand/source';
 import { publicDataMode } from '@/config';
 import { Logo } from './Logo';
 
@@ -16,7 +17,8 @@ export function SiteFooter() {
           <div>
             <p className="eyebrow">Start</p>
             <ul>
-              <li><Link href="/start">Start your assessment</Link></li>
+              <li><Link href="/start">Find your prick</Link></li>
+              <li><Link href="/#protocols">Peptide protocols</Link></li>
               <li><Link href="/royal-prick">The Royal Prick Experience</Link></li>
             </ul>
           </div>
@@ -31,8 +33,8 @@ export function SiteFooter() {
           <div>
             <p className="eyebrow">The serious bit</p>
             <p className="small" style={{ opacity: 0.75 }}>
-              Everything starts with a private health assessment and a clinician&apos;s review. If nothing is right for you,
-              we&apos;ll say so.
+              {SOURCE_LINE} Every protocol starts with a health screening and a clinician&apos;s review. If it isn&apos;t right
+              for you, we&apos;ll say so.
             </p>
           </div>
         </div>

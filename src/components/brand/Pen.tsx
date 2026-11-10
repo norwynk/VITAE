@@ -1,5 +1,5 @@
 import { useId, type CSSProperties } from 'react';
-import type { Botanical, PenColours } from '@/brand/pens';
+import type { Botanical, PenColours } from '@/brand/colours';
 import { Motif } from './Botanicals';
 
 /**
@@ -71,6 +71,9 @@ export function Pen({ colours, label, botanical = 'leaf', className, style, titl
         <filter id={g('paint')} x="-5%" y="-20%" width="110%" height="140%">
           <feGaussianBlur stdDeviation="0.8" />
         </filter>
+        <filter id={g('soft')} x="-5%" y="-100%" width="110%" height="300%">
+          <feGaussianBlur stdDeviation="2.2" />
+        </filter>
         <clipPath id={g('clip')}>
           <path d={body} />
         </clipPath>
@@ -87,6 +90,10 @@ export function Pen({ colours, label, botanical = 'leaf', className, style, titl
         {/* Soft panel so the print stays legible over the painting. */}
         <rect x="408" y="44" width="372" height="82" rx="41" fill={colours.mist} opacity="0.72" />
         <rect x="0" y="0" width="1000" height="170" fill={`url(#${g('round')})`} />
+        {/* Studio light: a sharp highlight along the top, a soft bounce along the bottom. */}
+        <rect x="70" y="40" width="790" height="7" rx="3.5" fill="#fff" opacity="0.7" filter={`url(#${g('soft')})`} />
+        <rect x="90" y="126" width="770" height="5" rx="2.5" fill="#fff" opacity="0.22" filter={`url(#${g('soft')})`} />
+        <ellipse cx="70" cy="62" rx="22" ry="12" fill="#fff" opacity="0.35" filter={`url(#${g('soft')})`} />
       </g>
 
       {/* Coloured pill on the grip end */}
@@ -128,6 +135,7 @@ export function Pen({ colours, label, botanical = 'leaf', className, style, titl
       <rect x="858" y="30" width="8" height="110" fill={`url(#${g('bronze')})`} />
       <path d="M866 26 H935 A28 59 0 0 1 935 144 H866 Z" fill={`url(#${g('cap')})`} />
       <rect x="866" y="38" width="84" height="6" rx="3" fill="#fff" opacity="0.35" />
+      <rect x="866" y="128" width="78" height="4" rx="2" fill="#fff" opacity="0.18" />
     </svg>
   );
 }

@@ -3,15 +3,19 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { useSide } from '@/hooks/useSide';
 import { BrandHero } from './brand/BrandHero';
+import { Explainer } from './brand/Explainer';
 import { RoyalPrickBand } from './brand/RoyalPrickBand';
 import { GoalCards } from './brand/GoalCards';
 import { RepeatScriptBand } from './brand/RepeatScriptBand';
-import { ClinicalTrustPanel, EditorialStatement, FinalCta, HowItWorks, DesignedForWomen } from './brand/Sections';
+import { ClinicalTrustPanel, CoFounderQuote, EditorialStatement, FinalCta, HowItWorks, DesignedForWomen, LifestylePanel, PeptideProtocols, Reviews, SourceSection, SubscriptionPanel } from './brand/Sections';
 import { BrandPage } from './site/BrandPage';
 import { Marquee } from './site/Marquee';
+import { HOUSE_PENS } from '@/brand/housePens';
 
-/** The brand band: standards and attitude. */
-export const STANDARDS_MARQUEE = ['A prick with standards', 'We don’t ghost', 'What happens here stays here', 'No lectures', 'A clinician in your corner'];
+/** The brand band: standards, with the source story slipped in. */
+export const SOURCE_MARQUEE = ['A prick with standards', 'Months of doses in one pen', 'Know where your prick has been', 'Tested. Every. Batch.', 'A clinician in your corner'];
+const MARQUEE = [...SOURCE_MARQUEE, 'Designed for women'];
+const MARQUEE_PENS = HOUSE_PENS;
 
 export function HomePage() {
   // A man who lands here from a link inside the site (no full page load) goes home to his own side.
@@ -25,16 +29,23 @@ export function HomePage() {
   return (
     <BrandPage>
       <BrandHero />
-      <Marquee items={[...STANDARDS_MARQUEE, 'Designed for women']} />
+      <Marquee items={MARQUEE} pens={MARQUEE_PENS} />
+      <Explainer />
       <GoalCards />
-      <HowItWorks />
-      <EditorialStatement top="A little prick." bottom="A lot of doctor.">
-        <p>Fun on the outside. Serious where it matters.</p>
-      </EditorialStatement>
+      <SourceSection />
+      <PeptideProtocols />
       <RoyalPrickBand />
       <RepeatScriptBand />
+      <EditorialStatement top="A little prick." bottom="A lot more you.">
+        <p>Pretty enough to show off. Serious enough to need a clinician&apos;s yes.</p>
+      </EditorialStatement>
       <DesignedForWomen />
+      <CoFounderQuote />
+      <HowItWorks />
+      <LifestylePanel />
       <ClinicalTrustPanel />
+      <Reviews />
+      <SubscriptionPanel />
       <FinalCta />
     </BrandPage>
   );

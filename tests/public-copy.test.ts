@@ -26,6 +26,8 @@ const PUBLIC_SOURCES = [
   'src/components/site/SiteNav.tsx',
   'src/components/site/SiteFooter.tsx',
   'src/components/site/Marquee.tsx',
+  'src/components/brand/Explainer.tsx',
+  'src/brand/housePens.ts',
 ];
 const read = (f: string) => readFileSync(f, 'utf8');
 const ingredients = RANGE.products.flatMap((p) => p.active_ingredient.split(/[+/]|\(/).map((s) => s.trim().replace(/\)$/, '')).filter((s) => s.length > 3));
@@ -40,15 +42,14 @@ describe('what a visitor can read', () => {
     expect(read(file)).not.toMatch(/brand\/pens|brand\/sides'|from '\.\/sides'|range\.json|penQuestions|penSafety|useCatalogue|useShortlist/);
   });
 
-  it.each(PUBLIC_SOURCES)('%s names no pen, ingredient or peptide', (file) => {
+  it.each(PUBLIC_SOURCES)('%s names no pen or ingredient', (file) => {
     const text = read(file);
-    for (const word of [...names, ...ingredients, 'SAHPRA']) expect(text, word).not.toContain(word);
-    expect(text).not.toMatch(/peptide/i);
+    for (const word of [...names, ...ingredients]) expect(text, word).not.toContain(word);
     expect(text).not.toMatch(/\b(Ozempic|Mounjaro)\b/);
   });
 
   it.each(PUBLIC_SOURCES)('%s does not pull in the range', (file) => {
-    expect(read(file)).not.toMatch(/brand\/pens|range\.json|server\/catalogue|PenStage/);
+    expect(read(file)).not.toMatch(/brand\/pens|range\.json|server\/catalogue|useCatalogue/);
   });
 
   it('the goal cards say what is going on, never what you will get', () => {

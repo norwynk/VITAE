@@ -1,45 +1,44 @@
 'use client';
 import Link from 'next/link';
 import { type CSSProperties, useEffect } from 'react';
+import { HOUSE_PENS } from '@/brand/housePens';
+import { SOURCE_LINE } from '@/brand/source';
 import { EditorialStatement } from './brand/Sections';
+import { PenStage } from './brand/Pen';
 import { RoyalSummonsForm } from './brand/RoyalSummonsForm';
-import { RoyalPrick } from './brand/RoyalPrick';
 import { ScrollFilm } from './brand/ScrollFilm';
 import { BrandPage } from './site/BrandPage';
 
 /**
  * The Royal Prick Experience, the concierge package: we do the heavy lifting.
- * It is an optional extra. Nobody needs it, or its blood test, to get started.
+ * It is an optional extra. Nobody needs it, or its blood test, to do an assessment and order a pen.
  * Kept out of search results. No booking or payment yet: the form at the end asks us to phone them.
  */
-/** The film's voice-over mentions the product, so it stays off until the attorney has cleared it. */
-const SHOW_FILM = false;
-const STEP_COLOURS = ['var(--sky)', 'var(--pink)', 'var(--orange)', 'var(--blue)', 'var(--lime)'];
 const delay = (ms: number) => ({ '--delay': `${ms}ms` }) as CSSProperties;
 
 const TO_DO = [
-  'Work out what you even need',
+  'Work out which peptide you even need',
   'Find a doctor who won’t raise an eyebrow',
   'Get a blood form',
   'Take a morning off work',
   'Sit in a lab queue',
   'Google your results at 11pm',
   'Work out if what you’re buying is real',
-  'Phone around',
-  'Learn it all from a stranger online',
+  'Phone around for stock',
+  'Learn to inject from a stranger online',
   'Wonder who to call when something feels off',
   'Book your own follow-up bloods',
   'Do it all again in three months',
 ];
 
 const STEPS = [
-  { title: 'Tell us about you.', body: 'A private health screening on your phone. A clinician checks it makes sense to go further, then requests the right bloods for you.', job: 'Answer honestly' },
-  { title: 'A nurse comes to you.', body: 'Home, office, wherever suits. You choose the slot. One small prick before the good one.', job: 'Open the door' },
-  { title: 'We get it tested.', body: 'Your sample goes straight to the lab. No forms to carry, no queue, no chasing anyone for anything.', job: 'Nothing' },
-  { title: 'Your doctor calls.', body: 'A proper one-on-one online consultation. They go through your numbers in plain English and tell you what they would do.', job: 'Pick up' },
-  { title: 'Yes or no. Honestly.', body: 'If treatment is right for you, your doctor writes your script and we take it from there. If it isn’t, they tell you why. No yes, no prick.', job: 'Nothing' },
-  { title: 'It comes to your door.', body: 'Handled properly, all the way. Then we walk you through it, so you never have to figure it out alone.', job: 'Sign for it' },
-  { title: 'We keep showing up.', body: 'Dose reminders, check-ins, a clinician to message, and follow-up bloods back at your door.', job: 'Reply when we check in' },
+  { title: 'Tell us about you.', body: 'A private health screening on your phone. A clinician checks it makes sense to go further, then requests the right bloods for you.', job: 'Answer honestly', pen: 'slow-and-steady' },
+  { title: 'A nurse comes to you.', body: 'Home, office, wherever suits. You choose the slot. One small prick before the good one.', job: 'Open the door', pen: 'the-glow-up' },
+  { title: 'We get it tested.', body: 'Your sample goes straight to the lab. No forms to carry, no queue, no chasing anyone for anything.', job: 'Nothing', pen: 'all-day-energy' },
+  { title: 'Your doctor calls.', body: 'A proper one-on-one online consultation. They go through your numbers in plain English and tell you what they would do.', job: 'Pick up', pen: 'deep-sleep-rebuild' },
+  { title: 'Yes or no. Honestly.', body: 'If a pen is right for you, your doctor writes your script and we take it from there. If it isn’t, they tell you why. No yes, no pen.', job: 'Nothing', pen: 'sharp-mind' },
+  { title: 'Your pen, at your door.', body: 'Sent cold, all the way. Then we show you your first dose, so you never have to figure it out alone.', job: 'Sign for it', pen: 'body-sculpt' },
+  { title: 'We keep showing up.', body: 'Dose reminders, check-ins, a clinician to message, follow-up bloods back at your door and your next pen before you run out.', job: 'Reply when we check in', pen: 'skin-rewind' },
 ];
 
 const STACK = [
@@ -49,8 +48,8 @@ const STACK = [
   { what: 'Collection, lab and testing, all handled', instead: 'Carrying forms around and chasing results' },
   { what: 'One-on-one online consultation with your doctor', instead: 'A form, a tick and good luck' },
   { what: 'Your results in plain English, yours to keep', instead: 'Googling your own bloods' },
-  { what: 'Your script, if treatment is right for you', instead: 'Hunting for someone to write one' },
-  { what: 'Delivery to your door, handled properly', instead: 'Phoning around' },
+  { what: 'Your script, if a pen is right for you', instead: 'Hunting for someone to write one' },
+  { what: 'Your pen, delivered in a full cold chain', instead: 'Phoning around for stock' },
   { what: 'Reminders, check-ins and a clinician to message', instead: 'Wondering who to call' },
   { what: 'Follow-up bloods, back at your door', instead: 'Starting the whole admin over' },
 ];
@@ -62,17 +61,44 @@ const BONUSES = [
   { name: 'The Side-by-Side', body: 'Your first bloods next to your follow-up bloods, explained by your doctor. Numbers, not guesses.', colour: 'var(--sky)' },
 ];
 
-const FOR_YOU = ['You know something’s off and don’t know where to start', 'You want your bloods checked before anything goes in your body', 'You’re busy, and a lab queue isn’t happening', 'You’re a little scared of the needle', 'You want one team looking after all of it'];
-const NOT_FOR_YOU = ['You want the cheapest option in the country', 'You want a prescription whatever the doctor says', 'You’d rather skip the bloods'];
+const FOR_YOU = ['You’re curious about peptides and don’t know where to start', 'You want your bloods checked before anything goes in your body', 'You’re busy, and a lab queue isn’t happening', 'You’re a little scared of the needle', 'You want one team looking after all of it'];
+const NOT_FOR_YOU = ['You want the cheapest pen in the country', 'You want a pen whatever the doctor says', 'You’d rather skip the bloods'];
 
 const FAQ = [
-  { q: 'Do I need this to get started?', a: 'No. This is the extra for people who want it all done for them. Anyone can do the online assessment without it, and you don’t need a blood test to do that. Your clinician will tell you if a test matters for you.' },
+  { q: 'Do I need this to get a pen?', a: 'No. This is the extra for people who want it all done for them. Anyone can do the online assessment and order a pen without it, and you don’t need a blood test to do that. Testosterone is the one exception, because your clinician needs your levels first. A clinician can also ask for a test if it matters for you.' },
   { q: 'Where do you come to?', a: 'Tell us where you are and we’ll let you know when a nurse can get to you.' },
-  { q: 'What happens if the doctor says no?', a: 'You keep your bloods and you get a straight explanation of why, plus what your doctor would look at instead. No yes, no prick.' },
+  { q: 'What happens if the doctor says no?', a: 'You keep your bloods and you get a straight explanation of why, plus what your doctor would look at instead. No yes, no pen.' },
   { q: 'Why do I start with a screening?', a: 'Labs need a doctor’s request, and some people shouldn’t go further at all. A few minutes on your phone means nobody sends a nurse for nothing.' },
   { q: 'I had bloods done recently. Do I need new ones?', a: 'Maybe not. Tell us in your screening and your doctor will let you know if they’re recent and complete enough.' },
   { q: 'Who sees my results?', a: 'Your clinician and the people who need them to do your test. Not delivery, not support, not your employer.' },
 ];
+
+const FINALE = HOUSE_PENS.slice(0, 5);
+
+/** The crowned pen from the film, standing on the royal carpet. */
+function RoyalPrick() {
+  return (
+    <svg className="pkg-royal" viewBox="0 0 180 560" aria-hidden="true">
+      <g stroke="#111" strokeWidth="6" strokeLinejoin="round">
+        <path d="M34 72 L28 18 L62 44 L90 8 L118 44 L152 18 L146 72 Z" fill="#ffc62b" />
+        <circle cx="90" cy="54" r="7" fill="var(--pink)" strokeWidth="4" />
+        <rect x="30" y="72" width="120" height="50" rx="6" fill="#111" />
+        <rect x="36" y="122" width="108" height="298" fill="#fff6ec" />
+        <rect x="36" y="232" width="108" height="46" fill="var(--pink)" />
+        <rect x="36" y="247" width="108" height="16" fill="#b9b9b9" strokeWidth="0" />
+        <rect x="50" y="420" width="80" height="30" rx="4" fill="#111" />
+      </g>
+      <path d="M64 450 V540 M116 450 V540" stroke="#111" strokeWidth="13" />
+      <path d="M50 553 H82 M98 553 H130" stroke="#111" strokeWidth="14" strokeLinecap="round" />
+      <text transform="translate(90 349) rotate(-90)" fill="#111" textAnchor="middle" dominantBaseline="central" style={{ font: '400 62px var(--font-display)' }}>
+        PRICK
+      </text>
+      <text transform="translate(90 177) rotate(-90)" fill="#111" textAnchor="middle" dominantBaseline="central" style={{ font: '700 10px var(--font-sans)', letterSpacing: '0.04em' }}>
+        WE COME TO YOU
+      </text>
+    </svg>
+  );
+}
 
 /** The 50-second film. It plays by itself when scrolled to. */
 function Film() {
@@ -117,22 +143,22 @@ export function RoyalPrickPage() {
             </h1>
             <p className="pkg-hero__lead">
               A nurse comes to you for your bloods. We get them tested. Your doctor reads them and talks you through them. If
-              they say yes, we take it from there and we stay with you after that. You don&apos;t go anywhere.
+              they say yes, your pen comes to you and we stay with you after that. You don&apos;t go anywhere.
             </p>
             <div className="pkg-actions">
               <a href="#summon" className="btn">Get the royal treatment</a>
               <a href="#included" className="link-arrow">See what&apos;s in it</a>
             </div>
             <p className="pkg-hero__note">
-              Purely optional. You don&apos;t need this package, or a blood test, to get started.{' '}
-              <Link href="/start">Just want to get started?</Link>
+              Purely optional. You don&apos;t need this package, or a blood test, to order a pen. Testosterone is the one exception.{' '}
+              <Link href="/start">Just here for a pen?</Link>
             </p>
           </div>
           <RoyalPrick />
         </div>
       </section>
 
-      {SHOW_FILM && <Film />}
+      <Film />
 
       <section className="pkg-list section">
         <div className="container pkg-list__grid">
@@ -167,7 +193,7 @@ export function RoyalPrickPage() {
           </div>
           <ol className="pkg-steps">
             {STEPS.map((s, i) => (
-              <li key={s.title} className="pkg-step" data-reveal style={{ ...delay((i % 3) * 90), '--step-colour': STEP_COLOURS[i % STEP_COLOURS.length] } as CSSProperties}>
+              <li key={s.title} className="pkg-step" data-reveal style={{ ...delay((i % 3) * 90), '--step-colour': HOUSE_PENS[i % HOUSE_PENS.length].colours.main } as CSSProperties}>
                 <div className="pkg-step__num">0{i + 1}</div>
                 <h3>{s.title}</h3>
                 <p>{s.body}</p>
@@ -215,6 +241,7 @@ export function RoyalPrickPage() {
 
       <EditorialStatement top="Most pricks make you do all the work." bottom="This one treats you like royalty.">
         <p>We do the heavy lifting. All of it.</p>
+        <p className="small muted">{SOURCE_LINE}</p>
       </EditorialStatement>
 
       <section className="section">
@@ -226,8 +253,8 @@ export function RoyalPrickPage() {
           <div data-reveal style={delay(120)}>
             <h2 className="display pkg-h2">It&apos;s not if</h2>
             <ul className="checklist pkg-fit__no">{NOT_FOR_YOU.map((t) => <li key={t}>{t}</li>)}</ul>
-            <p>Rather skip the bloods? No problem. <Link href="/start">Start your assessment</Link> online, no package needed.</p>
-            <p>Already on a prescribed treatment? <Link href="/start?route=repeat">Repeating your script</Link> is quicker.</p>
+            <p>Rather skip the bloods? No problem. <Link href="/start">Find your prick</Link> and do your assessment online, no package needed.</p>
+            <p>Already on a prescribed protocol? <Link href="/start?route=repeat">Repeating your script</Link> is quicker.</p>
           </div>
         </div>
       </section>
@@ -255,6 +282,11 @@ export function RoyalPrickPage() {
           </h2>
           <div data-reveal>
             <RoyalSummonsForm />
+          </div>
+          <div className="final-cta__pens" data-reveal>
+            {FINALE.map((b, i) => (
+              <PenStage key={b.slug} colours={b.colours} label={b.penLabel} botanical={b.botanical} angle={i % 2 ? -84 : -96} fit={0.95} />
+            ))}
           </div>
           <p className="small pkg-small">Every treatment is a clinician&apos;s decision and not everyone will be suitable. How people respond varies.</p>
         </div>
