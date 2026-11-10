@@ -212,7 +212,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 .hero__disc.three { width: min(9vw, 120px); background: var(--lime); bottom: 10%; left: 4%; animation: drift 11s ease-in-out infinite reverse; }
 .hero__royal { position: relative; z-index: 1; display: block; height: 88%; width: auto; }
 .hero__pen { position: absolute; inset: 0; z-index: 1; }
-.hero__note { position: absolute; z-index: 2; right: 0; bottom: 24%; transform: rotate(-6deg); color: var(--ink); }
+.hero__note { position: absolute; z-index: 2; left: 0; top: 4%; transform: rotate(-6deg); color: var(--ink); }
 
 @media (max-width: 860px) {
   .hero { min-height: auto; padding-top: var(--space-2); }
