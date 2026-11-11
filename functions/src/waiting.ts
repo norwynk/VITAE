@@ -1,8 +1,9 @@
 /**
- * Hourly check for anything left waiting on the clinician. The clinician and
- * the admin each get one email at the start of the working day, and nothing
- * more; the only exception is a one-off note to the admin about an unanswered
- * urgent message. Emails name people and waiting times only.
+ * Hourly check for anything left waiting on the clinician. Only the admin is
+ * emailed: one list each working morning of everything waiting, with anything
+ * overdue marked late, plus a one-off note about an unanswered urgent message.
+ * The clinician gets no reminder emails; the admin follows up with them.
+ * Emails name people and waiting times only.
  */
 import { FieldValue, type Firestore, type QuerySnapshot } from 'firebase-admin/firestore';
 import { type CollectionName, type MemberRecord, type Store, PENDING_REQUEST_STATUSES, emptyStore, localDate } from '../../src/domain/model';
@@ -101,39 +102,26 @@ export async function runWaitingSweep(db: Firestore, now: Date, mail: StaffMail)
   const urgentClaim = (i: WaitingItem) => `urgent_${i.key}_${i.since}`;
 
   if (isSummaryHour(now)) {
-    const assignments = await db.collection('providerAssignments').where('active', '==', true).limit(SWEEP_LIMIT).get();
-    const clinicians = new Map<string, Set<string>>();
-    for (const a of assignments.docs) clinicians.set(a.get('clinicianId'), (clinicians.get(a.get('clinicianId')) ?? new Set()).add(a.get('memberId')));
-
-    for (const [clinicianId, assigned] of clinicians) {
-      const theirs = items.filter((i) => assigned.has(i.memberId));
-      if (!theirs.length) continue;
-      const email = (await db.doc(`users/${clinicianId}`).get()).get('email') as string | undefined;
-      if (!email) continue;
-      const summaryId = `summary_${localDate(now)}_${clinicianId}`;
-      if (!(await claim(db, summaryId, now.toISOString()))) continue;
-      result.emails += await sendClaimed(
-        db,
-        [summaryId],
-        mail,
-        [email],
-        `${theirs.length} waiting for your review`,
-        ['Good morning. These are waiting for you:', '', ...urgentFirst(theirs).map(line), '', `Open your workspace: ${SITE}/app`, '', 'For privacy, health details are only in the workspace, never in email.'].join('\n'),
-      );
-    }
-
     const adminSummaryId = `admin_summary_${localDate(now)}`;
-    if (overdue.length && (await claim(db, adminSummaryId, now.toISOString()))) {
+    if (await claim(db, adminSummaryId, now.toISOString())) {
       // Anything urgent on this list has now been flagged, so it gets no separate note.
       const flagged: string[] = [];
       for (const i of overdue) if (i.kind === 'URGENT' && (await claim(db, urgentClaim(i), now.toISOString()))) flagged.push(urgentClaim(i));
+      const late = new Set(overdue.map((i) => i.key));
       result.emails += await sendClaimed(
         db,
         [adminSummaryId, ...flagged],
         mail,
         await mail.adminEmails(),
-        `Waiting too long: ${overdue.length} with the clinician`,
-        ['These have not been answered in time:', '', ...urgentFirst(overdue).map(line), ...adminFooter].join('\n'),
+        `${items.length} waiting for the doctor${overdue.length ? `, ${overdue.length} late` : ''}`,
+        [
+          'Good morning. These are waiting for the doctor:',
+          '',
+          ...urgentFirst(items).map((i) => line(i) + (late.has(i.key) ? ' (late)' : '')),
+          '',
+          'The doctor is not emailed about these, so give them a nudge.',
+          ...adminFooter,
+        ].join('\n'),
       );
     }
     return result;
