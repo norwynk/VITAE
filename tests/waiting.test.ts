@@ -339,27 +339,27 @@ describe('the hourly reminder sweep', () => {
     };
   });
 
-  it('sends the morning summary once a day', async () => {
+  it('sends the admin the morning list once a day, and never the clinician', async () => {
     await sweep('2026-11-02T05:20:00.000Z');
     await sweep('2026-11-02T06:20:00.000Z');
-    expect(to(clinicianMail)).toHaveLength(1);
-    expect(to(clinicianMail)[0][2]).toContain('Sam Example: pen request');
+    expect(to(adminMail)).toHaveLength(1);
+    expect(to(adminMail)[0][2]).toContain('Sam Example: pen request');
+    expect(to(clinicianMail)).toHaveLength(0);
   });
 
-  it('emails the clinician once a day however long it waits, and the admin once a day from two working days', async () => {
+  it('lists everything waiting each working morning, marking what is late', async () => {
     const day = async (date: string) => {
       for (const time of ['05:20', '06:20', '08:20', '12:20', '16:20']) await sweep(`${date}T${time}:00.000Z`);
     };
     await day('2026-11-03'); // about one working day
-    expect(to(clinicianMail)).toHaveLength(1);
-    expect(to(adminMail)).toHaveLength(0);
-    await day('2026-11-04'); // two working days pass mid-morning, after the morning email
-    expect(to(clinicianMail)).toHaveLength(2);
-    expect(to(adminMail)).toHaveLength(0);
-    await day('2026-11-05');
-    expect(to(clinicianMail)).toHaveLength(3);
     expect(to(adminMail)).toHaveLength(1);
-    expect(to(adminMail)[0][2]).toContain('Sam Example');
+    expect(to(adminMail)[0][2]).not.toContain('(late)');
+    await day('2026-11-04');
+    await day('2026-11-05');
+    expect(to(adminMail)).toHaveLength(3);
+    expect(to(adminMail)[2][2]).toContain('Sam Example: pen request');
+    expect(to(adminMail)[2][2]).toContain('(late)');
+    expect(to(clinicianMail)).toHaveLength(0);
   });
 
   it('does not email anyone about something that arrives later in the day', async () => {
@@ -381,7 +381,7 @@ describe('the hourly reminder sweep', () => {
     await sweep('2026-11-03T05:20:00.000Z');
     await sweep('2026-11-03T12:20:00.000Z');
     expect(to(adminMail)).toHaveLength(2);
-    expect(to(clinicianMail)).toHaveLength(1);
+    expect(to(clinicianMail)).toHaveLength(0);
   });
 
   it('sends nothing at the weekend but keeps the admin list right', async () => {
@@ -401,7 +401,7 @@ describe('the hourly reminder sweep', () => {
     send.mockRejectedValueOnce(new Error('Gmail down'));
     await sweep('2026-11-03T05:20:00.000Z');
     await sweep('2026-11-03T06:20:00.000Z');
-    expect(to(clinicianMail)).toHaveLength(2);
+    expect(to(adminMail)).toHaveLength(2);
   });
 
   it('never puts message text or the pen in an email', async () => {
