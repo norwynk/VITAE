@@ -2,7 +2,8 @@
  * Hourly check for anything left waiting on the clinician. Only the admin is
  * emailed: one list each working morning of everything waiting, with anything
  * overdue marked late, plus a one-off note about an unanswered urgent message.
- * The clinician gets no reminder emails; the admin follows up with them.
+ * The clinician gets no daily reminder (the admin follows up), but still gets the
+ * usual email the moment a screening, pen request or message arrives.
  * Emails name people and waiting times only.
  */
 import { FieldValue, type Firestore, type QuerySnapshot } from 'firebase-admin/firestore';
@@ -119,7 +120,7 @@ export async function runWaitingSweep(db: Firestore, now: Date, mail: StaffMail)
           '',
           ...urgentFirst(items).map((i) => line(i) + (late.has(i.key) ? ' (late)' : '')),
           '',
-          'The doctor is not emailed about these, so give them a nudge.',
+          'The doctor gets no reminder about these, so give them a nudge.',
           ...adminFooter,
         ].join('\n'),
       );

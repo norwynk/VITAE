@@ -11,6 +11,7 @@ import { defineSecret } from 'firebase-functions/params';
 import { createTransport } from 'nodemailer';
 import type { Command } from '../../src/domain/commands';
 import { isRepeatRoute } from '../../src/domain/intake';
+import { isFlagged, penQuestion } from '../../src/domain/penQuestions';
 import type { HealthAssessment, MemberRecord, MessageThread, PenRelease, Role } from '../../src/domain/model';
 
 export const MAIL_LOGIN = defineSecret('MAIL_LOGIN');
@@ -54,6 +55,12 @@ export async function emailsFor(db: Firestore, roles: Role[]): Promise<string[]>
   return snap.docs.map((d) => d.get('email') as string).filter(Boolean);
 }
 
+async function clinicianEmailsFor(db: Firestore, memberId: string): Promise<string[]> {
+  const assignments = await db.collection('providerAssignments').where('memberId', '==', memberId).where('active', '==', true).get();
+  const users = await Promise.all(assignments.docs.map((a) => db.doc(`users/${a.get('clinicianId')}`).get()));
+  return users.map((u) => u.get('email') as string).filter(Boolean);
+}
+
 /**
  * The admin's email check: same sending account and route as the real
  * alerts, sent only to the admin who clicked (never the clinician), clearly
@@ -83,11 +90,7 @@ export async function sendTestEmail(requestedBy: string): Promise<{ from: string
 /** So the admin can write to someone personally. Contact details only. */
 const contactLines = (member: MemberRecord | undefined) => [`Email: ${member?.email || 'not given'}`, `Mobile: ${member?.phone ?? 'not given'}`];
 
-/**
- * After a command succeeds: tell the admin. Never throws. The clinician is never
- * emailed: the admin gets one morning list of what's waiting and follows up, and
- * only an urgent message reaches the admin straight away.
- */
+/** After a command succeeds: tell the people who need to act. Never throws. */
 export async function notifyTeam(db: Firestore, command: Command, memberId: string | undefined, resultId: string | undefined, actorRole: Role) {
   try {
     if (command.type === 'onboard' && memberId) {
@@ -98,47 +101,76 @@ export async function notifyTeam(db: Firestore, command: Command, memberId: stri
       const repeat = assessment?.intake ? isRepeatRoute(assessment.intake.answers) : false;
       const what = repeat ? 'an existing script to verify' : 'a completed screening';
       await send(
-        await emailsFor(db, ['SUPER_ADMIN']),
-        `${repeat ? 'Script' : 'Screening'} sent to the clinician: ${name}`,
+        await clinicianEmailsFor(db, memberId),
+        repeat ? `Script to verify: ${name}` : `New screening: ${name}`,
         [
-          `${name} has sent ${what} to their clinician.`,
-          ...(flagged ? [`${flagged} answer${flagged === 1 ? '' : 's'} flagged for the doctor to look at.`] : []),
+          `${name} has sent you ${what}.`,
+          ...(flagged ? [`${flagged} answer${flagged === 1 ? '' : 's'} flagged for you to look at.`] : []),
           '',
-          ...contactLines(member),
+          `Open your clinician workspace to review it: ${SITE}/app`,
           '',
-          "The doctor isn't emailed about this. It's on tomorrow morning's list, and you'll get another email if a pen is approved.",
-          '',
-          `${SITE}/app`,
+          'For privacy, health details are only in the workspace, never in email.',
         ].join('\n'),
       );
-    }
-
-    // An existing member's new screening: the admin hears about it. A pen request just joins the morning list.
-    if (command.type === 'rescreen' && memberId) {
-      const member = (await db.doc(`members/${memberId}`).get()).data() as MemberRecord | undefined;
-      const name = member ? `${member.firstName} ${member.lastName}`.trim() : 'A member';
       await send(
         await emailsFor(db, ['SUPER_ADMIN']),
-        `Screening sent to the clinician: ${name}`,
-        [`${name} has sent an updated screening to their clinician.`, '', ...contactLines(member), '', "The doctor isn't emailed about this. It's on tomorrow morning's list.", '', `${SITE}/app`].join('\n'),
+        `${repeat ? 'Script' : 'Screening'} sent to the clinician: ${name}`,
+        [`${name} has sent ${what} to their clinician.`, '', ...contactLines(member), '', "You'll get another email if a pen is approved.", '', `${SITE}/app`].join('\n'),
       );
     }
 
-    // An urgent message can't wait for the morning list: the admin is told at once, to reach the doctor. Ordinary messages just join the list.
+    // An existing member's new screening, or a pen added from their account: the clinician has something to review.
+    if ((command.type === 'rescreen' || command.type === 'request') && memberId) {
+      const member = (await db.doc(`members/${memberId}`).get()).data() as MemberRecord | undefined;
+      const name = member ? `${member.firstName} ${member.lastName}`.trim() : 'A member';
+      const ids = command.type === 'request' ? [command.treatmentId] : command.treatmentIds;
+      const pens = (await Promise.all(ids.map((id) => db.doc(`treatments/${id}`).get()))).map((t) => (t.get('name') as string) || 'a pen');
+      const assessment =
+        command.type === 'rescreen' && resultId ? ((await db.doc(`healthAssessments/${resultId}`).get()).data() as HealthAssessment | undefined) : undefined;
+      const flagged =
+        command.type === 'rescreen'
+          ? (assessment?.penAnswers?.filter((a) => a.flagged).length ?? 0)
+          : command.penAnswers.filter((a) => {
+              const q = penQuestion(a.questionId);
+              return q && isFlagged(q, a.answer);
+            }).length;
+      const asks = pens.length ? `asked for ${pens.join(' and ')}` : 'asked you to suggest a pen';
+      await send(
+        await clinicianEmailsFor(db, memberId),
+        command.type === 'rescreen' ? `Updated screening: ${name}` : `New pen request: ${name}`,
+        [
+          command.type === 'rescreen' ? `${name} has sent you an updated screening and ${asks}.` : `${name} has ${asks}.`,
+          ...(flagged ? [`${flagged} answer${flagged === 1 ? '' : 's'} flagged for you to look at.`] : []),
+          '',
+          `Open your clinician workspace to review it: ${SITE}/app`,
+          '',
+          'For privacy, health details are only in the workspace, never in email.',
+        ].join('\n'),
+      );
+      if (command.type === 'rescreen') {
+        await send(
+          await emailsFor(db, ['SUPER_ADMIN']),
+          `Screening sent to the clinician: ${name}`,
+          [`${name} has sent an updated screening to their clinician.`, '', ...contactLines(member), '', `${SITE}/app`].join('\n'),
+        );
+      }
+    }
+
+    // A member writing in: the clinician is told at once, whatever the day. The words stay in the workspace.
     if (command.type === 'message' && actorRole === 'MEMBER' && memberId && resultId) {
       const thread = (await db.doc(`messageThreads/${resultId}`).get()).data() as MessageThread | undefined;
-      if (thread && thread.topic !== 'ORDER_DELIVERY' && thread.escalated) {
+      if (thread && thread.topic !== 'ORDER_DELIVERY') {
         const member = (await db.doc(`members/${memberId}`).get()).data() as MemberRecord | undefined;
         const name = member ? `${member.firstName} ${member.lastName}`.trim() : 'A member';
         await send(
-          await emailsFor(db, ['SUPER_ADMIN']),
-          `Urgent message for the doctor: ${name}`,
+          await clinicianEmailsFor(db, memberId),
+          `${thread.escalated ? 'Urgent message' : 'New message'}: ${name}`,
           [
-            `${name} has sent the doctor an urgent message. The doctor isn't emailed, so please let them know now.`,
+            `${name} has sent you ${thread.escalated ? 'an urgent message' : 'a message'}.`,
             '',
-            `${SITE}/app`,
+            `Open your clinician workspace to read it: ${SITE}/app`,
             '',
-            "For privacy, what they wrote is only in the doctor's workspace, never in email.",
+            'For privacy, health details are only in the workspace, never in email.',
           ].join('\n'),
         );
       }
