@@ -4,6 +4,7 @@ import { MEN_HOUSE_PENS } from '@/brand/housePens';
 import { rememberSide } from '@/hooks/useSide';
 import { BrandHero } from './brand/BrandHero';
 import { Explainer } from './brand/Explainer';
+import { HappyHormonesBand } from './brand/HappyHormonesBand';
 import { RoyalPrickBand } from './brand/RoyalPrickBand';
 import { MenGoalCards } from './brand/GoalCards';
 import { RepeatScriptBand } from './brand/RepeatScriptBand';
@@ -29,6 +30,7 @@ export function MenHomePage() {
       <MenGoalCards />
       <SourceSection />
       <PeptideProtocols men />
+      <HappyHormonesBand />
       <RoyalPrickBand />
       <RepeatScriptBand />
       <EditorialStatement top="A little prick." bottom="A lot more you.">

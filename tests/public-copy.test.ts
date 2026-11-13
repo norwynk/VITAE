@@ -4,7 +4,12 @@ import RANGE from '../src/brand/range.json';
 import { GOALS } from '../src/brand/goals';
 import { MEN_GOALS, goalForSide } from '../src/brand/sides';
 
-/** Everything a visitor can read without an account. */
+/**
+ * Everything a visitor can read without an account. The Happy Hormones page
+ * (src/components/HappyHormonesPage.tsx) is left out on purpose: it names its
+ * three hormone products, and that wording was cleared by the medicines attorney
+ * on 2026-11-13. Its homepage band is checked like everything else.
+ */
 const PUBLIC_SOURCES = [
   'src/app/layout.tsx',
   'src/app/page.tsx',
@@ -22,6 +27,7 @@ const PUBLIC_SOURCES = [
   'src/components/brand/GoalCards.tsx',
   'src/components/brand/Sections.tsx',
   'src/components/brand/RoyalPrickBand.tsx',
+  'src/components/brand/HappyHormonesBand.tsx',
   'src/components/brand/RepeatScriptBand.tsx',
   'src/components/site/SiteNav.tsx',
   'src/components/site/SiteFooter.tsx',
