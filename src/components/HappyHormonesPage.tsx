@@ -53,11 +53,15 @@ const RANGE = [
   },
 ] as const;
 
+/** Real life with the range. Every photo is the same height; widths follow each picture's shape. */
 const WILD = [
-  { src: '/hormones/sunlit.webp', alt: 'Happy Hormones progesterone, estrogen gel and the Full Throttle pen on a bathroom shelf in morning sun', wide: true },
-  { src: '/hormones/jar.webp', alt: 'A jar of Happy Hormones progesterone tablets on a pink plinth' },
-  { src: '/hormones/bottle.webp', alt: 'Happy Hormones estrogen gel on a yellow plinth' },
-  { src: '/hormones/hero.webp', alt: 'The three Happy Hormones products together', wide: true },
+  { src: '/hormones/life-2.webp', w: 1122, h: 1402, alt: 'A laughing woman on sunlit rocks by the sea, holding a jar of Happy Hormones progesterone' },
+  { src: '/hormones/life-6.webp', w: 1536, h: 1024, alt: 'Three friends laughing on a garden bench, one holding a jar of Happy Hormones progesterone' },
+  { src: '/hormones/life-1.webp', w: 1122, h: 1402, alt: 'A smiling woman in a bathrobe pumping Happy Hormones estrogen gel into her palm in morning sun' },
+  { src: '/hormones/life-3.webp', w: 1254, h: 1254, alt: 'Breakfast for two in the sun, with Happy Hormones progesterone and the PRICK Full Throttle pen on the table' },
+  { src: '/hormones/life-4.webp', w: 1122, h: 1402, alt: 'A relaxed man sitting on his bed in morning light, holding the PRICK Full Throttle pen' },
+  { src: '/hormones/life-5.webp', w: 1122, h: 1402, alt: 'A hand with coral nails holding Happy Hormones estrogen gel against a sunny yellow wall' },
+  { src: '/hormones/sunlit.webp', w: 1600, h: 1600, alt: 'Happy Hormones progesterone, estrogen gel and the Full Throttle pen on a bathroom shelf in morning sun' },
 ];
 
 const WHY = [
@@ -334,9 +338,9 @@ export function HappyHormonesPage() {
           </div>
           <div className="hh-wild__track" tabIndex={0} aria-label="Photos, scroll sideways">
             {WILD.map((w, i) => (
-              <figure key={w.src} className={`hh-wild__item${w.wide ? ' hh-wild__item--wide' : ''}`} data-reveal style={delay(i * 80)}>
+              <figure key={w.src} className="hh-wild__item" data-reveal style={{ ...delay(i * 80), aspectRatio: `${w.w} / ${w.h}` }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={w.src} alt={w.alt} loading="lazy" />
+                <img src={w.src} alt={w.alt} width={w.w} height={w.h} loading="lazy" />
               </figure>
             ))}
             <figure className="hh-wild__item hh-wild__note" data-reveal style={delay(WILD.length * 80)}>
@@ -372,14 +376,14 @@ export function HappyHormonesPage() {
           </div>
           <div className="hh-why__art" data-reveal>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/hormones/sunlit.webp" alt="" loading="lazy" />
+            <img src="/hormones/life-1.webp" alt="" loading="lazy" />
           </div>
         </section>
 
         <section className="hh-split" aria-labelledby="hh-split-title">
           <div className="hh-split__art" data-reveal>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/hormones/bottle.webp" alt="" loading="lazy" />
+            <img src="/hormones/life-3.webp" alt="" loading="lazy" />
           </div>
           <div className="hh-split__copy" data-reveal style={delay(120)}>
             <h2 id="hh-split-title" className="hh-h2">

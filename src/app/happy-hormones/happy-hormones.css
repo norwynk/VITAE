@@ -106,11 +106,9 @@
 /* ---- At home: sideways scroller ---- */
 .hh-wild { padding: var(--section) 0; background: var(--hh-butter); }
 .hh-wild__track { display: flex; gap: 1rem; overflow-x: auto; scroll-snap-type: x mandatory; padding: 0 var(--gutter) 1rem; scrollbar-width: thin; }
-.hh-wild__item { flex: 0 0 auto; width: min(78vw, 360px); aspect-ratio: 4 / 5; margin: 0; border-radius: 22px; overflow: hidden; scroll-snap-align: start; }
-.hh-wild__item--wide { width: min(86vw, 560px); aspect-ratio: auto; height: auto; }
+.hh-wild__item { flex: 0 0 auto; height: clamp(340px, 30vw + 160px, 520px); width: auto; aspect-ratio: 4 / 5; margin: 0; border-radius: 22px; overflow: hidden; scroll-snap-align: start; }
 .hh-wild__item img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 900ms var(--ease-out); }
 .hh-wild__item:hover img { transform: scale(1.05); }
-.hh-wild__item--wide img { aspect-ratio: 9 / 8; height: auto; }
 .hh-wild__note { background: var(--hh-cream); display: grid; place-content: center; justify-items: center; text-align: center; padding: 2rem; gap: 1rem; }
 .hh-wild__flower { width: 48px; color: var(--hh-orange); animation: hh-spin 20s linear infinite; }
 .hh-wild__promise { font-family: var(--font-serif); font-size: var(--step-1); line-height: 1.25; margin: 0; }
@@ -131,7 +129,7 @@
 .hh-accordion summary::after { content: '+'; font-size: 1.6rem; font-weight: 400; transition: transform var(--dur) var(--ease-out); }
 .hh-accordion details[open] summary::after { transform: rotate(45deg); }
 .hh-accordion details p { margin: 0 0 1.25rem; color: var(--hh-plum-soft); max-width: 52ch; }
-.hh-why__art img, .hh-split__art img { width: 100%; display: block; border-radius: var(--hh-radius); }
+.hh-why__art img, .hh-split__art img { width: 100%; display: block; border-radius: var(--hh-radius); aspect-ratio: 4 / 5; object-fit: cover; }
 
 /* ---- Why Happy Hormones: split ---- */
 .hh-split { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); align-items: center; max-width: var(--container); margin: 0 auto; padding: 0 var(--gutter) var(--section); }
