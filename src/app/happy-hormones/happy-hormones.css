@@ -1,0 +1,202 @@
+/* =========================================================================
+   Happy Hormones: PRICK's hormone-care sister. Sunny editorial, from the label.
+   ========================================================================= */
+.hh {
+  --hh-cream: #fbf0e2;
+  --hh-peach: #ffe1cf;
+  --hh-blush: #ffd3c4;
+  --hh-plum: #4a0d2c;
+  --hh-plum-soft: #6e3a52;
+  --hh-pink: #f2457f;
+  --hh-orange: #ff7a1a;
+  --hh-gold: #ffb81c;
+  --hh-butter: #fff1bf;
+  --hh-lilac: #eadcff;
+  --hh-blue: #a9bedd;
+  --hh-radius: 28px;
+  background: var(--hh-cream);
+  color: var(--hh-plum);
+  overflow-x: clip;
+}
+.hh em { font-style: italic; font-weight: 400; }
+
+.hh-strip { margin: 0; padding: 0.55rem var(--gutter); background: var(--hh-lilac); text-align: center; font-size: var(--step--1); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
+.hh-eyebrow { font-size: var(--step--1); font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--hh-pink); margin: 0 0 1rem; }
+
+.hh-logo { position: relative; display: inline-block; font-family: var(--font-serif); font-weight: 900; font-variation-settings: 'SOFT' 100, 'opsz' 144; line-height: 0.86; letter-spacing: -0.02em; }
+.hh-logo__flower { position: absolute; width: 0.6em; top: -0.2em; left: 2.95em; color: var(--hh-orange); }
+
+.hh-h2 { font-family: var(--font-serif); font-weight: 400; font-size: var(--step-3); line-height: 1; letter-spacing: -0.02em; margin: 0; }
+.hh-h2 em { color: var(--hh-pink); }
+.hh-head { display: grid; grid-template-columns: 1.2fr 1fr; gap: var(--space-3); align-items: end; max-width: var(--container); margin: 0 auto var(--space-4); padding: 0 var(--gutter); }
+.hh-head p { margin: 0; color: var(--hh-plum-soft); font-size: var(--step-0); max-width: 44ch; }
+.hh-head--centre { grid-template-columns: 1fr; text-align: center; justify-items: center; }
+
+/* Buttons: rounded pills, like the label's dose badge. */
+.hh-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 1.6rem; border-radius: 999px; background: var(--hh-plum); color: var(--hh-cream); border: 2px solid var(--hh-plum); font-weight: 700; text-decoration: none; transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast); }
+.hh-btn:hover { transform: translateY(-2px) rotate(-1deg); background: var(--hh-pink); border-color: var(--hh-pink); }
+.hh-btn--ghost { background: transparent; color: var(--hh-plum); }
+.hh-btn--ghost:hover { color: #fff; }
+.hh-btn--light { background: var(--hh-cream); color: var(--hh-plum); border-color: var(--hh-cream); }
+.hh-btn--outline { background: transparent; color: var(--hh-cream); border-color: var(--hh-cream); }
+.hh-btn--light:hover, .hh-btn--outline:hover { background: var(--hh-plum); border-color: var(--hh-plum); color: var(--hh-cream); }
+
+/* ---- Hero: a rounded sunny panel, product scene floating on the right ---- */
+.hh-hero { position: relative; margin: 0.75rem; border-radius: var(--hh-radius); background: radial-gradient(120% 90% at 85% 20%, #ffe9b8 0%, var(--hh-peach) 45%, var(--hh-blush) 100%); display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: var(--space-3); padding: clamp(6rem, 4rem + 6vw, 9rem) clamp(1.25rem, 4vw, 4rem) clamp(6rem, 5rem + 4vw, 9rem); overflow: hidden; isolation: isolate; }
+.hh-hero__title { font-family: var(--font-serif); font-weight: 400; font-size: clamp(3.2rem, 1.8rem + 6vw, 7.6rem); line-height: 0.92; letter-spacing: -0.035em; margin: 0; }
+.hh-hero__title em { color: var(--hh-pink); }
+.hh-hero__lede { font-size: var(--step-1); line-height: 1.35; max-width: 34ch; margin: 1.5rem 0 2rem; color: var(--hh-plum-soft); }
+.hh-hero__actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+.hh-hero__sun { position: absolute; inset: -18% -10% auto auto; width: 70%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, rgb(255 184 28 / 0.55), transparent 65%); z-index: -1; animation: hh-pulse 9s ease-in-out infinite; }
+.hh-hero__waves { position: absolute; left: 0; right: 0; bottom: -2px; height: clamp(60px, 9vw, 130px); z-index: -1; }
+
+.hh-float { position: absolute; color: var(--hh-orange); pointer-events: none; animation: hh-spin 18s linear infinite; }
+.hh-float--a { width: 72px; top: -26px; left: -20px; }
+.hh-float--b { width: 44px; bottom: 12%; right: -14px; color: var(--hh-pink); animation-duration: 24s; animation-direction: reverse; }
+.hh-float--c { width: 30px; top: 30%; right: 8%; color: var(--hh-gold); animation-duration: 14s; }
+
+/* Wavy label ribbon, drifting sideways forever. */
+.hh-waves { display: block; width: 100%; overflow: hidden; }
+.hh-waves__drift { animation: hh-drift 22s linear infinite; }
+
+/* ---- Promise ticker ---- */
+.hh-ticker { overflow: hidden; border-block: 2px solid var(--hh-plum); background: var(--hh-cream); margin-top: 1.5rem; }
+.hh-ticker__track { display: flex; width: max-content; animation: hh-marquee 38s linear infinite; }
+.hh-ticker__track span { display: inline-flex; align-items: center; gap: 0.7rem; padding: 0.9rem 1.6rem; font-family: var(--font-serif); font-size: var(--step-1); white-space: nowrap; }
+.hh-ticker__flower { width: 1.3em; color: var(--hh-orange); }
+.hh-ticker__track span:nth-child(3n + 2) .hh-ticker__flower { color: var(--hh-pink); }
+.hh-ticker__track span:nth-child(3n) .hh-ticker__flower { color: var(--hh-gold); }
+
+/* ---- Numbers band ---- */
+.hh-numbers { background: linear-gradient(180deg, var(--hh-cream) 0%, var(--hh-butter) 38%, #ffcf5c 100%); padding: var(--section) var(--gutter); text-align: center; }
+.hh-numbers__intro { font-family: var(--font-serif); font-size: var(--step-2); max-width: 22ch; margin: 0 auto var(--space-5); line-height: 1.1; }
+.hh-numbers__grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-3); max-width: var(--container); margin: 0 auto; }
+.hh-number { display: grid; gap: 0.6rem; justify-items: center; align-content: start; }
+.hh-number__n small { font-size: 0.55em; }
+.hh-number__n { font-family: var(--font-display); font-size: clamp(3.6rem, 1.8rem + 5.6vw, 7rem); white-space: nowrap; line-height: 0.85; letter-spacing: -0.01em; }
+.hh-number__label { font-size: var(--step-0); max-width: 16ch; }
+
+/* ---- The range ---- */
+.hh-range { padding: var(--section) 0; }
+.hh-range__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); max-width: var(--container); margin: 0 auto; padding: 0 var(--gutter); }
+.hh-card { display: flex; flex-direction: column; align-items: flex-start; }
+.hh-card__stage { width: 100%; aspect-ratio: 4 / 5; border-radius: var(--hh-radius); overflow: hidden; perspective: 900px; --rx: 0deg; --ry: 0deg; background: var(--hh-peach); }
+.hh-card--gold .hh-card__stage { background: var(--hh-butter); }
+.hh-card--blue .hh-card__stage { background: var(--hh-blue); }
+.hh-card__stage img { width: 100%; height: 100%; object-fit: cover; display: block; transform: rotateX(var(--rx)) rotateY(var(--ry)) scale(1.02); transition: transform 500ms var(--ease-out); }
+.hh-card__stage:hover img { transform: rotateX(var(--rx)) rotateY(var(--ry)) scale(1.07); }
+.hh-card__who { margin: 1.25rem 0 0.2rem; font-size: var(--step--1); font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--hh-pink); }
+.hh-card--blue .hh-card__who { color: #2b4c7e; }
+.hh-card__name { font-family: var(--font-serif); font-weight: 900; font-variation-settings: 'SOFT' 100; font-size: var(--step-2); margin: 0; line-height: 1; }
+.hh-card__kind { margin: 0.35rem 0 0.75rem; font-size: var(--step--1); letter-spacing: 0.12em; text-transform: uppercase; }
+.hh-card__line { margin: 0 0 1.25rem; color: var(--hh-plum-soft); flex: 1; }
+
+/* ---- Peptides vs hormones ---- */
+.hh-versus { padding: 0 0 var(--section); }
+.hh-versus__grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); max-width: 1100px; margin: 0 auto; padding: 0 var(--gutter); }
+.hh-versus__card { border-radius: var(--hh-radius); padding: clamp(1.75rem, 4vw, 3rem); display: grid; gap: 0.9rem; align-content: start; }
+.hh-versus__card h3 { font-family: var(--font-serif); font-size: var(--step-2); font-weight: 400; margin: 0; }
+.hh-versus__card p { margin: 0; }
+.hh-versus__card--prick { background: var(--black); color: var(--cream); }
+.hh-versus__card--prick .link-arrow { color: var(--pink); }
+.hh-versus__brand { font-family: var(--font-display); font-size: var(--step-3); line-height: 0.9; letter-spacing: 0.02em; }
+.hh-versus__card--hh { background: var(--hh-lilac); }
+.hh-versus__logo { font-size: var(--step-2); justify-self: start; }
+
+/* ---- At home: sideways scroller ---- */
+.hh-wild { padding: var(--section) 0; background: var(--hh-butter); }
+.hh-wild__track { display: flex; gap: 1rem; overflow-x: auto; scroll-snap-type: x mandatory; padding: 0 var(--gutter) 1rem; scrollbar-width: thin; }
+.hh-wild__item { flex: 0 0 auto; width: min(78vw, 360px); aspect-ratio: 4 / 5; margin: 0; border-radius: 22px; overflow: hidden; scroll-snap-align: start; }
+.hh-wild__item--wide { width: min(86vw, 560px); aspect-ratio: auto; height: auto; }
+.hh-wild__item img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 900ms var(--ease-out); }
+.hh-wild__item:hover img { transform: scale(1.05); }
+.hh-wild__item--wide img { aspect-ratio: 9 / 8; height: auto; }
+.hh-wild__note { background: var(--hh-cream); display: grid; place-content: center; justify-items: center; text-align: center; padding: 2rem; gap: 1rem; }
+.hh-wild__flower { width: 48px; color: var(--hh-orange); animation: hh-spin 20s linear infinite; }
+.hh-wild__promise { font-family: var(--font-serif); font-size: var(--step-1); line-height: 1.25; margin: 0; }
+.hh-wild__note figcaption { font-size: var(--step--1); letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; color: var(--hh-pink); }
+
+/* ---- Statement ---- */
+.hh-statement { position: relative; background: var(--hh-lilac); padding: var(--section) var(--gutter); text-align: center; overflow: hidden; }
+.hh-statement p { font-family: var(--font-serif); font-size: var(--step-3); line-height: 1.05; letter-spacing: -0.02em; max-width: 20ch; margin: 0 auto; }
+.hh-statement em { color: var(--hh-pink); }
+.hh-statement__flower { position: absolute; width: clamp(140px, 20vw, 280px); right: -40px; bottom: -60px; color: var(--hh-orange); opacity: 0.9; animation: hh-spin 40s linear infinite; }
+
+/* ---- Why hormones: accordion + image ---- */
+.hh-why { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); align-items: center; max-width: var(--container); margin: 0 auto; padding: var(--section) var(--gutter); }
+.hh-accordion { margin-top: var(--space-4); border-top: 1.5px solid var(--hh-plum); }
+.hh-accordion details { border-bottom: 1.5px solid var(--hh-plum); }
+.hh-accordion summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 1.1rem 0; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; font-size: var(--step--1); }
+.hh-accordion summary::-webkit-details-marker { display: none; }
+.hh-accordion summary::after { content: '+'; font-size: 1.6rem; font-weight: 400; transition: transform var(--dur) var(--ease-out); }
+.hh-accordion details[open] summary::after { transform: rotate(45deg); }
+.hh-accordion details p { margin: 0 0 1.25rem; color: var(--hh-plum-soft); max-width: 52ch; }
+.hh-why__art img, .hh-split__art img { width: 100%; display: block; border-radius: var(--hh-radius); }
+
+/* ---- Why Happy Hormones: split ---- */
+.hh-split { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); align-items: center; max-width: var(--container); margin: 0 auto; padding: 0 var(--gutter) var(--section); }
+.hh-split__art img { aspect-ratio: 4 / 5; object-fit: cover; }
+.hh-split__copy p { color: var(--hh-plum-soft); max-width: 50ch; }
+.hh-split__copy .hh-h2 { margin-bottom: var(--space-3); }
+.hh-split__kicker { font-family: var(--font-serif); font-style: italic; font-size: var(--step-1); color: var(--hh-pink) !important; }
+
+/* ---- Finale ---- */
+.hh-finale { position: relative; margin: 0 0.75rem 0.75rem; border-radius: var(--hh-radius); background: var(--hh-orange); color: var(--hh-cream); overflow: hidden; }
+.hh-finale__waves { height: clamp(60px, 9vw, 130px); transform: scaleY(-1); }
+.hh-finale__waves > g:nth-child(3) path { fill: var(--hh-cream); }
+.hh-finale__inner { display: grid; justify-items: center; text-align: center; gap: var(--space-3); padding: var(--space-5) var(--gutter) var(--section); }
+.hh-finale__logo { font-size: clamp(2.6rem, 1.6rem + 4vw, 5rem); color: var(--hh-plum); }
+.hh-finale__logo .hh-logo__flower { color: var(--hh-cream); }
+.hh-finale__title { font-family: var(--font-serif); font-weight: 400; font-size: var(--step-3); line-height: 1; letter-spacing: -0.02em; margin: 0; max-width: 16ch; }
+.hh-finale__title em { color: var(--hh-plum); }
+.hh-finale__small { font-size: var(--step--1); max-width: 60ch; opacity: 0.92; margin: 0; }
+
+@keyframes hh-bob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -12px; } }
+@keyframes hh-pulse { 0%, 100% { scale: 1; opacity: 0.9; } 50% { scale: 1.12; opacity: 1; } }
+@keyframes hh-spin { to { rotate: 360deg; } }
+@keyframes hh-drift { to { transform: translateX(-1440px); } }
+@keyframes hh-marquee { to { transform: translateX(-50%); } }
+
+@media (max-width: 900px) {
+  .hh-hero { grid-template-columns: 1fr; padding-top: 6.5rem; }
+  .hh-head, .hh-why, .hh-split, .hh-versus__grid { grid-template-columns: 1fr; }
+  .hh-numbers__grid { grid-template-columns: repeat(2, 1fr); row-gap: var(--space-4); }
+  .hh-range__grid { grid-template-columns: 1fr; max-width: 520px; }
+  .hh-split__art { order: 2; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hh *, .hh *::before { animation: none !important; }
+}
+
+/* ---- The way in from the homepages ---- */
+.hh-band { position: relative; overflow: hidden; background: radial-gradient(110% 90% at 80% 10%, #ffe9b8 0%, #ffe1cf 45%, #ffd3c4 100%); color: #4a0d2c; }
+.hh-band__inner { display: grid; grid-template-columns: 1fr 1.1fr; gap: var(--space-5); align-items: center; padding-block: var(--section); }
+.hh-band__eyebrow { font-size: var(--step--1); font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #f2457f; margin: 0 0 1rem; }
+.hh-band__title { font-family: var(--font-serif); font-weight: 400; font-size: var(--step-3); line-height: 1; letter-spacing: -0.02em; margin: 0 0 1.25rem; }
+.hh-band__title em { color: #f2457f; }
+.hh-band p { max-width: 46ch; color: #6e3a52; }
+.hh-band .hh-logo { font-size: var(--step-2); color: #4a0d2c; margin-bottom: 1.5rem; }
+.hh-band .hh-logo__flower { color: #ff7a1a; }
+.hh-band__art { perspective: 1200px; }
+.hh-band__art img { width: 100%; height: auto; display: block; border-radius: 22px; box-shadow: 0 40px 80px -30px rgb(74 13 44 / 0.45); transform: rotate(-1.5deg); transition: transform 700ms var(--ease-out); }
+.hh-band__art:hover img { transform: rotate(0deg) scale(1.02); }
+.hh-band .hh-btn { margin-top: 0.5rem; }
+@media (max-width: 900px) { .hh-band__inner { grid-template-columns: 1fr; } }
+
+/* ---- Hero stage: three 3D-rendered products floating, each at its own depth ---- */
+.hh-stage { position: relative; aspect-ratio: 1.12; --px: 0; --py: 0; perspective: 1400px; }
+.hh-stage .hh-hero__sun { inset: 4% 6% auto auto; width: 78%; }
+.hh-prod { position: absolute; transform: translate3d(calc(var(--px) * var(--depth) * 1px), calc(var(--py) * var(--depth) * 1px), 0) rotateY(calc(var(--px) * 14deg)) rotateX(calc(var(--py) * -10deg)); transition: transform 700ms var(--ease-out); }
+.hh-prod img { display: block; width: 100%; height: auto; animation: hh-bob var(--bob, 6s) ease-in-out infinite; animation-delay: var(--phase, 0s); filter: drop-shadow(0 24px 30px rgb(74 13 44 / 0.18)); }
+.hh-prod__shadow { position: absolute; left: 18%; right: 18%; bottom: -3%; height: 7%; border-radius: 50%; background: radial-gradient(closest-side, rgb(74 13 44 / 0.32), transparent); animation: hh-shadow var(--bob, 6s) ease-in-out infinite; animation-delay: var(--phase, 0s); z-index: -1; }
+.hh-prod--jar { left: 0; top: 8%; width: 46%; --depth: 26; --bob: 6.5s; }
+.hh-prod--bottle { right: 6%; top: -4%; width: 27%; --depth: 44; --bob: 7.5s; --phase: -2.4s; }
+.hh-prod--pen { left: 22%; bottom: 0; width: 74%; --depth: 70; --bob: 5.5s; --phase: -1.2s; z-index: 2; }
+.hh-prod--pen .hh-prod__shadow { left: 10%; right: 22%; bottom: 6%; }
+@keyframes hh-shadow { 0%, 100% { scale: 1; opacity: 1; } 50% { scale: 0.82; opacity: 0.6; } }
+@media (max-width: 900px) { .hh-stage { max-width: 560px; width: 100%; justify-self: center; } }
+
+/* The two product photos sit whole in their cards, on their own studio colour. */
+.hh-card--pink .hh-card__stage { background: linear-gradient(#e8d7cb, #f3e4db); }
+.hh-card--gold .hh-card__stage { background: linear-gradient(#f6e9e2, #f6e8dd); }
+.hh-card--pink .hh-card__stage img, .hh-card--gold .hh-card__stage img { object-fit: contain; }

@@ -36,6 +36,22 @@ function SideSwitch({ className, onDone }: { className?: string; onDone?: () => 
   );
 }
 
+/** The flower from the Happy Hormones label: our hormone-care sister brand. */
+function HHFlower() {
+  return (
+    <svg viewBox="-1.2 -1.2 2.4 2.4" aria-hidden="true">
+      <g fill="#ff7a1a">
+        <circle cx="0" cy="-0.58" r="0.46" />
+        <circle cx="0.55" cy="-0.18" r="0.46" />
+        <circle cx="0.34" cy="0.47" r="0.46" />
+        <circle cx="-0.34" cy="0.47" r="0.46" />
+        <circle cx="-0.55" cy="-0.18" r="0.46" />
+      </g>
+      <circle r="0.3" fill="#fde7b8" />
+    </svg>
+  );
+}
+
 export function SiteNav({ cta = true }: { cta?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -57,6 +73,10 @@ export function SiteNav({ cta = true }: { cta?: boolean }) {
         </nav>
         <Logo />
         <div className="site-nav__end">
+          <Link href="/happy-hormones" className="hh-navpill">
+            <HHFlower />
+            Happy Hormones
+          </Link>
           <SideSwitch />
           <Link href="/app" className="link-arrow site-nav__pens">
             Account
@@ -77,6 +97,9 @@ export function SiteNav({ cta = true }: { cta?: boolean }) {
             {l.label}
           </Link>
         ))}
+        <Link href="/happy-hormones" onClick={() => setOpen(false)}>
+          Happy Hormones
+        </Link>
         <Link href="/app" onClick={() => setOpen(false)}>
           Account
         </Link>

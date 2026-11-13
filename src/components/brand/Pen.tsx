@@ -10,7 +10,27 @@ import { Motif } from './Botanicals';
  * name, a silver dose window and a grey end cap. The dose window is left blank
  * on purpose: no verified doses exist yet. Stand-in until product photography.
  */
-export function Pen({ colours, label, botanical = 'leaf', className, style, title }: { colours: PenColours; label: string; botanical?: Botanical; className?: string; style?: CSSProperties; title?: string }) {
+export function Pen({
+  colours,
+  label,
+  botanical = 'leaf',
+  className,
+  style,
+  title,
+  line,
+  tag,
+}: {
+  colours: PenColours;
+  label: string;
+  botanical?: Botanical;
+  className?: string;
+  style?: CSSProperties;
+  title?: string;
+  /** Small print under the wordmark, when it isn't a peptide pen (e.g. a hormone pen). */
+  line?: string;
+  /** Italic line under the label. */
+  tag?: string;
+}) {
   const id = useId().replace(/:/g, '');
   const g = (name: string) => `${name}-${id}`;
   // Product name sits between the divider (x 520) and the window (x 790).
@@ -112,7 +132,7 @@ export function Pen({ colours, label, botanical = 'leaf', className, style, titl
           PRICK
         </text>
         <text x="463" y="106" textAnchor="middle" style={{ fontFamily: 'var(--font-sans), sans-serif', fontSize: 8.5, fontWeight: 700, letterSpacing: 2.6 }}>
-          {house ? 'PEPTIDE PROTOCOLS' : 'PEPTIDE PENS'}
+          {line ?? (house ? 'PEPTIDE PROTOCOLS' : 'PEPTIDE PENS')}
         </text>
         <rect x="519" y="58" width="1.4" height="54" opacity="0.4" />
         <text
@@ -125,7 +145,7 @@ export function Pen({ colours, label, botanical = 'leaf', className, style, titl
           {label}
         </text>
         <text x="653" y="108" textAnchor="middle" style={{ fontFamily: 'var(--font-serif), Georgia, serif', fontStyle: 'italic', fontSize: 15 }}>
-          {house ? 'Prescribed for you' : 'Peptide Pen'}
+          {tag ?? (house ? 'Prescribed for you' : 'Peptide Pen')}
         </text>
       </g>
 

@@ -22,6 +22,7 @@ const PUBLIC_SOURCES = [
   'src/components/brand/GoalCards.tsx',
   'src/components/brand/Sections.tsx',
   'src/components/brand/RoyalPrickBand.tsx',
+  'src/components/brand/HappyHormonesBand.tsx',
   'src/components/brand/RepeatScriptBand.tsx',
   'src/components/site/SiteNav.tsx',
   'src/components/site/SiteFooter.tsx',

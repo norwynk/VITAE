@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useSide } from '@/hooks/useSide';
 import { BrandHero } from './brand/BrandHero';
 import { Explainer } from './brand/Explainer';
+import { HappyHormonesBand } from './brand/HappyHormonesBand';
 import { RoyalPrickBand } from './brand/RoyalPrickBand';
 import { GoalCards } from './brand/GoalCards';
 import { RepeatScriptBand } from './brand/RepeatScriptBand';
@@ -34,6 +35,7 @@ export function HomePage() {
       <GoalCards />
       <SourceSection />
       <PeptideProtocols />
+      <HappyHormonesBand />
       <RoyalPrickBand />
       <RepeatScriptBand />
       <EditorialStatement top="A little prick." bottom="A lot more you.">
