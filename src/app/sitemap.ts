@@ -7,6 +7,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: `${base}/`, changeFrequency: 'weekly', priority: 1 },
     { url: `${base}/men`, changeFrequency: 'weekly', priority: 0.9 },
+    { url: `${base}/happy-hormones`, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${base}/about`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${base}/the-prick-list`, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${base}/privacy`, changeFrequency: 'yearly', priority: 0.2 },

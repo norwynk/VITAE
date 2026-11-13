@@ -7,7 +7,8 @@ import { BrandPage } from './site/BrandPage';
  * Happy Hormones: PRICK's hormone-care sister brand. Three prescription
  * products (progesterone tablets, estrogen gel and the Full Throttle
  * testosterone pen), each only after a doctor's yes. Same screening, same
- * doctors, its own sunny look. Kept out of search results for now.
+ * doctors, its own sunny look. Its product wording was cleared by the medicines
+ * attorney on 2026-11-13.
  */
 const delay = (ms: number) => ({ '--delay': `${ms}ms` }) as CSSProperties;
 
