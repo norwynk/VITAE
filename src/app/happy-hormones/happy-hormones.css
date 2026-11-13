@@ -23,7 +23,7 @@
 .hh-strip { margin: 0; padding: 0.55rem var(--gutter); background: var(--hh-lilac); text-align: center; font-size: var(--step--1); font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
 .hh-eyebrow { font-size: var(--step--1); font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--hh-pink); margin: 0 0 1rem; }
 
-.hh-logo { position: relative; display: inline-block; font-family: var(--font-serif); font-weight: 900; font-variation-settings: 'SOFT' 100, 'opsz' 144; line-height: 0.86; letter-spacing: -0.02em; }
+.hh-logo { position: relative; display: inline-block; text-align: left; font-family: var(--font-serif); font-weight: 900; font-variation-settings: 'SOFT' 100, 'opsz' 144; line-height: 0.86; letter-spacing: -0.02em; }
 .hh-logo__flower { position: absolute; width: 0.6em; top: -0.2em; left: 2.95em; color: var(--hh-orange); }
 
 .hh-h2 { font-family: var(--font-serif); font-weight: 400; font-size: var(--step-3); line-height: 1; letter-spacing: -0.02em; margin: 0; }
@@ -198,3 +198,100 @@
 .hh-card--pink .hh-card__stage { background: linear-gradient(#e8d7cb, #f3e4db); }
 .hh-card--gold .hh-card__stage { background: linear-gradient(#f6e9e2, #f6e8dd); }
 .hh-card--pink .hh-card__stage img, .hh-card--gold .hh-card__stage img { object-fit: contain; }
+
+/* ---- Happy Hormones' own header ---- */
+.hh-header { position: sticky; top: 0; z-index: 40; background: rgb(251 240 226 / 0.94); backdrop-filter: blur(10px); border-bottom: 1px solid rgb(74 13 44 / 0.12); }
+.hh-header__inner { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: var(--space-3); max-width: var(--container); margin: 0 auto; padding: 0.7rem var(--gutter); }
+.hh-header__logo { text-decoration: none; color: var(--hh-plum); }
+.hh-header__logo .hh-logo { font-size: 1.35rem; }
+.hh-header__links { display: flex; justify-content: center; gap: var(--space-3); }
+.hh-header__links a { text-decoration: none; font-weight: 700; font-size: var(--step--1); letter-spacing: 0.1em; text-transform: uppercase; color: var(--hh-plum); }
+.hh-header__links a:hover { color: var(--hh-pink); }
+.hh-header__end { display: flex; align-items: center; gap: var(--space-2); }
+.hh-header__sister { font-family: var(--font-serif); font-style: italic; font-size: var(--step--1); color: var(--hh-plum-soft); text-decoration: none; white-space: nowrap; }
+.hh-header__sister:hover { color: var(--hh-pink); }
+.hh-btn--small { min-height: 40px; padding: 0 1.1rem; }
+@media (max-width: 860px) {
+  .hh-header__links { display: none; }
+  .hh-header__inner { grid-template-columns: auto 1fr; }
+  .hh-header__end { justify-content: flex-end; }
+}
+@media (max-width: 420px) { .hh-header__sister { display: none; } }
+
+/* ---- Footer links (the finale is the footer) ---- */
+.hh-finale { display: block; }
+.hh-finale__links { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem 1.4rem; }
+.hh-finale__links a { color: var(--hh-cream); font-weight: 700; font-size: var(--step--1); letter-spacing: 0.08em; text-transform: uppercase; text-decoration: none; }
+.hh-finale__links a:hover { color: var(--hh-plum); }
+
+/* ---- Meet the three: one story per product ---- */
+.hh-stories { display: grid; gap: clamp(4rem, 8vw, 7rem); max-width: var(--container); margin: 0 auto; padding: 0 var(--gutter); }
+.hh-story { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: clamp(2rem, 5vw, 4.5rem); align-items: start; }
+.hh-story--flip .hh-story__art { order: 2; }
+.hh-story__art { perspective: 1200px; --px: 0; --py: 0; position: sticky; top: 6rem; }
+.hh-story__photo { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: var(--hh-radius); transform: rotateY(calc(var(--px) * 6deg)) rotateX(calc(var(--py) * -5deg)); transition: transform 700ms var(--ease-out); }
+.hh-story__cutout { position: absolute; width: 34%; right: -6%; bottom: -6%; filter: drop-shadow(0 22px 26px rgb(74 13 44 / 0.3)); transform: translate3d(calc(var(--px) * 30px), calc(var(--py) * 24px), 0); transition: transform 700ms var(--ease-out); animation: hh-bob 6.5s ease-in-out infinite; }
+.hh-story--blue .hh-story__cutout { width: 58%; right: -8%; bottom: -4%; }
+.hh-story--flip .hh-story__cutout { right: auto; left: -6%; }
+.hh-story__name { font-family: var(--font-serif); font-weight: 900; font-variation-settings: 'SOFT' 100; font-size: var(--step-3); line-height: 0.95; margin: 0; }
+.hh-story__hook { font-family: var(--font-serif); font-style: italic; font-size: var(--step-1); line-height: 1.25; color: var(--hh-pink); margin: 0.75rem 0 1.5rem; max-width: 30ch; }
+.hh-story__cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.hh-story__col { border-radius: 20px; padding: 1.25rem 1.4rem; }
+.hh-story__col h4, .hh-story__bloods h4 { margin: 0 0 0.6rem; font-size: var(--step--1); letter-spacing: 0.14em; text-transform: uppercase; }
+.hh-story__col ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.6rem; font-size: 0.95rem; line-height: 1.45; }
+.hh-story__col--accident { background: #fff; border: 1.5px solid rgb(74 13 44 / 0.15); }
+.hh-story__col--accident h4 { color: var(--hh-plum-soft); }
+.hh-story__col--ambulance { background: var(--hh-plum); color: var(--hh-cream); }
+.hh-story__col--ambulance h4 { color: var(--hh-gold); }
+.hh-story__col--ambulance .hh-cite a { color: var(--hh-gold); }
+.hh-story__bloods { margin-top: 1rem; }
+.hh-story__bloods ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.hh-story__bloods li { padding: 0.35rem 0.8rem; border-radius: 999px; background: var(--hh-butter); font-size: var(--step--1); font-weight: 700; }
+.hh-story--pink .hh-story__bloods li { background: #ffe0e9; }
+.hh-story--blue .hh-story__bloods li { background: #dfe7f3; }
+.hh-story__watch { margin: 1rem 0 0; font-size: 0.92rem; color: var(--hh-plum-soft); max-width: 60ch; }
+.hh-cite { font-size: 0.65em; margin-left: 0.15em; }
+.hh-cite a { color: var(--hh-pink); text-decoration: none; font-weight: 700; }
+.hh-range__cta { display: grid; justify-items: center; gap: 1rem; text-align: center; margin: clamp(4rem, 8vw, 6rem) auto 0; padding: 0 var(--gutter); }
+.hh-range__cta p { font-family: var(--font-serif); font-size: var(--step-2); line-height: 1.1; max-width: 26ch; margin: 0; }
+
+/* ---- Bloods first ---- */
+.hh-bloods { background: var(--hh-plum); color: var(--hh-cream); padding: var(--section) 0; }
+.hh-bloods .hh-head p { color: rgb(251 240 226 / 0.85); max-width: 60ch; }
+.hh-bloods .hh-h2 em { color: var(--hh-gold); }
+.hh-bloods .hh-eyebrow { color: var(--hh-gold); }
+.hh-bloods__options { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); max-width: 1000px; margin: 0 auto var(--space-5); padding: 0 var(--gutter); }
+.hh-bloods__option { position: relative; background: var(--hh-cream); color: var(--hh-plum); border-radius: var(--hh-radius); padding: clamp(1.75rem, 4vw, 2.5rem); }
+.hh-bloods__option h3 { font-family: var(--font-serif); font-weight: 900; font-variation-settings: 'SOFT' 100; font-size: var(--step-2); margin: 0 0 0.75rem; }
+.hh-bloods__option p { margin: 0 0 1rem; color: var(--hh-plum-soft); }
+.hh-bloods__price { font-weight: 800; color: var(--hh-plum) !important; margin: 0 !important; }
+.hh-bloods__tag { position: absolute; top: -0.8rem; left: 1.75rem; background: var(--hh-gold); color: var(--hh-plum); font-size: var(--step--1); font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.3rem 0.8rem; border-radius: 999px; }
+.hh-steps { list-style: none; display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; max-width: var(--container); margin: 0 auto; padding: 0 var(--gutter); }
+.hh-steps li { display: grid; gap: 0.4rem; align-content: start; border-top: 2px solid rgb(251 240 226 / 0.3); padding-top: 1rem; }
+.hh-steps__n { font-family: var(--font-display); font-size: 2.6rem; line-height: 1; color: var(--hh-gold); }
+.hh-steps strong { font-family: var(--font-serif); font-size: var(--step-1); font-weight: 700; }
+.hh-steps span:last-child { font-size: 0.92rem; color: rgb(251 240 226 / 0.82); }
+.hh-versus { padding-top: var(--section); }
+.hh-versus__bloods { padding: 0.6rem 0.9rem; border-radius: 12px; background: rgb(255 255 255 / 0.12); }
+.hh-versus__card--hh .hh-versus__bloods { background: var(--hh-plum); color: var(--hh-cream); }
+
+/* ---- Sources ---- */
+.hh-sources { max-width: var(--container-narrow); margin: 0 auto; padding: 0 var(--gutter) var(--section); font-size: 0.85rem; color: var(--hh-plum-soft); }
+.hh-sources h2 { font-size: var(--step--1); letter-spacing: 0.14em; text-transform: uppercase; color: var(--hh-plum); }
+.hh-sources ol { padding-left: 1.4rem; display: grid; gap: 0.35rem; }
+.hh-sources li:target { background: var(--hh-butter); }
+
+@media (max-width: 900px) {
+  .hh-story, .hh-story__cols, .hh-bloods__options { grid-template-columns: 1fr; }
+  .hh-story--flip .hh-story__art { order: 0; }
+  .hh-story__art { position: relative; top: 0; max-width: 520px; }
+  .hh-steps { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 520px) { .hh-steps { grid-template-columns: 1fr; } }
+
+/* ---- The Happy Hormones screening: its own colours on the shared questionnaire ---- */
+.hh-intake { min-height: 70vh; }
+.hh-intake .intake__title, .hh-intake .display { font-family: var(--font-serif); text-transform: none; font-weight: 900; font-variation-settings: 'SOFT' 100; letter-spacing: -0.02em; }
+.hh-intake .eyebrow { color: var(--hh-pink); }
+.hh-intake .intake__nav button:not(.secondary):not(.link-arrow), .hh-intake .intake__account button { background: var(--hh-plum); border-color: var(--hh-plum); color: var(--hh-cream); border-radius: 999px; }
+.hh-intake .route__bar span { background: linear-gradient(90deg, var(--hh-gold), var(--hh-pink), var(--hh-orange)); }

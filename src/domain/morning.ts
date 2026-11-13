@@ -13,7 +13,7 @@ export interface BriefAction {
   text: string;
   who: 'Team' | 'Doctor';
   late: boolean;
-  tab: 'Pens' | 'Messages' | 'Royal Summons';
+  tab: 'Pens' | 'Messages' | 'Royal Summons' | 'The Blood Bank';
 }
 
 export interface MorningBrief {
@@ -22,6 +22,8 @@ export interface MorningBrief {
   toSend: number;
   /** People who asked for the Royal Prick and haven't been phoned. */
   summons: number;
+  /** Happy Hormones members whose bloods still need arranging. */
+  bloods: number;
   /** Everyone on The Prick List, and how many joined this week. */
   prickList: { total: number; thisWeek: number };
   outForDelivery: number;
@@ -37,6 +39,7 @@ export function morningBrief(store: Store, now: Date): MorningBrief {
   const toSend = releases.filter((r) => r.status === 'TO_SEND');
   const out = releases.filter((r) => r.status === 'SENT' && !r.deliveredAt);
   const summons = Object.values(store.royalSummons).filter((s) => s.status === 'NEW');
+  const bloods = Object.values(store.operationalProfiles).filter((p) => p.hormoneBloods?.status === 'TO_ARRANGE');
   const name = (memberId: string) => {
     const m = store.members[memberId];
     return (m && `${m.firstName} ${m.lastName}`.trim()) || store.operationalProfiles[memberId]?.displayName || 'A member';
@@ -49,6 +52,16 @@ export function morningBrief(store: Store, now: Date): MorningBrief {
       who: 'Team',
       late: workingHours(s.createdAt, now) >= TEAM_REPLY_HOURS,
       tab: 'Royal Summons',
+    })),
+    ...bloods.map((p): BriefAction => ({
+      key: `bloods_${p.memberId}`,
+      text:
+        p.hormoneBloods!.route === 'NURSE_VISIT'
+          ? `Book a nurse to take ${name(p.memberId)}'s bloods (Happy Hormones)`
+          : `Get ${name(p.memberId)}'s blood results in (Happy Hormones)`,
+      who: 'Team',
+      late: workingHours(p.hormoneBloods!.askedAt, now) >= TEAM_REPLY_HOURS,
+      tab: 'The Blood Bank',
     })),
     ...toSend.map((r): BriefAction => ({
       key: `send_${r.id}`,
@@ -92,6 +105,7 @@ export function morningBrief(store: Store, now: Date): MorningBrief {
     withDoctor: members.reduce((n, m) => n + (m.penJourneys ?? []).filter((j) => !j.decidedAt).length, 0),
     toSend: toSend.length,
     summons: summons.length,
+    bloods: bloods.length,
     prickList: (() => {
       const on = Object.values(store.prickList).filter((e) => e.status === 'IN');
       return { total: on.length, thisWeek: on.filter((e) => e.createdAt >= weekAgo).length };

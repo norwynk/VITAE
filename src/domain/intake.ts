@@ -69,6 +69,25 @@ export const ROUTE_REPEAT = 'I already have a script';
 export const isRepeatRoute = (a: IntakeAnswers) => str(a, 'route') === ROUTE_REPEAT;
 export const isNewRoute = (a: IntakeAnswers) => !isRepeatRoute(a);
 
+/**
+ * Happy Hormones, PRICK's hormone-care sister brand, has its own way in. Hormones
+ * can't be prescribed without bloods (peptides can), so this route adds a bloods stop.
+ */
+export const HAPPY_HORMONES = 'Happy Hormones';
+export const isHappyHormones = (a: IntakeAnswers) => str(a, 'pathway') === HAPPY_HORMONES;
+export const HH_FOR_HER = ['Progesterone tablets', 'Estrogen gel'];
+export const HH_FOR_HIM = ['Testosterone (the Full Throttle pen)'];
+export const HH_NOT_SURE = 'Not sure yet';
+export const HH_BLOODS_NURSE = 'A nurse comes to me';
+export const HH_BLOODS_OWN = 'I’ll send you my own results';
+/** The nurse visit's price, in Rand. null until it's set: shown as "price to be confirmed". */
+export const HH_NURSE_VISIT_PRICE_RAND: number | null = null;
+export function hhNurseVisitPrice(price: number | null = HH_NURSE_VISIT_PRICE_RAND): string {
+  return price === null ? 'price to be confirmed' : `R${price.toLocaleString('en-ZA')}`;
+}
+/** Which products to offer: by sex at birth, both lists if they'd rather discuss it. */
+export const hhOptionsFor = (a: IntakeAnswers) => [...(isMale(a) ? [] : HH_FOR_HER), ...(isFemale(a) ? [] : HH_FOR_HIM), HH_NOT_SURE];
+
 /** "What would you like help with?", as each side asks it. */
 export const HELP_OPTIONS = {
   women: ['Weight management', 'Body shape', 'Skin and appearance', 'Energy', 'Sleep', 'Recovery', 'Hormones', 'Libido', 'Focus', 'Gut health', 'General wellbeing'],
@@ -91,7 +110,11 @@ export const INTAKE: IntakeSection[] = [
     id: 'start',
     label: 'How you’re starting',
     title: 'Is this your first time with us?',
-    questions: [{ id: 'route', kind: 'choice', label: 'How are you starting?', options: [ROUTE_NEW, ROUTE_REPEAT] }],
+    questions: [
+      { id: 'route', kind: 'choice', label: 'How are you starting?', options: [ROUTE_NEW, ROUTE_REPEAT] },
+      // Never asked: set by the Happy Hormones way in (/happy-hormones/start).
+      { id: 'pathway', kind: 'choice', label: 'Which brand they came through', options: [HAPPY_HORMONES] },
+    ],
   },
   {
     id: 'script',
@@ -115,6 +138,34 @@ export const INTAKE: IntakeSection[] = [
       { id: 'usingFor', kind: 'choice', label: 'How long have you been on it?', options: ['Less than 3 months', '3 to 12 months', 'More than a year'], required: true },
       { id: 'recentBloods', kind: 'choice', label: 'Have you had blood tests or markers checked?', options: ['Yes, in the last 6 months', 'Yes, longer ago', 'No'], required: true },
       { id: 'sideEffects', kind: 'long', label: 'Any side effects so far?', hint: 'Leave it blank if none.', maxLength: 1000 },
+    ],
+  },
+  {
+    id: 'bloods',
+    label: 'Bloods',
+    title: 'Bloods first. Always.',
+    lead: 'Hormones aren’t like peptides. No doctor can prescribe them without seeing your bloods first, so this is where Happy Hormones starts.',
+    why: 'Your bloods show where your hormones really are, so your doctor can decide if a hormone is right for you, and at what dose.',
+    showIf: isHappyHormones,
+    questions: [
+      { id: 'hhFor', kind: 'multi', label: 'What are you here about?', hint: 'Pick any. Your doctor makes the final call.', options: [...HH_FOR_HER, ...HH_FOR_HIM, HH_NOT_SURE], required: true },
+      {
+        id: 'hhBloods',
+        kind: 'choice',
+        label: 'How would you like to do your bloods?',
+        hint: 'A nurse can come to your home or office, the same nurses as the Royal Prick. Or send us results you already have.',
+        options: [HH_BLOODS_NURSE, HH_BLOODS_OWN],
+        required: true,
+      },
+      {
+        id: 'hhResultsWhen',
+        kind: 'choice',
+        label: 'When were they taken?',
+        hint: 'You’ll send them to your doctor from your account once you’ve finished. Older results may need redoing.',
+        options: ['In the last 3 months', '3 to 12 months ago', 'Not done yet: I’ll get them and send them'],
+        required: true,
+        showIf: (a) => str(a, 'hhBloods') === HH_BLOODS_OWN,
+      },
     ],
   },
   {

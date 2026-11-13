@@ -9,9 +9,12 @@ import {
   type IntakeQuestion,
   type IntakeSection,
   type IntakeValue,
+  HAPPY_HORMONES,
   HELP_OPTIONS,
   ROUTE_NEW,
   ROUTE_REPEAT,
+  hhOptionsFor,
+  isHappyHormones,
   isNewRoute,
   isRepeatRoute,
   problemWith,
@@ -27,6 +30,7 @@ import { useSide } from '@/hooks/useSide';
 import { MEN_GOALS, goalForSide } from '@/brand/side';
 import { demoRepository } from '@/services/repository';
 import { FitMoment } from '../member/FitMoment';
+import { HHHeader } from '../brand/HappyHormonesChrome';
 import { SiteNav } from '../site/SiteNav';
 import { Notice } from '../ui';
 import { Field } from './Fields';
@@ -95,7 +99,7 @@ function buildRoute(
     // The opening question (new, or repeating a script) comes before the route itself.
     const stop = s.id === 'start' ? -1 : stops.push(s.label) - 1;
     // Chunk every question, then hide the ones that don't apply, so a follow-up appearing never moves another question.
-    const visible = new Set(visibleQuestions(s, answers));
+    const visible = new Set(visibleQuestions(s, answers).filter((q) => q.id !== 'pathway'));
     const parts = chunk(s.questions)
       .map((c) => c.filter((q) => visible.has(q)))
       .filter((c) => c.length);
@@ -109,6 +113,15 @@ function buildRoute(
   screens.push({ kind: 'arrive', stop: stops.length }, { kind: 'fit', stop: stops.length });
   return { stops, screens };
 }
+
+/** Happy Hormones' own destination on the route, in its own colours and photo. */
+const HH_GOAL = {
+  title: 'Happier hormones',
+  destination: 'happier hormones',
+  colour: '#f2457f',
+  image: '/hormones/life-6.webp',
+  picture: 'Your bloods, read properly, by a doctor who explains them.',
+};
 
 /** "Why this matters" copy, with their destination dropped in. */
 function because(text: string | undefined, goal: Goal | undefined) {
@@ -126,6 +139,7 @@ export function Questionnaire({
   initialRoute,
   initialStop,
   back,
+  pathway,
 }: {
   initialGoal?: string;
   initialRoute?: string;
@@ -133,6 +147,8 @@ export function Questionnaire({
   initialStop?: string;
   /** Came from the send screen: offer the way straight back to it. */
   back?: boolean;
+  /** Came in through Happy Hormones, the hormone-care sister brand: its own look, and bloods first. */
+  pathway?: 'happy-hormones';
 }) {
   const { state, update, clear } = useScreening();
   const [problem, setProblem] = useState<string | null>(null);
@@ -143,17 +159,31 @@ export function Questionnaire({
 
   // The way in decides the route: "Repeat your script" means a script; a goal card means new.
   // It replaces an answer left on this device by an earlier visit, and starts the route again if it changed.
-  const entryRoute = initialRoute === 'repeat' ? ROUTE_REPEAT : initialGoal ? ROUTE_NEW : undefined;
+  const hhEntry = pathway === 'happy-hormones';
+  const entryRoute = hhEntry ? ROUTE_NEW : initialRoute === 'repeat' ? ROUTE_REPEAT : initialGoal ? ROUTE_NEW : undefined;
+  // Happy Hormones marks the screening as its own. Coming back in through a PRICK door (a goal card or a script) makes it a PRICK one again.
+  const prickEntry = !hhEntry && Boolean(initialGoal || initialRoute);
+  useEffect(() => {
+    if (hhEntry) update((s) => (s.answers.pathway === HAPPY_HORMONES ? {} : { answers: { ...s.answers, pathway: HAPPY_HORMONES }, step: 0, completedAt: undefined }));
+    else if (prickEntry)
+      update((s) => {
+        if (s.answers.pathway === undefined) return {};
+        const { pathway: _p, ...answers } = s.answers;
+        return { answers, step: 0, completedAt: undefined };
+      });
+  }, [hhEntry, prickEntry, update]);
   useEffect(() => {
     if (entryRoute) update((s) => (s.answers.route === entryRoute ? {} : { answers: { ...s.answers, route: entryRoute }, step: 0, completedAt: undefined }));
   }, [entryRoute, update]);
 
   const { side } = useSide();
   // What's going on is already known if they came from a goal card: never ask twice.
-  const known = goalBySlug(initialGoal);
+  const known = goalBySlug(hhEntry ? 'hormones' : initialGoal);
   const destination = known?.slug ?? state.destination;
   const baseGoal = goalBySlug(destination);
-  const goal = baseGoal && goalForSide(baseGoal, side);
+  const sideGoal = baseGoal && goalForSide(baseGoal, side);
+  const hhNow = hhEntry || isHappyHormones(state.answers);
+  const goal = sideGoal && hhNow ? { ...sideGoal, ...HH_GOAL } : sideGoal;
   const knownSlug = known?.slug;
   const storedDestination = state.destination;
   useEffect(() => {
@@ -167,6 +197,7 @@ export function Questionnaire({
   }, [storedDestination, knownSlug, side, update]);
   const helpOptions = HELP_OPTIONS[side === 'men' ? 'men' : 'women'];
   const firstName = typeof state.answers.firstName === 'string' ? state.answers.firstName : '';
+  const hh = hhNow;
 
   const sections = sectionsFor(state.answers);
   const { stops, screens } = buildRoute(
@@ -203,7 +234,7 @@ export function Questionnaire({
         for (const q of sc.questions) {
           const p = problemWith(onScreen(q), state.answers[q.id], SA_PROVINCES);
           if (p) return p;
-          if (q.id === 'dateOfBirth' && underAge(state.answers.dateOfBirth)) return 'PRICK is only for adults aged 18 and over.';
+          if (q.id === 'dateOfBirth' && underAge(state.answers.dateOfBirth)) return `${hh ? 'Happy Hormones' : 'PRICK'} is only for adults aged 18 and over.`;
         }
         return null;
       }
@@ -251,9 +282,10 @@ export function Questionnaire({
   const opened = useRef(false);
   useEffect(() => {
     if (opened.current || !initialStop) return;
-    opened.current = true;
     const at = screens.findIndex((sc) => sc.kind === 'section' && sc.section.id === initialStop);
-    if (at >= 0) update({ step: at });
+    if (at < 0) return;
+    opened.current = true;
+    update({ step: at });
   });
   // Arriving at the result with something unanswered (an older visit, a changed question): straight back to it.
   const atEnd = screen.kind === 'arrive' || screen.kind === 'fit';
@@ -298,7 +330,7 @@ export function Questionnaire({
     }
   };
 
-  const accent = { '--accent': goal?.colour ?? 'var(--pink)' } as React.CSSProperties;
+  const accent = { '--accent': hh ? '#f2457f' : (goal?.colour ?? 'var(--pink)') } as React.CSSProperties;
   const stopIndex = screen.stop;
   const firstOfStop = screens.findIndex((s) => s.stop === stopIndex) === step;
   const cheer =
@@ -312,8 +344,8 @@ export function Questionnaire({
 
   return (
     <>
-      <SiteNav cta={false} />
-      <main className="intake" style={accent}>
+      {hh ? <HHHeader cta={false} /> : <SiteNav cta={false} />}
+      <main className={hh ? 'intake hh hh-intake' : 'intake'} style={accent}>
         <div className="container narrow" ref={topRef}>
           <Route stops={stops} current={stopIndex} progress={progress} goal={goal} />
 
@@ -344,7 +376,9 @@ export function Questionnaire({
                           ? { ...q, placeholder: `For example: “${goal.visionExample}”` }
                           : q.id === 'goals'
                             ? { ...q, options: withChosen(helpOptions, state.answers.goals) }
-                            : onScreen(q)
+                            : q.id === 'hhFor'
+                              ? { ...q, options: withChosen(hhOptionsFor(state.answers), state.answers.hhFor) }
+                              : onScreen(q)
                       }
                       value={state.answers[q.id]}
                       onChange={(v) => {
@@ -358,7 +392,7 @@ export function Questionnaire({
               </>
             )}
 
-            {screen.kind === 'arrive' && <Arriving goal={goal} repeat={isRepeatRoute(state.answers)} onDone={() => go(step + 1)} />}
+            {screen.kind === 'arrive' && <Arriving goal={goal} repeat={isRepeatRoute(state.answers)} bloods={hh} onDone={() => go(step + 1)} />}
 
             {screen.kind === 'fit' && (
               <>
@@ -429,7 +463,7 @@ export function Questionnaire({
                       clear();
                       setProblem(null);
                       // A clean start: forget the way they came in too, so the opening question is asked.
-                      router.replace('/start');
+                      router.replace(hh ? '/happy-hormones/start' : '/start');
                     }
                   }}
                 >
@@ -529,11 +563,12 @@ function withChosen(options: string[], value: IntakeValue | undefined): string[]
 }
 
 /** A short, honest "working on it" moment: each line is a check that really runs. */
-function Arriving({ goal, repeat, onDone }: { goal?: Goal; repeat: boolean; onDone: () => void }) {
+function Arriving({ goal, repeat, bloods, onDone }: { goal?: Goal; repeat: boolean; bloods: boolean; onDone: () => void }) {
   const lines = [
     'Reading your answers',
     ...(repeat ? ['Checking your script details'] : []),
     ...(repeat ? [] : [`Mapping your route to ${goal?.destination ?? 'your goal'}`]),
+    ...(bloods ? ['Lining up your bloods'] : []),
     'Getting your file ready for your clinician',
   ];
   const [done, setDone] = useState(0);

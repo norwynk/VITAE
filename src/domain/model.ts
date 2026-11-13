@@ -185,6 +185,19 @@ export interface OperationalProfile {
   waitingSince?: string;
   consentWithdrawn: boolean;
   lastActivityAt: string;
+  /** Happy Hormones: bloods needed before a hormone can be prescribed. No health details, just the logistics. */
+  hormoneBloods?: HormoneBloods;
+}
+
+export const HORMONE_BLOODS_ROUTES = ['NURSE_VISIT', 'OWN_RESULTS'] as const;
+export type HormoneBloodsRoute = (typeof HORMONE_BLOODS_ROUTES)[number];
+export const HORMONE_BLOODS_STATUSES = ['TO_ARRANGE', 'BOOKED', 'RESULTS_IN'] as const;
+export type HormoneBloodsStatus = (typeof HORMONE_BLOODS_STATUSES)[number];
+export interface HormoneBloods {
+  route: HormoneBloodsRoute;
+  status: HormoneBloodsStatus;
+  askedAt: string;
+  updatedAt: string;
 }
 
 export interface MemberGoal {

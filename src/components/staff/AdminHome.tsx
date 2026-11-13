@@ -15,10 +15,11 @@ import { OrderTable } from './OrderTable';
 import { PenReleases } from './PenReleases';
 import { PrickTracker, WaitingOnDoctor } from './PrickTracker';
 import { RoyalSummons } from './RoyalSummons';
+import { BloodBank } from './BloodBank';
 import { PrickList } from './PrickList';
 import { StockTable } from './StockTable';
 
-const TABS: AdminTab[] = ['Today', 'Customers', 'Pens', 'Royal Summons', 'The Prick List', 'Messages', 'Stock and catalogue', 'Behind the scenes'];
+const TABS: AdminTab[] = ['Today', 'Customers', 'Pens', 'Royal Summons', 'The Blood Bank', 'The Prick List', 'Messages', 'Stock and catalogue', 'Behind the scenes'];
 
 interface AdminView {
   tab: AdminTab;
@@ -83,6 +84,7 @@ export function AdminHome() {
       {tab === 'Customers' && <Customers stage={stage} person={person} onStage={(s) => go('Customers', s)} onPerson={(id) => navigate({ tab, stage, person: id })} />}
       {tab === 'Pens' && <Pens />}
       {tab === 'Royal Summons' && <RoyalSummons />}
+      {tab === 'The Blood Bank' && <BloodBank />}
       {tab === 'The Prick List' && <PrickList />}
       {tab === 'Messages' && <Messages />}
       {tab === 'Stock and catalogue' && <StockAndCatalogue />}
