@@ -6,17 +6,32 @@ import { SideDoor } from './SideDoor';
 import { SiteFooter } from './SiteFooter';
 import { SiteNav } from './SiteNav';
 
-/** Shell for brand pages: the doors (first visit only), nav, scroll reveals, footer. */
-export function BrandPage({ children, revealKey, doors = true }: { children: ReactNode; revealKey?: unknown; doors?: boolean }) {
+/**
+ * Shell for brand pages: the doors (first visit only), nav, scroll reveals, footer.
+ * A sister brand (Happy Hormones) brings its own header and footer.
+ */
+export function BrandPage({
+  children,
+  revealKey,
+  doors = true,
+  header,
+  footer,
+}: {
+  children: ReactNode;
+  revealKey?: unknown;
+  doors?: boolean;
+  header?: ReactNode;
+  footer?: ReactNode;
+}) {
   useReveal([revealKey]);
   // Arrived through a door from the other homepage: let the light fade.
   useEffect(finishWalkThrough, []);
   return (
     <>
       {doors && <SideDoor />}
-      <SiteNav />
+      {header ?? <SiteNav />}
       <main>{children}</main>
-      <SiteFooter />
+      {footer ?? <SiteFooter />}
     </>
   );
 }

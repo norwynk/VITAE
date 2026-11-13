@@ -41,9 +41,10 @@ import {
   isScheduledOn,
   isValidDate,
   localDate,
+  HORMONE_BLOODS_STATUSES,
 } from './model';
 import { waitingOnClinician } from './waiting';
-import { INTAKE_VERSION, type IntakeAnswers, validateIntake } from './intake';
+import { HH_BLOODS_NURSE, INTAKE_VERSION, type IntakeAnswers, isHappyHormones, validateIntake } from './intake';
 import { invalidAnswer, isFlagged, penQuestion } from './penQuestions';
 
 // ---------------------------------------------------------------------------
@@ -400,6 +401,7 @@ export const commandSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('penReceived'), releaseId: id }),
   z.object({ type: z.literal('summonsStatus'), summonsId: id, status: z.enum(['PHONED', 'BOOKED', 'NOT_GOING_AHEAD']) }),
   z.object({ type: z.literal('prickListLeave'), entryId: id }),
+  z.object({ type: z.literal('hormoneBloods'), memberId: id, status: z.enum(HORMONE_BLOODS_STATUSES) }),
 ]);
 
 export type Command = z.infer<typeof commandSchema>;
@@ -458,6 +460,7 @@ const COMMAND_ROLES: Record<CommandType, readonly Role[]> = {
   logCall: ['CLINICIAN'],
   summonsStatus: ['SUPER_ADMIN'],
   prickListLeave: ['SUPER_ADMIN'],
+  hormoneBloods: ['SUPER_ADMIN', 'OPERATIONS'],
 };
 
 export function allowedRoles(type: CommandType): readonly Role[] {
@@ -493,6 +496,7 @@ export function commandMemberId(command: Command, actor: Actor): string | undefi
     case 'nutrition':
     case 'followup':
     case 'orderStatus':
+    case 'hormoneBloods':
       return command.memberId;
     case 'message':
       return actor.role === 'MEMBER' ? actor.uid : command.memberId;
@@ -632,6 +636,19 @@ function checkedIntake(answers: Record<string, unknown>): { version: string; ans
   const checked = validateIntake(answers, SA_PROVINCES);
   if (checked.problem) fail('INVALID', checked.problem);
   return { version: INTAKE_VERSION, answers: checked.answers };
+}
+
+/**
+ * Happy Hormones screenings need bloods before anything can be prescribed. The
+ * admin's list gets the route they chose (nurse visit or their own results),
+ * never any health detail. A new screening with the same route keeps its progress.
+ */
+function noteHormoneBloods(store: Store, memberId: string, intake: { answers: IntakeAnswers } | undefined, at: string) {
+  const profile = store.operationalProfiles[memberId];
+  if (!profile || !intake || !isHappyHormones(intake.answers)) return;
+  const route = intake.answers.hhBloods === HH_BLOODS_NURSE ? 'NURSE_VISIT' : 'OWN_RESULTS';
+  if (profile.hormoneBloods?.route === route && profile.hormoneBloods.status !== 'RESULTS_IN') return;
+  profile.hormoneBloods = { route, status: 'TO_ARRANGE', askedAt: at, updatedAt: at };
 }
 
 function refreshOpenRequestCount(store: Store, memberId: string) {
@@ -956,6 +973,7 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
         consentWithdrawn: false,
         lastActivityAt: at,
       };
+      noteHormoneBloods(store, member.id, intake, at);
       targets.push(goalId, assessmentId, weightId);
       if (store.screeningDrafts[member.id]) {
         store.screeningDrafts[member.id] = { ...store.screeningDrafts[member.id], status: 'SUBMITTED', answers: {}, updatedAt: at };
@@ -980,6 +998,7 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
         intake,
         completedAt: at,
       };
+      noteHormoneBloods(store, member.id, intake, at);
       targets.push(assessmentId);
       const { health } = command;
       const pregnancyOrBreastfeeding =
@@ -1366,6 +1385,15 @@ export function applyCommand(current: Store, actor: Actor, input: unknown, ctx: 
       store.prickList[command.entryId] = { ...entry, status: 'OUT', updatedAt: at };
       targets.push(command.entryId);
       resultId = command.entryId;
+      break;
+    }
+
+    case 'hormoneBloods': {
+      const profile = store.operationalProfiles[command.memberId];
+      if (!profile?.hormoneBloods) fail('NOT_FOUND', 'This member has no bloods to arrange');
+      profile.hormoneBloods = { ...profile.hormoneBloods, status: command.status, updatedAt: at };
+      targets.push(command.memberId);
+      resultId = command.memberId;
       break;
     }
 

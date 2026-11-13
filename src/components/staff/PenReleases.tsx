@@ -138,6 +138,7 @@ const ACTIVITY: Record<string, (who: string) => string> = {
   releaseDelivered: (who) => `Pen delivered to ${who}`,
   penReceived: (who) => `${who} confirmed they have their pen`,
   summonsStatus: () => 'The team moved a Royal Summons on',
+  hormoneBloods: (who) => `The team moved ${who}'s Happy Hormones bloods on`,
 };
 
 /** What happened, without what anyone said. */

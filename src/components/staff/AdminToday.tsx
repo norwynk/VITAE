@@ -4,7 +4,7 @@ import type { MorningBrief } from '@/domain/morning';
 import { Badge, Card, Empty } from '../ui';
 import { TeamActivity } from './PenReleases';
 
-export type AdminTab = 'Today' | 'Customers' | 'Pens' | 'Royal Summons' | 'The Prick List' | 'Messages' | 'Stock and catalogue' | 'Behind the scenes';
+export type AdminTab = 'Today' | 'Customers' | 'Pens' | 'Royal Summons' | 'The Blood Bank' | 'The Prick List' | 'Messages' | 'Stock and catalogue' | 'Behind the scenes';
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
@@ -14,6 +14,7 @@ export function AdminToday({ brief, onGo }: { brief: MorningBrief; onGo: (tab: A
   const tiles: { label: string; value: number; tab: AdminTab; hot?: boolean }[] = [
     { label: 'Pens to send', value: brief.toSend, tab: 'Pens', hot: brief.toSend > 0 },
     { label: 'Royal summons to phone', value: brief.summons, tab: 'Royal Summons', hot: brief.summons > 0 },
+    { label: 'Hormone bloods to arrange', value: brief.bloods, tab: 'The Blood Bank', hot: brief.bloods > 0 },
     { label: `On The Prick List (${brief.prickList.thisWeek} this week)`, value: brief.prickList.total, tab: 'The Prick List' },
     { label: 'Out for delivery', value: brief.outForDelivery, tab: 'Pens' },
     { label: 'Delivered, last 7 days', value: brief.deliveredThisWeek, tab: 'Pens' },
