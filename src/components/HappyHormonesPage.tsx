@@ -51,7 +51,6 @@ interface Product {
   accident: Point[];
   ambulance: Point[];
   bloods: string[];
-  watch: string;
 }
 
 const RANGE: Product[] = [
@@ -76,7 +75,6 @@ const RANGE: Product[] = [
       { text: 'It slows the bone loss that follows menopause, which is why it’s licensed to help prevent osteoporosis.', cite: [1, 2] },
     ],
     bloods: ['FSH and estradiol', 'Thyroid', 'Liver function', 'Cholesterol', 'Full blood count'],
-    watch: 'If you still have a womb, estrogen is paired with progesterone to keep the lining safe. Your doctor checks in at 3 months, then at least once a year, and keeps your mammograms on track.',
   },
   {
     id: 'progesterone',
@@ -97,7 +95,6 @@ const RANGE: Product[] = [
       { text: 'It’s the same molecule your ovaries make. It has a gentle calming effect, which is why it’s usually taken at bedtime, and some women find they sleep more deeply on it.', cite: [1] },
     ],
     bloods: ['Usually checked alongside your estrogen panel', 'FSH and estradiol', 'Full blood count'],
-    watch: 'It can make you drowsy, so it’s taken at night. Any bleeding you don’t expect goes straight to your doctor.',
   },
   {
     id: 'testosterone',
@@ -120,7 +117,6 @@ const RANGE: Product[] = [
       { text: 'The biggest trial yet, TRAVERSE (5,246 men), found no rise in heart attacks or strokes compared with placebo in men with genuinely low levels.', cite: [8] },
     ],
     bloods: ['Two early-morning testosterone tests', 'LH, FSH and SHBG', 'Full blood count', 'PSA', 'Cholesterol'],
-    watch: 'Only for men whose bloods confirm it, never for bulking. It lowers sperm production, so tell your doctor if you’re planning children. Red blood cells and PSA are checked at every follow-up.',
   },
 ];
 
@@ -249,9 +245,6 @@ function ProductStory({ p, i }: { p: Product; i: number }) {
             ))}
           </ul>
         </div>
-        <p className="hh-story__watch">
-          <strong>What we keep an eye on:</strong> {p.watch}
-        </p>
       </div>
     </article>
   );
