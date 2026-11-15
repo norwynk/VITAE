@@ -249,7 +249,6 @@
 .hh-story__bloods li { padding: 0.35rem 0.8rem; border-radius: 999px; background: var(--hh-butter); font-size: var(--step--1); font-weight: 700; }
 .hh-story--pink .hh-story__bloods li { background: #ffe0e9; }
 .hh-story--blue .hh-story__bloods li { background: #dfe7f3; }
-.hh-story__watch { margin: 1rem 0 0; font-size: 0.92rem; color: var(--hh-plum-soft); max-width: 60ch; }
 .hh-cite { font-size: 0.65em; margin-left: 0.15em; }
 .hh-cite a { color: var(--hh-pink); text-decoration: none; font-weight: 700; }
 .hh-range__cta { display: grid; justify-items: center; gap: 1rem; text-align: center; margin: clamp(4rem, 8vw, 6rem) auto 0; padding: 0 var(--gutter); }
