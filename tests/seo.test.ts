@@ -36,6 +36,7 @@ describe('search engines', () => {
     expect(r.rules).toMatchObject({ allow: '/', disallow: expect.arrayContaining(['/app', '/start', '/shop', '/pens/', '/find-your-prick', '/api/']) });
     const urls = sitemap().map((u) => u.url);
     expect(urls).toContain('https://www.prick.co.za/men');
+    expect(urls).toEqual(expect.arrayContaining(['https://www.prick.co.za/happy-hormones', 'https://www.prick.co.za/royal-prick']));
     expect(urls.some((u) => /\/(app|start|shop|pens|find-your-prick)/.test(u))).toBe(false);
   });
 });
