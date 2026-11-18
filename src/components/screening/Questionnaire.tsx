@@ -10,11 +10,11 @@ import {
   type IntakeSection,
   type IntakeValue,
   HAPPY_HORMONES,
+  HH_ONLY_ANSWERS,
   HELP_OPTIONS,
   ROUTE_NEW,
   ROUTE_REPEAT,
   hhOptionsFor,
-  isHappyHormones,
   isNewRoute,
   isRepeatRoute,
   problemWith,
@@ -161,17 +161,19 @@ export function Questionnaire({
   // It replaces an answer left on this device by an earlier visit, and starts the route again if it changed.
   const hhEntry = pathway === 'happy-hormones';
   const entryRoute = hhEntry ? ROUTE_NEW : initialRoute === 'repeat' ? ROUTE_REPEAT : initialGoal ? ROUTE_NEW : undefined;
-  // Happy Hormones marks the screening as its own. Coming back in through a PRICK door (a goal card or a script) makes it a PRICK one again.
-  const prickEntry = !hhEntry && Boolean(initialGoal || initialRoute);
+  // The address decides the brand: /happy-hormones/start is Happy Hormones, /start is always PRICK.
+  // Answers left on this device by the other one are carried over, minus anything that only belongs there.
   useEffect(() => {
     if (hhEntry) update((s) => (s.answers.pathway === HAPPY_HORMONES ? {} : { answers: { ...s.answers, pathway: HAPPY_HORMONES }, step: 0, completedAt: undefined }));
-    else if (prickEntry)
+    else
       update((s) => {
         if (s.answers.pathway === undefined) return {};
-        const { pathway: _p, ...answers } = s.answers;
-        return { answers, step: 0, completedAt: undefined };
+        const answers = Object.fromEntries(Object.entries(s.answers).filter(([k]) => !HH_ONLY_ANSWERS.includes(k)));
+        // Happy Hormones chose "hormones" for them; PRICK asks what's going on itself.
+        const fromHH = s.destination === 'hormones' && s.destinationFrom === 'known';
+        return { answers, step: 0, completedAt: undefined, ...(fromHH ? { destination: undefined, destinationFrom: undefined } : {}) };
       });
-  }, [hhEntry, prickEntry, update]);
+  }, [hhEntry, update]);
   useEffect(() => {
     if (entryRoute) update((s) => (s.answers.route === entryRoute ? {} : { answers: { ...s.answers, route: entryRoute }, step: 0, completedAt: undefined }));
   }, [entryRoute, update]);
@@ -182,7 +184,7 @@ export function Questionnaire({
   const destination = known?.slug ?? state.destination;
   const baseGoal = goalBySlug(destination);
   const sideGoal = baseGoal && goalForSide(baseGoal, side);
-  const hhNow = hhEntry || isHappyHormones(state.answers);
+  const hhNow = hhEntry;
   const goal = sideGoal && hhNow ? { ...sideGoal, ...HH_GOAL } : sideGoal;
   const knownSlug = known?.slug;
   const storedDestination = state.destination;

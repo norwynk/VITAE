@@ -85,6 +85,11 @@ export const HH_NURSE_VISIT_PRICE_RAND: number | null = null;
 export function hhNurseVisitPrice(price: number | null = HH_NURSE_VISIT_PRICE_RAND): string {
   return price === null ? 'price to be confirmed' : `R${price.toLocaleString('en-ZA')}`;
 }
+/** Where each brand's screening lives. The address alone decides which one someone is in. */
+export const screeningPath = (a: IntakeAnswers) => (isHappyHormones(a) ? '/happy-hormones/start' : '/start');
+/** Answers that only exist on the Happy Hormones route. */
+export const HH_ONLY_ANSWERS = ['pathway', 'hhFor', 'hhBloods', 'hhResultsWhen'];
+
 /** Which products to offer: by sex at birth, both lists if they'd rather discuss it. */
 export const hhOptionsFor = (a: IntakeAnswers) => [...(isMale(a) ? [] : HH_FOR_HER), ...(isFemale(a) ? [] : HH_FOR_HIM), HH_NOT_SURE];
 

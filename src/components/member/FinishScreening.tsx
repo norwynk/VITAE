@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
-import { type IntakeAnswers, NONE, intakeQuestion, isRepeatRoute, knownAnswers, medsText, validateIntake } from '@/domain/intake';
+import { type IntakeAnswers, NONE, intakeQuestion, isRepeatRoute, knownAnswers, medsText, validateIntake, screeningPath } from '@/domain/intake';
 import { MENOPAUSE_STAGES, SA_PROVINCES } from '@/domain/model';
 import { IntakeReview } from '../screening/IntakeReview';
 import { useScreening } from '@/hooks/useScreening';
@@ -235,7 +235,7 @@ export function FinishScreening({ again = false }: { again?: boolean }) {
         <Notice tone="error">
           {problem.text}{' '}
           {problem.stop && (
-            <Link href={`/start?stop=${problem.stop}&back=1`} className="link-arrow">
+            <Link href={`${screeningPath(a)}?stop=${problem.stop}&back=1`} className="link-arrow">
               Fix it now
             </Link>
           )}
@@ -249,7 +249,7 @@ export function FinishScreening({ again = false }: { again?: boolean }) {
       <details className="finish__review">
         <summary className="link-arrow">Review my answers</summary>
         <p className="small muted">Everything you told us. Tap Change to fix a part; you’ll come straight back here.</p>
-        <IntakeReview answers={a} open={['why']} changeHref={(id) => `/start?stop=${id}&back=1`} />
+        <IntakeReview answers={a} open={['why']} changeHref={(id) => `${screeningPath(a)}?stop=${id}&back=1`} />
       </details>
     </form>
   );
