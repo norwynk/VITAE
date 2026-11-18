@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { type CommandInput, DomainError, applyCommand } from '../src/domain/commands';
 import { DEMO_USERS, createFixtureStore, demoActor } from '../src/domain/fixtures';
-import { HAPPY_HORMONES, HH_BLOODS_NURSE, HH_BLOODS_OWN, hhNurseVisitPrice, hhOptionsFor, validateIntake } from '../src/domain/intake';
+import { HAPPY_HORMONES, HH_BLOODS_NURSE, HH_BLOODS_OWN, HH_ONLY_ANSWERS, hhNurseVisitPrice, hhOptionsFor, screeningPath, validateIntake } from '../src/domain/intake';
 import { type Store, SA_PROVINCES, visible } from '../src/domain/model';
 import { morningBrief } from '../src/domain/morning';
 
@@ -113,5 +113,12 @@ describe('Happy Hormones: bloods first', () => {
     expect(booked.operationalProfiles[NEW].hormoneBloods?.status).toBe('BOOKED');
     expect(morningBrief(visible(booked, admin), NOW).bloods).toBe(0);
     for (const actor of [member, clinician]) expect(() => run(base, actor, { type: 'hormoneBloods', memberId: NEW, status: 'RESULTS_IN' })).toThrow(DomainError);
+  });
+
+  it('keeps the two screenings apart: each brand has its own address', () => {
+    expect(screeningPath(intake())).toBe('/happy-hormones/start');
+    const { pathway: _p, ...prick } = intake();
+    expect(screeningPath(prick)).toBe('/start');
+    expect(HH_ONLY_ANSWERS).toEqual(expect.arrayContaining(['pathway', 'hhFor', 'hhBloods', 'hhResultsWhen']));
   });
 });
